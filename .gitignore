@@ -4,3 +4,4 @@ target/
 old/*
 /tests/*
 /resources/*
+/ui_zoo/*

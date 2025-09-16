@@ -23,7 +23,9 @@ mod tabbar;
 mod tag;
 mod traits;
 mod view;
+mod color_picker;
 
+pub use color_picker::*;
 pub use button::*;
 pub use card::*;
 pub use checkbox::*;
@@ -562,6 +564,8 @@ live_design! {
             }
         }
     }
+
+    pub GColorPicker = <GColorPickerBase> {}
 }
 
 pub fn components_register(cx: &mut Cx) {
@@ -584,6 +588,7 @@ pub fn components_register(cx: &mut Cx) {
     router::live_design(cx);
     menu::menu_register(cx);
     collapse::live_design(cx);
+    color_picker::live_design(cx);
 }
 
 component! {
