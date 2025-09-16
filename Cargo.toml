@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "gen_m3",
+    #  "tests",
+    # "old"
+]
