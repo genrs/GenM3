@@ -36,3 +36,22 @@ where
 //     }
 //     None
 // }
+
+pub fn round_2_decimals(value: f64) -> f64 {
+    (value * 100.0).round() / 100.0
+}
+
+pub fn round_2_decimals_f32(value: f32) -> f32 {
+    (value * 100.0).round() / 100.0
+}
+
+/// normalization [0, 1] (归一化), return value in [0, 1]
+pub fn normalization(value: f32, min: f32, max: f32) -> f32 {
+    if max - min < 0.0 {
+        panic!("max must be greater than min");
+    }
+    // 保证value在[min, max]范围内
+    let v = value.clamp(min, max);
+    let r2 = (v - min) / (max - min);
+    round_2_decimals_f32(r2)
+}

@@ -52,7 +52,7 @@ live_design! {
 #[derive(Live, WidgetRef, WidgetSet, LiveRegisterWidget)]
 pub struct GCollapse {
     #[live]
-    pub style: CollapseProp,
+    pub style: CollapseStyle,
     #[live]
     pub header: GView,
     #[live]

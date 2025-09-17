@@ -7,6 +7,8 @@ pub mod draw_svg;
 pub mod draw_image;
 pub mod draw_popup;
 pub mod draw_link;
+pub mod draw_progress;
+pub mod draw_color_panel;
 
 use makepad_widgets::Cx;
 

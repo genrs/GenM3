@@ -39,7 +39,7 @@ macro_rules! prop_interconvert {
         impl TryFrom<&toml_edit::Item> for $ty_name {
             type Error = crate::error::Error;
             fn try_from(value: &toml_edit::Item) -> Result<Self, Self::Error> {
-                let table = value.as_table().ok_or(Error::ThemeStyleParse(
+                let table = value.as_table().ok_or(crate::error::Error::ThemeStyleParse(
                     $e.to_string(),
                 ))?;
                 $(

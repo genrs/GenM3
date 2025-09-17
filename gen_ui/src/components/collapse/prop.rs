@@ -16,7 +16,7 @@ use crate::{
 };
 
 prop_interconvert! {
-    CollapseProp {
+    CollapseStyle {
         basic_prop = CollapseBasicStyle;
         basic => BASIC, CollapseBasicStyle::default(), |v| (v, CollapseState::Basic).try_into(),
         hover => HOVER, CollapseBasicStyle::from_state(Theme::default(), CollapseState::Hover), |v| (v, CollapseState::Hover).try_into(),
@@ -25,7 +25,7 @@ prop_interconvert! {
     }, "[component.menu_item] should be a table"
 }
 
-impl Style for CollapseProp {
+impl Style for CollapseStyle {
     type State = CollapseState;
 
     type Basic = CollapseBasicStyle;
@@ -49,7 +49,7 @@ impl Style for CollapseProp {
     }
 }
 
-impl SlotStyle for CollapseProp {
+impl SlotStyle for CollapseStyle {
     type Part = CollapsePart;
 
     fn sync_slot(&mut self, map: &crate::prop::ApplySlotMap<Self::State, Self::Part>) -> () {

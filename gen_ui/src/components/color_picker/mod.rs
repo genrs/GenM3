@@ -1,3 +1,5 @@
+mod panel;
+
 use makepad_widgets::*;
 
 live_design!{

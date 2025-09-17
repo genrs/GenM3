@@ -1,14 +1,13 @@
 use toml_edit::Table;
 
 use crate::components::{
-    ButtonStyle, CardProp, CheckboxProp, CollapseProp, DividerProp, ImageProp, LabelProp, LinkProp,
+    ButtonStyle, CardStyle, CheckboxProp, CollapseStyle, DividerProp, ImageProp, LabelProp, LinkProp,
     MenuItemProp, MenuProp, PopupContainerProp, PopupProp, RadioProp, SubMenuProp, SvgStyle,
-    SwitchProp, TabbarItemProp, TabbarProp, TagProp, ViewStyle,
+    SwitchProp, TabbarItemProp, TabbarProp, TagProp, ViewStyle, ProgressStyle
 };
 use crate::error::Error;
 use crate::prop::manuel::{
-    BUTTON, CARD, CHECKBOX, COLLAPSE, DIVIDER, IMAGE, LABEL, LINK, MENU, MENU_ITEM, POPUP,
-    POPUP_CONTAINER, RADIO, SUB_MENU, SVG, SWITCH, TABBAR, TABBAR_ITEM, TAG, VIEW,
+    BUTTON, CARD, CHECKBOX, COLLAPSE, DIVIDER, IMAGE, LABEL, LINK, MENU, MENU_ITEM, POPUP, POPUP_CONTAINER, PROGRESS, RADIO, SUB_MENU, SVG, SWITCH, TABBAR, TABBAR_ITEM, TAG, VIEW
 };
 use crate::try_from_toml_item;
 
@@ -17,7 +16,7 @@ pub struct ComponentsConf {
     pub label: LabelProp,
     pub view: ViewStyle,
     pub button: ButtonStyle,
-    pub card: CardProp,
+    pub card: CardStyle,
     pub radio: RadioProp,
     pub checkbox: CheckboxProp,
     pub switch: SwitchProp,
@@ -33,7 +32,8 @@ pub struct ComponentsConf {
     pub menu_item: MenuItemProp,
     pub sub_menu: SubMenuProp,
     pub menu: MenuProp,
-    pub collapse: CollapseProp,
+    pub collapse: CollapseStyle,
+    pub progress: ProgressStyle
 }
 
 try_from_toml_item! {
@@ -41,7 +41,7 @@ try_from_toml_item! {
         label => LABEL, LabelProp::default(), |item| item.try_into(),
         view => VIEW, ViewStyle::default(), |item| item.try_into(),
         button => BUTTON, ButtonStyle::default(), |item| item.try_into(),
-        card => CARD, CardProp::default(), |item| item.try_into(),
+        card => CARD, CardStyle::default(), |item| item.try_into(),
         radio => RADIO, RadioProp::default(), |item| item.try_into(),
         checkbox => CHECKBOX, CheckboxProp::default(), |item| item.try_into(),
         switch => SWITCH, SwitchProp::default(), |item| item.try_into(),
@@ -57,7 +57,8 @@ try_from_toml_item! {
         menu_item => MENU_ITEM, MenuItemProp::default(), |item| item.try_into(),
         sub_menu => SUB_MENU, SubMenuProp::default(), |item| item.try_into(),
         menu => MENU, MenuProp::default(), |item| item.try_into(),
-        collapse => COLLAPSE, CollapseProp::default(), |item| item.try_into()
+        collapse => COLLAPSE, CollapseStyle::default(), |item| item.try_into(),
+        progress => PROGRESS, ProgressStyle::default(), |item| item.try_into()
     }, "[components] should be a table"
 }
 

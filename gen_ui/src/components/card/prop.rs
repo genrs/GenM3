@@ -27,14 +27,14 @@ use crate::{
 };
 
 prop_interconvert! {
-    CardProp {
+    CardStyle {
         basic_prop = CardBasicStyle;
         basic => BASIC, CardBasicStyle::default(), |v| (v, CardState::Basic).try_into(),
         hover => HOVER, CardBasicStyle::from_state(Theme::default(), CardState::Hover), |v| (v, CardState::Hover).try_into()
     }, "[component.card] should be a table"
 }
 
-impl Style for CardProp {
+impl Style for CardStyle {
     type State = CardState;
 
     type Basic = CardBasicStyle;
@@ -60,7 +60,7 @@ impl Style for CardProp {
     }
 }
 
-impl SlotStyle for CardProp {
+impl SlotStyle for CardStyle {
     type Part = CardPart;
 
     fn sync_slot(&mut self, map: &crate::prop::ApplySlotMap<Self::State, Self::Part>) -> () {

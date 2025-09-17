@@ -56,6 +56,7 @@ pub const FIT: &str = "fit";
 pub const MIN_WIDTH: &str = "min_width";
 pub const MIN_HEIGHT: &str = "min_height";
 pub const WIDTH_SCALE: &str = "width_scale";
+pub const CIRCLE: &str = "circle";
 // --- text ------------------------------------------------------
 pub const FONT_SIZE: &str = "font_size";
 pub const COLOR: &str = "color";
@@ -69,6 +70,8 @@ pub const ACTIVE: &str = "active";
 pub const HOVER_BASIC: &str = "hover_basic";
 pub const HOVER_ACTIVE: &str = "hover_active";
 pub const LOADING: &str = "loading";
+pub const DRAGGING: &str = "dragging";
+pub const IN_PROGRESS: &str = "in_progress";
 // --- slot ------------------------------------------------------
 pub const SLOT: &str = "slot";
 pub const HEADER: &str = "header";
@@ -101,6 +104,9 @@ pub const LINK: &str = "link";
 pub const MENU_ITEM: &str = "menu_item";
 pub const SUB_MENU: &str = "sub_menu";
 pub const COLLAPSE: &str = "collapse";
+pub const PROGRESS: &str = "progress";
+pub const SLIDER: &str = "slider";
+pub const COLOR_PICKER: &str = "color_picker";
 // --- mode ------------------------------------------------------
 pub const MODE: &str = "mode";
 pub const ROUND: &str = "Round";

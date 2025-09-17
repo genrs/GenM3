@@ -6,10 +6,72 @@ use toml_edit::Value;
 use crate::{
     error::Error,
     prop::{
-        manuel::{HORIZONTAL, VERTICAL},
+        manuel::{CIRCLE, HORIZONTAL, VERTICAL},
         traits::FromLiveValue,
     },
 };
+
+#[derive(Live, LiveHook, Clone, Copy, Default, PartialEq, Eq, Hash, Debug)]
+#[live_ignore]
+#[repr(u32)]
+pub enum ProgressMode {
+    #[pick]
+    #[default]
+    Horizontal = shader_enum(1),
+    Vertical = shader_enum(2),
+    Circle = shader_enum(3),
+}
+
+impl TryFrom<&Value> for ProgressMode {
+    type Error = Error;
+
+    fn try_from(value: &Value) -> Result<Self, Self::Error> {
+        let mode_str = value
+            .as_str()
+            .ok_or_else(|| Error::ThemeStyleParse("ProgressMode should be a string".to_string()))?;
+
+        mode_str.parse()
+    }
+}
+
+impl FromStr for ProgressMode {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            HORIZONTAL => Ok(Self::Horizontal),
+            VERTICAL => Ok(Self::Vertical),
+            CIRCLE => Ok(Self::Circle),
+            _ => Err(Error::ThemeStyleParse(format!(
+                "Unknown ProgressMode: {}",
+                s
+            ))),
+        }
+    }
+}
+
+impl FromLiveValue for ProgressMode {
+    fn from_live_value(v: &LiveValue) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        if let LiveValue::BareEnum(e) = v {
+            e.to_string().parse().ok()
+        } else {
+            None
+        }
+    }
+}
+
+impl ToLiveValue for ProgressMode {
+    fn to_live_value(&self) -> LiveValue {
+        LiveValue::BareEnum(match self {
+            ProgressMode::Horizontal => live_id!(Horizontal),
+            ProgressMode::Vertical => live_id!(Vertical),
+            ProgressMode::Circle => live_id!(Circle),
+        })
+    }
+}
 
 #[derive(Live, LiveHook, Clone, Copy, Default, PartialEq, Eq, Hash, Debug)]
 #[live_ignore]

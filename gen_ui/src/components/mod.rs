@@ -24,6 +24,8 @@ mod tag;
 mod traits;
 mod view;
 mod color_picker;
+mod slider;
+mod progress;
 
 pub use color_picker::*;
 pub use button::*;
@@ -49,6 +51,7 @@ pub use tabbar::*;
 pub use tag::*;
 pub use traits::*;
 pub use view::*;
+pub use progress::*;
 
 use crate::component;
 

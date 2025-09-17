@@ -57,7 +57,7 @@ pub struct GButton {
 ```rust
 #[derive(Live, WidgetRef, WidgetSet, LiveRegisterWidget)]
 pub struct GCard {
-    #[live] pub style: CardProp,
+    #[live] pub style: CardStyle,
     #[live] pub header: GView,
     #[live] pub body: GView,
     #[live] pub footer: GView,

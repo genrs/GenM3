@@ -2,5 +2,5 @@
 members = [
     "gen_ui",
     "ui_zoo",
-    # "old"
+    "old"
 ]

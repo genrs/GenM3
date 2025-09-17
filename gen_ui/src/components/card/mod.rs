@@ -50,7 +50,7 @@ live_design! {
 #[derive(Live, WidgetRef, WidgetSet, LiveRegisterWidget)]
 pub struct GCard {
     #[live]
-    pub style: CardProp,
+    pub style: CardStyle,
     // --- others -------------------
     #[live(true)]
     pub visible: bool,
