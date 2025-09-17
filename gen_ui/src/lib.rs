@@ -51,4 +51,5 @@ pub struct ComponentAnInit {
     collapse: bool,
     sub_menu: bool,
     menu: bool,
+    progress: bool,
 }

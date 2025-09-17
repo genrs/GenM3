@@ -569,6 +569,8 @@ live_design! {
     }
 
     pub GColorPicker = <GColorPickerBase> {}
+
+    pub GProgress = <GProgressBase> {}
 }
 
 pub fn components_register(cx: &mut Cx) {
@@ -592,6 +594,7 @@ pub fn components_register(cx: &mut Cx) {
     menu::menu_register(cx);
     collapse::live_design(cx);
     color_picker::live_design(cx);
+    progress::live_design(cx);
 }
 
 component! {

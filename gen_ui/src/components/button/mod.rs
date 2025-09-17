@@ -6,24 +6,14 @@ use makepad_widgets::*;
 pub use prop::*;
 
 use crate::{
-    active_event, animation_open_then_redraw, area, area_ref,
-    components::{
+    active_event, animation_open_then_redraw, area, area_ref, components::{
         lifecycle::LifeCycle,
         traits::{BasicStyle, Component, Style},
-    },
-    error::Error,
-    event_option, event_option_ref, getter, getter_setter_ref, hit_finger_down, hit_finger_up,
-    hit_hover_in, hit_hover_out, lifecycle, play_animation,
-    prop::{
+    }, error::Error, event_option, event_option_ref, getter, getter_setter_ref, hit_finger_down, hit_finger_up, hit_hover_in, hit_hover_out, lifecycle, play_animation, prop::{
         manuel::{BASIC, DISABLED, HOVER, PRESSED},
         traits::{ToColor, ToFloat},
         ApplyStateMap, Radius,
-    },
-    pure_after_apply, set_animation, set_index, set_scope_path, setter,
-    shader::draw_view::DrawView,
-    sync,
-    themes::{conf::Conf, Theme},
-    visible, ComponentAnInit,
+    }, pure_after_apply, set_animation, set_index, set_scope_path, setter, shader::draw_view::DrawView, switch_state, sync, themes::{conf::Conf, Theme}, visible, ComponentAnInit
 };
 
 live_design! {
@@ -324,10 +314,6 @@ impl Component for GButton {
         };
     }
 
-    fn switch_state(&mut self, state: Self::State) -> () {
-        self.state = state;
-    }
-
     fn switch_state_with_animation(&mut self, cx: &mut Cx, state: Self::State) -> () {
         if !self.animation_open {
             return;
@@ -518,6 +504,7 @@ impl Component for GButton {
     set_scope_path!();
     set_index!();
     lifecycle!();
+    switch_state!();
 }
 
 impl GButton {

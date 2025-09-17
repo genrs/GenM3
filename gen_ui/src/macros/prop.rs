@@ -264,6 +264,15 @@ macro_rules! sync {
     };
 }
 
+#[macro_export]
+macro_rules! switch_state {
+    () => {
+        fn switch_state(&mut self, state: Self::State) -> () {
+            self.state = state;
+        }
+    };
+}
+
 /// ## Inherit View Basic Properties
 /// This macro generates a struct that inherits the basic properties of a view.
 /// ### When to use

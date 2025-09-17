@@ -77,8 +77,8 @@ basic_prop_interconvert! {
             padding: Padding => PADDING, Padding::from_xy(10.0, 16.0), |v| v.to_padding(padding),
             flow: Flow => FLOW, Flow::Right, |v| v.to_flow(),
             align: Align => ALIGN, Align::from_f64(0.5), |v| v.to_align(align),
-            height: Size => HEIGHT, Size::Fit, |v| v.to_size(),
-            width: Size => WIDTH, Size::Fit, |v| v.to_size(),
+            height: Size => HEIGHT, Size::Fixed(16.0), |v| v.to_size(),
+            width: Size => WIDTH, Size::Fill, |v| v.to_size(),
             spacing: f64 => SPACING, 6.0, |v| v.to_f64(),
             abs_pos: AbsPos => ABS_POS, None, |v| Ok(v.to_dvec2().map_or(None, |v| Some(v)))
         }
@@ -128,8 +128,8 @@ impl BasicStyle for ProgressBasicStyle {
             padding: Padding::from_xy(10.0, 16.0),
             flow: Flow::Right,
             align: Align::from_f64(0.5),
-            height: Size::Fit,
-            width: Size::Fit,
+            height: Size::Fixed(16.0),
+            width: Size::Fill,
             spacing: 6.0,
             abs_pos: None,
         }
@@ -137,9 +137,9 @@ impl BasicStyle for ProgressBasicStyle {
 
     state_colors! {
         (bg_level, border_level, shadow_level, color_level),
-        ProgressState::Basic => (200, 500, 400, 500),
-        ProgressState::InProgress => (200, 500, 400, 600),
-        ProgressState::Disabled => (200, 300, 200, 400)
+        ProgressState::Basic => (100, 500, 400, 600),
+        ProgressState::InProgress => (100, 500, 400, 600),
+        ProgressState::Disabled => (100, 300, 200, 500)
     }
 
     fn len() -> usize {

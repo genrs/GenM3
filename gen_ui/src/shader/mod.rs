@@ -21,5 +21,6 @@ pub fn shader_register(cx: &mut Cx) {
     draw_image::live_design(cx);
     draw_popup::live_design(cx);
     draw_link::live_design(cx);
+    draw_progress::live_design(cx);
     animation::live_design(cx);
 }

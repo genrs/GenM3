@@ -5,16 +5,16 @@ use makepad_widgets::*;
 pub use prop::*;
 
 use crate::{
-    components::{BasicStyle, Component, LifeCycle, Style}, error::Error, prop::{
-        manuel::{BASIC, DISABLED, IN_PROGRESS}, ApplyStateMap, Direction, ProgressMode
-    }, pure_after_apply, shader::draw_progress::DrawProgress, themes::conf::Conf, visible
+    components::{BasicStyle, Component, LifeCycle, Style}, error::Error, lifecycle, play_animation, prop::{
+        manuel::{BASIC, DISABLED, IN_PROGRESS}, traits::ToFloat, ApplyStateMap, Direction, ProgressMode
+    }, pure_after_apply, set_animation, set_index, set_scope_path, shader::draw_progress::DrawProgress, switch_state, sync, themes::conf::Conf, utils::normalization, visible, ComponentAnInit
 };
 
 live_design! {
     link genui_basic;
     use link::genui_animation_prop::*;
 
-    pub GProgress = {{GProgress}} {
+    pub GProgressBase = {{GProgress}} {
 
     }
 }
@@ -23,7 +23,7 @@ live_design! {
 pub struct GProgress {
     #[live]
     pub style: ProgressStyle,
-    #[live]
+    #[live(true)]
     pub visible: bool,
     #[live]
     pub disabled: bool,
@@ -165,46 +165,176 @@ impl Component for GProgress {
     }
 
     fn render(&mut self, cx: &mut Cx) -> Result<(), Self::Error> {
-        todo!()
-    }
-
-    fn set_scope_path(&mut self, path: &HeapLiveIdPath) -> () {
-        todo!()
+        if self.disabled {
+            self.switch_state(ProgressState::Disabled);
+        }
+        let style = self.style.get(self.state);
+        self.draw_progress.merge(style);
+        self.draw_progress.mode = self.mode;
+        self.draw_progress.value = normalization(self.value, self.min, self.max);
+        Ok(())
     }
 
     fn handle_widget_event(&mut self, cx: &mut Cx, event: &Event, hit: Hit, area: Area) {
-        todo!()
-    }
-
-    fn play_animation(&mut self, cx: &mut Cx, state: &[LiveId; 2]) -> () {
-        todo!()
-    }
-
-    fn switch_state(&mut self, state: Self::State) -> () {
-        todo!()
+        ()
     }
 
     fn switch_state_with_animation(&mut self, cx: &mut Cx, state: Self::State) -> () {
-        todo!()
-    }
-
-    fn sync(&mut self) -> () {
-        todo!()
+        if !self.animation_open {
+            return;
+        }
+        self.switch_state(state);
+        self.set_animation(cx);
+        // self.redraw(cx);
     }
 
     fn focus_sync(&mut self) -> () {
-        todo!()
+        self.style.sync(&self.apply_state_map);
     }
 
     fn set_animation(&mut self, cx: &mut Cx) -> () {
-        todo!()
+        let init_global = cx.global::<ComponentAnInit>().progress;
+
+        let live_ptr = match self.animator.live_ptr {
+            Some(ptr) => ptr.file_id.0,
+            None => return,
+        };
+
+        let mut registry = cx.live_registry.borrow_mut();
+        let live_file = match registry.live_files.get_mut(live_ptr as usize) {
+            Some(lf) => lf,
+            None => return,
+        };
+
+        let nodes = &mut live_file.expanded.nodes;
+
+        if self.lifecycle.is_created() || !init_global || self.scope_path.is_none() {
+            self.lifecycle.next();
+            let basic_prop = self.style.get(ProgressState::Basic);
+            let in_progress_prop = self.style.get(ProgressState::InProgress);
+            let disabled_prop = self.style.get(ProgressState::Disabled);
+            let (mut basic_index, mut in_progress_index, mut disabled_index) = (None, None, None);
+            if let Some(index) = nodes.child_by_path(
+                self.index,
+                &[
+                    live_id!(animator).as_field(),
+                    live_id!(hover).as_instance(),
+                    live_id!(off).as_instance(),
+                ],
+            ) {
+                basic_index = Some(index);
+            }
+
+            if let Some(index) = nodes.child_by_path(
+                self.index,
+                &[
+                    live_id!(animator).as_field(),
+                    live_id!(in_progress).as_instance(),
+                    live_id!(on).as_instance(),
+                ],
+            ) {
+                in_progress_index = Some(index);
+            }
+
+            if let Some(index) = nodes.child_by_path(
+                self.index,
+                &[
+                    live_id!(animator).as_field(),
+                    live_id!(hover).as_instance(),
+                    live_id!(disabled).as_instance(),
+                ],
+            ) {
+                disabled_index = Some(index);
+            }
+
+            set_animation! {
+                nodes: draw_progress = {
+                    basic_index => {
+                        background_color => basic_prop.background_color,
+                        border_color =>basic_prop.border_color,
+                        border_radius => basic_prop.border_radius,
+                        border_width =>(basic_prop.border_width as f64),
+                        shadow_color => basic_prop.shadow_color,
+                        spread_radius => (basic_prop.spread_radius as f64),
+                        blur_radius => (basic_prop.blur_radius as f64),
+                        shadow_offset => basic_prop.shadow_offset,
+                        background_visible => basic_prop.background_visible.to_f64()
+                    },
+                    in_progress_index => {
+                        background_color => in_progress_prop.background_color,
+                        border_color => in_progress_prop.border_color,
+                        border_radius => in_progress_prop.border_radius,
+                        border_width => (in_progress_prop.border_width as f64),
+                        shadow_color => in_progress_prop.shadow_color,
+                        spread_radius => (in_progress_prop.spread_radius as f64),
+                        blur_radius => (in_progress_prop.blur_radius as f64),
+                        shadow_offset => in_progress_prop.shadow_offset,
+                        background_visible => in_progress_prop.background_visible.to_f64()
+                    },
+                    disabled_index => {
+                        background_color => disabled_prop.background_color,
+                        border_color => disabled_prop.border_color,
+                        border_radius => disabled_prop.border_radius,
+                        border_width => (disabled_prop.border_width as f64),
+                        shadow_color => disabled_prop.shadow_color,
+                        spread_radius => (disabled_prop.spread_radius as f64),
+                        blur_radius => (disabled_prop.blur_radius as f64),
+                        shadow_offset => disabled_prop.shadow_offset,
+                        background_visible => disabled_prop.background_visible.to_f64()
+                    }
+                }
+            }
+        } else {
+            let state = self.state;
+            let style = self.style.get(state);
+            let index = match state {
+                ProgressState::Basic => nodes.child_by_path(
+                    self.index,
+                    &[
+                        live_id!(animator).as_field(),
+                        live_id!(hover).as_instance(),
+                        live_id!(off).as_instance(),
+                    ],
+                ),
+                ProgressState::InProgress => nodes.child_by_path(
+                    self.index,
+                    &[
+                        live_id!(animator).as_field(),
+                        live_id!(in_progress).as_instance(),
+                        live_id!(on).as_instance(),
+                    ],
+                ),
+                ProgressState::Disabled => nodes.child_by_path(
+                    self.index,
+                    &[
+                        live_id!(animator).as_field(),
+                        live_id!(hover).as_instance(),
+                        live_id!(disabled).as_instance(),
+                    ],
+                ),
+            };
+            set_animation! {
+                nodes: draw_progress = {
+                    index => {
+                        background_color => style.background_color,
+                        border_color => style.border_color,
+                        border_radius => style.border_radius,
+                        border_width => (style.border_width as f64),
+                        shadow_color => style.shadow_color,
+                        spread_radius => (style.spread_radius as f64),
+                        blur_radius => (style.blur_radius as f64),
+                        shadow_offset => style.shadow_offset,
+                        background_visible => style.background_visible.to_f64()
+                    }
+                }
+            }
+        }
     }
 
-    fn lifecycle(&self) -> LifeCycle {
-        todo!()
-    }
-
-    fn set_index(&mut self, index: usize) -> () {
-        todo!()
-    }
+    sync!();
+    play_animation!();
+    set_scope_path!();
+    set_index!();
+    lifecycle!();
+    switch_state!();
 }
