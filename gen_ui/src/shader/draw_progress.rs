@@ -9,11 +9,11 @@ use crate::{
 live_design! {
     use link::shaders::*;
     DrawProgress = {{DrawProgress}}{
-
         fn get_color(self) -> vec4 { return self.color; }
 
         fn pixel(self) -> vec4 {
             let sdf = Sdf2d::viewport(self.pos * self.rect_size3);
+            let one_deg = PI / 180.0;
             // - [draw progress bar] --------------------------------------------------------------
             match self.mode {
                 ProgressMode::Horizontal => {
@@ -57,17 +57,18 @@ live_design! {
                     // - [basic sdf for draw a view] ------------------------------------------------------
                     let border_width = self.border_width;
                     let total_shadow_size = self.spread_radius + self.blur_radius;
-
+                    let wave_offset = self.sdf_rect_size.y * 0.25;
+                    let progress_width = self.sdf_rect_size.x * self.value;
                     // 使用calculated位置而不是原始rect_size
                     sdf.box_all(
-                        self.sdf_rect_pos.x,
-                        self.sdf_rect_pos.y,
-                        self.sdf_rect_size.x,
-                        self.sdf_rect_size.y,
-                        max(self.border_radius.x, 1.0),
-                        max(self.border_radius.y, 1.0),
-                        max(self.border_radius.z, 1.0),
-                        max(self.border_radius.w, 1.0)
+                        self.sdf_rect_pos.x + progress_width,
+                        self.sdf_rect_pos.y + wave_offset,
+                        self.sdf_rect_size.x - progress_width,
+                        self.sdf_rect_size.y * 0.5,
+                        max(self.border_radius.x * 0.5, 1.0),
+                        max(self.border_radius.y * 0.5, 1.0),
+                        max(self.border_radius.z * 0.5, 1.0),
+                        max(self.border_radius.w * 0.5, 1.0)
                     );
 
                     // - [background color if visible] ----------------------------------------------------
@@ -80,26 +81,69 @@ live_design! {
                         sdf.stroke_keep(self.get_border_color(), border_width);
                     }
                     // [draw a small dot in the end of the progress bar] --------------------------
-                    let dot_radius = self.rect_size.y * 0.28;
+                    let dot_radius = 4.0;
                     let dot_pos = vec2(
-                        self.rect_size.x + self.pos.x - dot_radius * 2.0 - self.border_width, 
+                        self.rect_size.x + self.pos.x - dot_radius * 2.0 - self.border_width,
                         self.pos.y + self.rect_size.y * 0.5
                     );
                     sdf.circle(dot_pos.x, dot_pos.y, dot_radius);
                     sdf.fill_premul(self.get_color());
+                    
                     // [draw the progress bar] ----------------------------------------------------
-                    let progress_width = self.sdf_rect_size.x * self.value;
-                    sdf.box_all(
+                    if self.in_progress == 1.0 {
+                        // 波浪进度条参数
+                        let center_y = self.pos.y + self.rect_size.y * 0.5;
+                        // 使用更少的段数但更大的弧度来创建更连续的波浪
+                        let mut x = 0.0;
+                        for i in 0..20 {
+                            if i < int(self.value * 20.0) {
+                                let wave_r = self.sdf_rect_size.y;
+                                 // 因为最后一个波浪永远需要是完整的，所以需要在这里做一个偏移
+                                let wave_x = (self.sdf_rect_pos.x + (2.0 * x + 1.0) * wave_r - 2.5 * x * wave_offset) - (self.value * 10.0 - float(int(self.value * 10.0)) * wave_offset * 0.5);
+                                if wave_x > (self.sdf_rect_pos.x + self.sdf_rect_size.x * self.value) {
+                                    break;
+                                }
+                                
+                                if mod(x, 2.0) == 0.0 {
+                                    // 下波浪 - 弧线向下，使用更大的弧度范围
+                                    sdf.arc_round_caps(
+                                        wave_x,
+                                        0.0 - wave_offset * 1.0,
+                                        wave_r,
+                                        -45.0 * one_deg,
+                                        45.0 * one_deg,
+                                        wave_offset * 2.0
+                                    );
+                                } else {
+                                    // 上波浪 - 弧线向上，使用更大的弧度范围
+                                    sdf.arc_round_caps(
+                                        wave_x,
+                                        self.sdf_rect_size.y + wave_offset * 1.0,
+                                        wave_r,
+                                        135.0 * one_deg,
+                                        225.0 * one_deg,
+                                        wave_offset * 2.0
+                                    );
+                                }
+                                sdf.fill_keep(self.get_color());
+                            }
+                            x += 1.0;
+                        }
+
+                    }else{
+                        sdf.box_all(
                         self.sdf_rect_pos.x,
-                        self.sdf_rect_pos.y,
-                        progress_width,
-                        self.sdf_rect_size.y,
-                        max(self.border_radius.x, 1.0),
-                        max(self.border_radius.y, 1.0),
-                        max(self.border_radius.z, 1.0),
-                        max(self.border_radius.w, 1.0)
-                    );
-                    sdf.fill_keep(self.get_color());
+                            self.sdf_rect_pos.y,
+                            progress_width,
+                            self.sdf_rect_size.y,
+                            max(self.border_radius.x, 1.0),
+                            max(self.border_radius.y, 1.0),
+                            max(self.border_radius.z, 1.0),
+                            max(self.border_radius.w, 1.0)
+                        );
+                        sdf.fill_keep(self.get_color());
+                    }
+                    
                 }
                 ProgressMode::Vertical => {
                     // - [draw shadow and blur] -----------------------------------------------------------
@@ -165,9 +209,9 @@ live_design! {
                         sdf.stroke_keep(self.get_border_color(), border_width);
                     }
                     // [draw a small dot in the end of the progress bar] --------------------------
-                    let dot_radius = self.rect_size.x * 0.28;
+                    let dot_radius = self.rect_size.x * 0.2;
                     let dot_pos = vec2(
-                        self.pos.x + self.rect_size.x * 0.5, 
+                        self.pos.x + self.rect_size.x * 0.5,
                         self.pos.y + dot_radius * 2.0 + self.border_width
                     );
                     sdf.circle(dot_pos.x, dot_pos.y, dot_radius);
@@ -206,7 +250,7 @@ live_design! {
                         sdf.stroke_keep(self.get_border_color(), self.border_width);
                     }
                     // [draw the progress part] ----------------------------------------------------
-                    let one_deg = PI / 180;
+                    
                     sdf.arc_round_caps(
                         center_pos.x,
                         center_pos.y,
@@ -241,7 +285,7 @@ pub struct DrawProgress {
     /// is in progress state
     /// when in_progress is 1.0, the progress bar should be act as wave
     /// when in_progress is 0.0, the progress bar should be act as normal
-    #[live]
+    #[live(1.0)]
     pub in_progress: f32,
 }
 
