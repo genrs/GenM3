@@ -456,7 +456,7 @@ impl Widget for GView {
 
             let layout = style.layout().with_scroll(scroll);
 
-            if style.background_visible {
+            if self.visible {
                 self.draw_view.begin(cx, walk, layout);
             } else {
                 cx.begin_turtle(walk, layout);
@@ -500,7 +500,7 @@ impl Widget for GView {
                     scroll_bars.draw_scroll_bars(cx);
                 };
 
-                if style.background_visible {
+                if self.visible {
                     if is_texture(self.optimize) {
                         panic!("dont use show_bg and texture caching at the same time");
                     }

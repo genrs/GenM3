@@ -12,6 +12,16 @@ live_design! {
         varying sdf_rect_pos: vec2,
         varying sdf_rect_size: vec2,
 
+        fn count_border_radius(self) -> vec4 {
+            let max_radius = min(self.rect_size.x, self.rect_size.y) * 0.25;
+            return vec4(
+                min(max(self.border_radius.x - self.border_width * 0.5, 1.0), max_radius),
+                min(max(self.border_radius.y - self.border_width * 0.5, 1.0), max_radius),
+                min(max(self.border_radius.z - self.border_width * 0.5, 1.0), max_radius),
+                min(max(self.border_radius.w - self.border_width * 0.5, 1.0), max_radius)
+            )
+        }
+
         // [getter] -------------------------------------------------------------------------------
         fn get_background_color(self) -> vec4 { return self.background_color; }
         fn get_border_color(self) -> vec4 { return self.border_color; }
@@ -79,31 +89,27 @@ live_design! {
             }
 
             // - [basic sdf for draw a view] ------------------------------------------------------
-            let border_width = self.border_width;
             let total_shadow_size = self.spread_radius + self.blur_radius;
-
+            let border_radius = self.count_border_radius();
             // 使用calculated位置而不是原始rect_size
             sdf.box_all(
                 self.sdf_rect_pos.x,
                 self.sdf_rect_pos.y,
                 self.sdf_rect_size.x,
                 self.sdf_rect_size.y,
-                max(self.border_radius.x, 1.0),
-                max(self.border_radius.y, 1.0),
-                max(self.border_radius.z, 1.0),
-                max(self.border_radius.w, 1.0)
+                border_radius.x,
+                border_radius.y,
+                border_radius.z,
+                border_radius.w
             );
-
+            // - [border with and color if width bigger than 0] -----------------------------------
+            if self.border_width != 0.0 {
+                sdf.stroke_keep(self.get_border_color(), self.border_width);
+            }
             // - [background color if visible] ----------------------------------------------------
             if self.background_visible == 1.0 {
-                sdf.fill_keep(self.get_background_color());
+                sdf.fill(self.get_background_color());
             }
-
-            // - [border with and color if width bigger than 0] -----------------------------------
-            if border_width > 0.0 {
-                sdf.stroke(self.get_border_color(), border_width);
-            }
-
             return sdf.result;
         }
     }
