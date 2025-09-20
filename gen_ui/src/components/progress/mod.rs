@@ -15,7 +15,7 @@ live_design! {
     use link::genui_animation_prop::*;
 
     pub GProgressBase = {{GProgress}} {
-
+        
     }
 }
 

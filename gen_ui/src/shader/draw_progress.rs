@@ -177,8 +177,8 @@ live_design! {
                     // keep the mask even if background invisible so stroke can draw
                     if self.background_visible == 1.0 {
                         sdf.fill_premul(self.get_background_color());
-                    } 
-                    
+                    }
+
                     // [draw a small dot in the end of the progress bar] --------------------------
                     let dot_radius = 4.0;
                     let dot_pos = vec2(
@@ -221,51 +221,83 @@ live_design! {
 
                     let ring_inner_radius = ring_outer_radius - offset * 2.0;
                     let ring_arc_radius = ring_inner_radius + offset;
-                    // sdf.circle(center_pos.x, center_pos.y, ring_outer_radius);
-                    // sdf.circle(center_pos.x, center_pos.y, ring_inner_radius);
-                    let start_deg = (self.value * PI) * one_deg;
-                    if self.value != 1.0 {
-                        sdf.arc_round_caps(
-                            center_pos.x,
-                            center_pos.y,
-                            ring_arc_radius,
-                            (self.value * 360.0 - 162.0) * one_deg,
-                            162.0 * one_deg,
-                            offset * 2.0
-                        );
-                    }
-
-                    if self.border_width > 0.0 {
-                        sdf.stroke_keep(self.get_border_color(), self.border_width);
-                    }
-
-                    // keep mask even when background invisible so stroke can draw
-                    if self.background_visible == 1.0 {
-                        sdf.fill_premul(self.get_background_color());
-                    }
-
+                    let start_angle = self.value * 360.0 - 180.0;
+                    let end_angle = 146.0;
                     
                     // [draw the progress part] ----------------------------------------------------
-                    if self.value == 1.0 {
-                        sdf.arc_round_caps(
-                            center_pos.x,
-                            center_pos.y,
-                            ring_arc_radius,
-                            0.0 * one_deg,
-                            360.0 * one_deg,
-                            offset * 2.0
-                        );
-                    } else {
-                        sdf.arc_round_caps(
-                            center_pos.x,
-                            center_pos.y,
-                            ring_arc_radius,
-                            198.0 * one_deg,
-                            (self.value * 360.0 + 162.0) * one_deg,
-                            offset * 2.0
-                        );
+                    let p_start_angle = 0.0;
+                    let p_end_angle = 360.0;
+                    if self.value != 1.0 {
+                        p_start_angle = 180.0;
+                        p_end_angle = self.value * 360.0 + 146.0;
                     }
-                    sdf.fill_premul(self.get_color());
+
+                    if self.value * 360.0 < 36.0 {
+                        if self.value != 0.0 {
+                            sdf.arc_round_caps(
+                                center_pos.x,
+                                center_pos.y,
+                                ring_arc_radius,
+                                p_start_angle * one_deg,
+                                p_end_angle * one_deg,
+                                offset * 2.0
+                            );
+                        }
+                        sdf.fill_premul(self.get_color());
+                        
+                        if self.value != 1.0 {
+                            sdf.arc_round_caps(
+                                center_pos.x,
+                                center_pos.y,
+                                ring_arc_radius,
+                                start_angle * one_deg,
+                                end_angle * one_deg,
+                                offset * 2.0
+                            );
+                        }
+
+                        if self.border_width > 0.0 {
+                            sdf.stroke_keep(self.get_border_color(), self.border_width);
+                        }
+
+                        // keep mask even when background invisible so stroke can draw
+                        if self.background_visible == 1.0 {
+                            sdf.fill_premul(self.get_background_color());
+                        }
+                    } else {
+                        if self.value != 1.0 {
+                            sdf.arc_round_caps(
+                                center_pos.x,
+                                center_pos.y,
+                                ring_arc_radius,
+                                start_angle * one_deg,
+                                end_angle * one_deg,
+                                offset * 2.0
+                            );
+                        }
+
+                        if self.border_width > 0.0 {
+                            sdf.stroke_keep(self.get_border_color(), self.border_width);
+                        }
+
+                        // keep mask even when background invisible so stroke can draw
+                        if self.background_visible == 1.0 {
+                            sdf.fill_premul(self.get_background_color());
+                        }
+
+                        if self.value != 0.0 {
+                            sdf.arc_round_caps(
+                                center_pos.x,
+                                center_pos.y,
+                                ring_arc_radius,
+                                p_start_angle * one_deg,
+                                p_end_angle * one_deg,
+                                offset * 2.0
+                            );
+                        }
+                        sdf.fill_premul(self.get_color());
+                    }
+                    
                 }
 
             }
