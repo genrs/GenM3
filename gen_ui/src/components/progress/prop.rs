@@ -8,8 +8,8 @@ use crate::{
         ApplyStateMapImpl, Radius,
         manuel::{
             ABS_POS, ALIGN, BACKGROUND_COLOR, BACKGROUND_VISIBLE, BASIC, BLUR_RADIUS, BORDER_COLOR,
-            BORDER_RADIUS, BORDER_WIDTH, COLOR, CURSOR, DISABLED, FLOW, HEIGHT, IN_PROGRESS,
-            MARGIN, PADDING, SHADOW_COLOR, SHADOW_OFFSET, SPACING, SPREAD_RADIUS, THEME, WIDTH,
+            BORDER_RADIUS, BORDER_WIDTH, COLOR, CURSOR, DISABLED, FLOW, HEIGHT, LOADING, MARGIN,
+            PADDING, SHADOW_COLOR, SHADOW_OFFSET, SPACING, SPREAD_RADIUS, THEME, WIDTH,
         },
         traits::{AbsPos, FromLiveColor, FromLiveValue, NewFrom, ToColor, ToTomlValue},
     },
@@ -21,7 +21,7 @@ prop_interconvert! {
     ProgressStyle {
         basic_prop = ProgressBasicStyle;
         basic => BASIC, ProgressBasicStyle::default(),|v| (v, ProgressState::Basic).try_into(),
-        in_progress => IN_PROGRESS, ProgressBasicStyle::from_state(Theme::default(), ProgressState::InProgress),|v| (v, ProgressState::InProgress).try_into(),
+        loading => LOADING, ProgressBasicStyle::from_state(Theme::default(), ProgressState::Loading),|v| (v, ProgressState::Loading).try_into(),
         disabled => DISABLED, ProgressBasicStyle::from_state(Theme::default(), ProgressState::Disabled),|v| (v, ProgressState::Disabled).try_into()
     }, "[component.Progress] should be a table"
 }
@@ -33,7 +33,7 @@ impl Style for ProgressStyle {
 
     get_get_mut! {
         ProgressState::Basic => basic,
-        ProgressState::InProgress => in_progress,
+        ProgressState::Loading => loading,
         ProgressState::Disabled => disabled
     }
 
@@ -49,7 +49,7 @@ impl Style for ProgressStyle {
             &mut self.basic,
             ProgressState::Basic,
             [
-                (ProgressState::InProgress, &mut self.in_progress),
+                (ProgressState::Loading, &mut self.loading),
                 (ProgressState::Disabled, &mut self.disabled),
             ],
         );
@@ -138,7 +138,7 @@ impl BasicStyle for ProgressBasicStyle {
     state_colors! {
         (bg_level, border_level, shadow_level, color_level),
         ProgressState::Basic => (100, 500, 400, 600),
-        ProgressState::InProgress => (100, 500, 400, 600),
+        ProgressState::Loading => (100, 500, 400, 600),
         ProgressState::Disabled => (100, 300, 200, 500)
     }
 
@@ -316,7 +316,7 @@ impl BasicStyle for ProgressBasicStyle {
 component_state! {
     ProgressState {
         Basic => BASIC,
-        InProgress => IN_PROGRESS,
+        Loading => LOADING,
         Disabled => DISABLED
     },
     _ => ProgressState::Basic
@@ -327,6 +327,3 @@ impl ComponentState for ProgressState {
         matches!(self, ProgressState::Disabled)
     }
 }
-
-
-

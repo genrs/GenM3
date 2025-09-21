@@ -75,4 +75,20 @@ live_design!{
         underline_visible: 1.0,
         underline_width: 1.0,
     }
+
+    pub AN_DRAW_PROGRESS = {
+        background_color: #777777,
+        border_color: #777777,
+        border_width: 0.0,
+        // border_radius: vec4(4.0, 4.0, 4.0, 4.0),
+        shadow_color: #777777,
+        spread_radius: 0.0,
+        blur_radius: 0.0,
+        background_visible: 1.0,
+        rotation: 0.0,
+        scale: 1.0,
+        shadow_offset: vec2(0.0, 0.0),
+        color: #ffffff,
+        value: 0.0,
+    }
 }

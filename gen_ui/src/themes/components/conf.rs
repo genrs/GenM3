@@ -1,13 +1,11 @@
 use toml_edit::Table;
 
 use crate::components::{
-    ButtonStyle, CardStyle, CheckboxProp, CollapseStyle, DividerProp, ImageProp, LabelProp, LinkProp,
-    MenuItemProp, MenuProp, PopupContainerProp, PopupProp, RadioProp, SubMenuProp, SvgStyle,
-    SwitchProp, TabbarItemProp, TabbarProp, TagProp, ViewStyle, ProgressStyle
+    ButtonStyle, CardStyle, CheckboxProp, CollapseStyle, DividerProp, ImageProp, LabelProp, LinkProp, LoadingStyle, MenuItemProp, MenuProp, PopupContainerProp, PopupProp, ProgressStyle, RadioProp, SubMenuProp, SvgStyle, SwitchProp, TabbarItemProp, TabbarProp, TagProp, ViewStyle
 };
 use crate::error::Error;
 use crate::prop::manuel::{
-    BUTTON, CARD, CHECKBOX, COLLAPSE, DIVIDER, IMAGE, LABEL, LINK, MENU, MENU_ITEM, POPUP, POPUP_CONTAINER, PROGRESS, RADIO, SUB_MENU, SVG, SWITCH, TABBAR, TABBAR_ITEM, TAG, VIEW
+    BUTTON, CARD, CHECKBOX, COLLAPSE, DIVIDER, IMAGE, LABEL, LINK, LOADING, MENU, MENU_ITEM, POPUP, POPUP_CONTAINER, PROGRESS, RADIO, SUB_MENU, SVG, SWITCH, TABBAR, TABBAR_ITEM, TAG, VIEW
 };
 use crate::try_from_toml_item;
 
@@ -33,7 +31,8 @@ pub struct ComponentsConf {
     pub sub_menu: SubMenuProp,
     pub menu: MenuProp,
     pub collapse: CollapseStyle,
-    pub progress: ProgressStyle
+    pub progress: ProgressStyle,
+    pub loading: LoadingStyle
 }
 
 try_from_toml_item! {
@@ -58,7 +57,8 @@ try_from_toml_item! {
         sub_menu => SUB_MENU, SubMenuProp::default(), |item| item.try_into(),
         menu => MENU, MenuProp::default(), |item| item.try_into(),
         collapse => COLLAPSE, CollapseStyle::default(), |item| item.try_into(),
-        progress => PROGRESS, ProgressStyle::default(), |item| item.try_into()
+        progress => PROGRESS, ProgressStyle::default(), |item| item.try_into(),
+        loading => LOADING, LoadingStyle::default(), |item| item.try_into()
     }, "[components] should be a table"
 }
 

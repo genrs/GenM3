@@ -52,4 +52,5 @@ pub struct ComponentAnInit {
     sub_menu: bool,
     menu: bool,
     progress: bool,
+    loading: bool,
 }

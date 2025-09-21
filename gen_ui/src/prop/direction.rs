@@ -6,10 +6,72 @@ use toml_edit::Value;
 use crate::{
     error::Error,
     prop::{
-        manuel::{CIRCLE, HORIZONTAL, VERTICAL},
+        manuel::{CIRCLE, DOT, HORIZONTAL, POLYGONS, VERTICAL},
         traits::FromLiveValue,
     },
 };
+
+#[derive(Live, LiveHook, Clone, Copy, Default, PartialEq, Eq, Hash, Debug)]
+#[live_ignore]
+#[repr(u32)]
+pub enum LoadingMode {
+    #[pick]
+    #[default]
+    Circle = shader_enum(1),
+    Dot = shader_enum(2),
+    Polygons = shader_enum(3),
+}
+
+impl TryFrom<&Value> for LoadingMode {
+    type Error = Error;
+
+    fn try_from(value: &Value) -> Result<Self, Self::Error> {
+        let mode_str = value
+            .as_str()
+            .ok_or_else(|| Error::ThemeStyleParse("LoadingMode should be a string".to_string()))?;
+
+        mode_str.parse()
+    }
+}
+
+impl FromStr for LoadingMode {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            CIRCLE => Ok(Self::Circle),
+            DOT => Ok(Self::Dot),
+            POLYGONS => Ok(Self::Polygons),
+            _ => Err(Error::ThemeStyleParse(format!(
+                "Unknown LoadingMode: {}",
+                s
+            ))),
+        }
+    }
+}
+
+impl FromLiveValue for LoadingMode {
+    fn from_live_value(v: &LiveValue) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        if let LiveValue::BareEnum(e) = v {
+            e.to_string().parse().ok()
+        } else {
+            None
+        }
+    }
+}
+
+impl ToLiveValue for LoadingMode {
+    fn to_live_value(&self) -> LiveValue {
+        LiveValue::BareEnum(match self {
+            LoadingMode::Circle => live_id!(Circle),
+            LoadingMode::Dot => live_id!(Dot),
+            LoadingMode::Polygons => live_id!(Polygons),
+        })
+    }
+}
 
 #[derive(Live, LiveHook, Clone, Copy, Default, PartialEq, Eq, Hash, Debug)]
 #[live_ignore]

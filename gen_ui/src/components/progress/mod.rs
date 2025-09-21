@@ -5,9 +5,21 @@ use makepad_widgets::*;
 pub use prop::*;
 
 use crate::{
-    components::{BasicStyle, Component, LifeCycle, Style}, error::Error, lifecycle, play_animation, prop::{
-        manuel::{BASIC, DISABLED, IN_PROGRESS}, traits::ToFloat, ApplyStateMap, Direction, ProgressMode
-    }, pure_after_apply, set_animation, set_index, set_scope_path, shader::draw_progress::DrawProgress, switch_state, sync, themes::conf::Conf, utils::normalization, visible, ComponentAnInit
+    ComponentAnInit,
+    components::{BasicStyle, Component, LifeCycle, Style},
+    error::Error,
+    lifecycle, play_animation,
+    prop::{
+        ApplyStateMap, ProgressMode,
+        manuel::{BASIC, DISABLED, LOADING},
+        traits::ToFloat,
+    },
+    pure_after_apply, set_animation, set_index, set_scope_path,
+    shader::draw_progress::DrawProgress,
+    switch_state, sync,
+    themes::conf::Conf,
+    utils::normalization,
+    visible,
 };
 
 live_design! {
@@ -15,7 +27,38 @@ live_design! {
     use link::genui_animation_prop::*;
 
     pub GProgressBase = {{GProgress}} {
-        
+        animator: {
+            loading = {
+                default: off,
+
+                off = {
+                    from: {all: Forward {duration: (AN_DURATION)}},
+                    ease: InOutQuad,
+                    apply: {
+                        draw_progress: <AN_DRAW_PROGRESS> {}
+                    }
+                }
+
+                on = {
+                    from: {
+                        all: Forward {duration: (AN_DURATION),},
+                        pressed: Forward {duration: (AN_DURATION)},
+                    },
+                    ease: InOutQuad,
+                    apply: {
+                       draw_progress: <AN_DRAW_PROGRESS> {}
+                    }
+                }
+
+                disabled = {
+                    from: {all: Forward {duration: (AN_DURATION)}},
+                    ease: InOutQuad,
+                    apply: {
+                        draw_progress: <AN_DRAW_PROGRESS> {}
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -125,12 +168,7 @@ impl LiveHook for GProgress {
             nodes,
             index,
             &ProgressBasicStyle::live_props(),
-            [
-                live_id!(basic),
-                live_id!(hover),
-                live_id!(pressed),
-                live_id!(disabled),
-            ],
+            [live_id!(basic), live_id!(loading), live_id!(disabled)],
             |_| {},
             |prefix, component, applys| match prefix.to_string().as_str() {
                 BASIC => {
@@ -138,10 +176,10 @@ impl LiveHook for GProgress {
                         .apply_state_map
                         .insert(ProgressState::Basic, applys);
                 }
-                IN_PROGRESS => {
+                LOADING => {
                     component
                         .apply_state_map
-                        .insert(ProgressState::InProgress, applys);
+                        .insert(ProgressState::Loading, applys);
                 }
                 DISABLED => {
                     component
@@ -164,7 +202,7 @@ impl Component for GProgress {
         self.style = style.clone();
     }
 
-    fn render(&mut self, cx: &mut Cx) -> Result<(), Self::Error> {
+    fn render(&mut self, _cx: &mut Cx) -> Result<(), Self::Error> {
         if self.disabled {
             self.switch_state(ProgressState::Disabled);
         }
@@ -211,14 +249,14 @@ impl Component for GProgress {
         if self.lifecycle.is_created() || !init_global || self.scope_path.is_none() {
             self.lifecycle.next();
             let basic_prop = self.style.get(ProgressState::Basic);
-            let in_progress_prop = self.style.get(ProgressState::InProgress);
+            let loading_prop = self.style.get(ProgressState::Loading);
             let disabled_prop = self.style.get(ProgressState::Disabled);
-            let (mut basic_index, mut in_progress_index, mut disabled_index) = (None, None, None);
+            let (mut basic_index, mut loading_index, mut disabled_index) = (None, None, None);
             if let Some(index) = nodes.child_by_path(
                 self.index,
                 &[
                     live_id!(animator).as_field(),
-                    live_id!(hover).as_instance(),
+                    live_id!(loading).as_instance(),
                     live_id!(off).as_instance(),
                 ],
             ) {
@@ -229,18 +267,18 @@ impl Component for GProgress {
                 self.index,
                 &[
                     live_id!(animator).as_field(),
-                    live_id!(in_progress).as_instance(),
+                    live_id!(loading).as_instance(),
                     live_id!(on).as_instance(),
                 ],
             ) {
-                in_progress_index = Some(index);
+                loading_index = Some(index);
             }
 
             if let Some(index) = nodes.child_by_path(
                 self.index,
                 &[
                     live_id!(animator).as_field(),
-                    live_id!(hover).as_instance(),
+                    live_id!(loading).as_instance(),
                     live_id!(disabled).as_instance(),
                 ],
             ) {
@@ -258,18 +296,22 @@ impl Component for GProgress {
                         spread_radius => (basic_prop.spread_radius as f64),
                         blur_radius => (basic_prop.blur_radius as f64),
                         shadow_offset => basic_prop.shadow_offset,
-                        background_visible => basic_prop.background_visible.to_f64()
+                        background_visible => basic_prop.background_visible.to_f64(),
+                        color => basic_prop.color,
+                        value => (self.value as f64)
                     },
-                    in_progress_index => {
-                        background_color => in_progress_prop.background_color,
-                        border_color => in_progress_prop.border_color,
-                        border_radius => in_progress_prop.border_radius,
-                        border_width => (in_progress_prop.border_width as f64),
-                        shadow_color => in_progress_prop.shadow_color,
-                        spread_radius => (in_progress_prop.spread_radius as f64),
-                        blur_radius => (in_progress_prop.blur_radius as f64),
-                        shadow_offset => in_progress_prop.shadow_offset,
-                        background_visible => in_progress_prop.background_visible.to_f64()
+                    loading_index => {
+                        background_color => loading_prop.background_color,
+                        border_color => loading_prop.border_color,
+                        border_radius => loading_prop.border_radius,
+                        border_width => (loading_prop.border_width as f64),
+                        shadow_color => loading_prop.shadow_color,
+                        spread_radius => (loading_prop.spread_radius as f64),
+                        blur_radius => (loading_prop.blur_radius as f64),
+                        shadow_offset => loading_prop.shadow_offset,
+                        background_visible => loading_prop.background_visible.to_f64(),
+                        color => loading_prop.color,
+                        value => (self.value as f64)
                     },
                     disabled_index => {
                         background_color => disabled_prop.background_color,
@@ -280,7 +322,9 @@ impl Component for GProgress {
                         spread_radius => (disabled_prop.spread_radius as f64),
                         blur_radius => (disabled_prop.blur_radius as f64),
                         shadow_offset => disabled_prop.shadow_offset,
-                        background_visible => disabled_prop.background_visible.to_f64()
+                        background_visible => disabled_prop.background_visible.to_f64(),
+                        color => disabled_prop.color,
+                        value => (self.value as f64)
                     }
                 }
             }
@@ -292,15 +336,15 @@ impl Component for GProgress {
                     self.index,
                     &[
                         live_id!(animator).as_field(),
-                        live_id!(hover).as_instance(),
+                        live_id!(loading).as_instance(),
                         live_id!(off).as_instance(),
                     ],
                 ),
-                ProgressState::InProgress => nodes.child_by_path(
+                ProgressState::Loading => nodes.child_by_path(
                     self.index,
                     &[
                         live_id!(animator).as_field(),
-                        live_id!(in_progress).as_instance(),
+                        live_id!(loading).as_instance(),
                         live_id!(on).as_instance(),
                     ],
                 ),
@@ -308,7 +352,7 @@ impl Component for GProgress {
                     self.index,
                     &[
                         live_id!(animator).as_field(),
-                        live_id!(hover).as_instance(),
+                        live_id!(loading).as_instance(),
                         live_id!(disabled).as_instance(),
                     ],
                 ),
@@ -324,7 +368,9 @@ impl Component for GProgress {
                         spread_radius => (style.spread_radius as f64),
                         blur_radius => (style.blur_radius as f64),
                         shadow_offset => style.shadow_offset,
-                        background_visible => style.background_visible.to_f64()
+                        background_visible => style.background_visible.to_f64(),
+                        color => style.color,
+                        value => (self.value as f64)
                     }
                 }
             }

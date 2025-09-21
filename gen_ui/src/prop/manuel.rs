@@ -57,6 +57,8 @@ pub const MIN_WIDTH: &str = "min_width";
 pub const MIN_HEIGHT: &str = "min_height";
 pub const WIDTH_SCALE: &str = "width_scale";
 pub const CIRCLE: &str = "circle";
+pub const DOT: &str = "dot";
+pub const POLYGONS: &str = "polygons";
 // --- text ------------------------------------------------------
 pub const FONT_SIZE: &str = "font_size";
 pub const COLOR: &str = "color";

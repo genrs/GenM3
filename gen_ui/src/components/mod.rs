@@ -39,7 +39,6 @@ pub use label::*;
 pub use lifecycle::*;
 pub use link::*;
 pub use live_props::*;
-// pub use loading::*;
 pub use menu::*;
 pub use popup::*;
 pub use radio::*;
@@ -52,6 +51,7 @@ pub use tag::*;
 pub use traits::*;
 pub use view::*;
 pub use progress::*;
+pub use loading::*;
 
 use crate::component;
 
@@ -571,6 +571,8 @@ live_design! {
     pub GColorPicker = <GColorPickerBase> {}
 
     pub GProgress = <GProgressBase> {}
+
+    pub GLoading = <GLoadingBase> {}
 }
 
 pub fn components_register(cx: &mut Cx) {
@@ -595,6 +597,7 @@ pub fn components_register(cx: &mut Cx) {
     collapse::live_design(cx);
     color_picker::live_design(cx);
     progress::live_design(cx);
+    loading::live_design(cx);
 }
 
 component! {
