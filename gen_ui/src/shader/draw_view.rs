@@ -4,6 +4,7 @@ use makepad_widgets::*;
 live_design! {
     use link::shaders::*;
     DrawView = {{DrawView}}{
+        instance wave: 0.0,
         uniform border_inset: vec4(0.0, 0.0, 0.0, 0.0),
         varying rect_size2: vec2,
         varying rect_size3: vec2,

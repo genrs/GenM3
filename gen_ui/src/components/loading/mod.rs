@@ -141,9 +141,9 @@ impl LiveHook for GLoading {
             return;
         }
 
-        if let Err(e) = self.render(cx) {
-            error!("GLoading render error: {:?}", e);
-        }
+        // if let Err(e) = self.render(cx) {
+        //     error!("GLoading render error: {:?}", e);
+        // }
     }
 
     fn after_new_before_apply(&mut self, cx: &mut Cx) {

@@ -4,154 +4,203 @@
 - author: [Will-YiFei Sheng](syf20020816@outlook.com)
 
 ```
-uProgressMode::Circle => {
-                    // [draw a ring progress bar] ------------------------------------------------
-                    let center_pos = vec2(self.pos.x + self.rect_size.x * 0.5, self.pos.y + self.rect_size.y * 0.5);
-                    let offset = max(
-                        max(self.border_radius.x, max(self.border_radius.y, max(self.border_radius.z, self.border_radius.w))),
-                    32.0) * 0.25;
-                    // 0.8 is a magic offset which can make circle look better
-                    let ring_outer_radius = min(self.rect_size.x, self.rect_size.y) * 0.5 - self.border_width * 2.0 - offset ;
-                    sdf.circle(center_pos.x, center_pos.y, min(self.rect_size.x, self.rect_size.y) * 0.5);
-                    sdf.fill_premul(#f00);
-                    sdf.circle(center_pos.x, center_pos.y, min(self.rect_size.x, self.rect_size.y) * 0.5 - offset * 4.0);
-                    sdf.fill_premul(#ff0);
-                    let ring_inner_radius = ring_outer_radius - offset * 2.0;
-                    let ring_arc_radius = ring_outer_radius;
-                    sdf.circle(center_pos.x, center_pos.y, ring_outer_radius);
-                    sdf.circle(center_pos.x, center_pos.y, ring_inner_radius);
-                    sdf.subtract();
-                    if self.background_visible == 1.0 {
-                        sdf.fill_premul(self.get_background_color());
-                    }
-                    if self.border_width > 0.0 {
-                        sdf.stroke_keep(self.get_border_color(), self.border_width);
-                    }
-                    
-                    // [draw the progress part] ----------------------------------------------------
-                    if self.in_progress == 1.0 {
-                        // 圆环波浪进度条参数
-                        let wave_count = 12.0; // 圆环上的波浪数量
-                        let wave_amplitude = offset * 2.0; // 波浪振幅
-                        let wave_thickness = offset * 2.0; // 波浪线条厚度
-                        let x = 0.0;
-                        for i in 0..12 {
-                            if x > 3.0 {break;}
-                            if i < int(self.value * wave_count) {
-                                // 计算每个波浪在圆环上的角度位置
-                                // 强行将起点设置在坐标轴1号区域(右上区域)
-                                let wave_angle = (x / wave_count) * 360.0 * PI / 180.0 + 180.0 * PI / 180.0;
+<View> {
+                        // style: {basic: { height: 160., width: 160.}}
+                        height: 160.,
+                        width: 160.,
+                        show_bg: true,
+                        draw_bg: {
+                            color: #6750A4
+                            instance loading: 1.0
+                            
+                            
+                            fn sdf_box(p: vec2, b: vec2) -> float {
+                                let d = abs(p) - b;
+                                return length(max(d, 0.0)) + min(max(d.x, d.y), 0.0);
+                            }
+                            
+                            fn sdf_rounded_box(p: vec2, b: vec2, r: float) -> float {
+                                let d = abs(p) - b + r;
+                                return length(max(d, 0.0)) + min(max(d.x, d.y), 0.0) - r;
+                            }
+                            
+                            fn sdf_star(p: vec2, r: float, n: float, m: float) -> float {
+                                let an = 3.141593 / n;
+                                let en = 3.141593 / m;
+                                let acs = vec2(cos(an), sin(an));
+                                let ecs = vec2(cos(en), sin(en));
+                                
+                                let bn = mod(atan(p.x, p.y), 2.0 * an) - an;
+                                let p_rot = length(p) * vec2(cos(bn), abs(sin(bn)));
+                                let p_final = p_rot - r * acs;
+                                let p_final2 = p_final - ecs * clamp(dot(p_final, ecs), 0.0, r * acs.y / ecs.y);
+                                return length(p_final2) * sign(p_final.x);
+                            }
+                            
+                            fn sdf_draw_star(p: vec2, r: float, teeth: float, th: float, tang: float) -> float {
+                                let angle = atan(p.y, p.x);
+                                let segment_angle = 2.0 * 3.141593 / teeth;
+                                let local_angle = mod(angle + 3.141593, segment_angle) - segment_angle * 0.5;
+                                let dist_from_center = length(p);
+                                
+                                // Create teeth pattern
+                                let tooth_height = th;
+                                let tooth_width = segment_angle * tang;
+                                let tooth_factor = smoothstep_custom(tooth_width, 0.0, abs(local_angle));
+                                let radius_variation = r + tooth_height * tooth_factor;
+                                
+                                return dist_from_center - radius_variation;
+                            }
 
-                                // 检查是否在进度范围内
-                                if wave_angle <= (self.value * 360.0) * PI / 180.0 + 180.0 * PI / 180.0{
-                                    // 计算波浪中心位置
-                                    let wave_offset = ((abs(self.value * 10.0 - float(int(self.value * 10.0))) + 1.0) * offset * 0.5);
-                                    let wave_center_x = center_pos.x - cos(wave_angle) * ring_arc_radius;
-                                    let wave_center_y = center_pos.y + sin(wave_angle) * ring_arc_radius;
-                                    
-                                    if mod(x, 2.0) == 0.0 {
-                                        // 外波浪 - 向外的弧线
-                                        let start_deg = 25.0 ;
-                                        let end_deg = start_deg + 90.0 * one_deg;
-                                        
-                                        if x == 0.0 {
-                                            sdf.arc_round_caps(
-                                                wave_center_x - wave_offset * 0.25,
-                                                wave_center_y - wave_thickness * 1.25 - wave_offset,
-                                                wave_amplitude * 1.25,
-                                                25.0 * one_deg,
-                                                115.0 * one_deg,
-                                                wave_thickness
-                                            );
-                                        }
-                                        if x == 2.0 {
-                                            sdf.arc_round_caps(
-                                                wave_center_x - wave_offset * 2.5,
-                                                wave_center_y - wave_thickness * 0.25 - wave_offset,
-                                                wave_amplitude * 1.25,
-                                                -25.0 * one_deg,
-                                                65.0 * one_deg,
-                                                wave_thickness
-                                            );
-                                        }
-                                    } else {
-                                        // 内波浪 - 向内的弧线
-                                        sdf.arc_round_caps(
-                                            wave_center_x - wave_amplitude * 1.25 - wave_offset,
-                                            wave_center_y - wave_offset * 0.25,
-                                            wave_amplitude * 1.25,
-                                            180.0 * one_deg,
-                                            270.0 * one_deg,
-                                            wave_thickness 
-                                        );
-                                    }
-                                    sdf.fill_premul(self.get_color());
+                            // Gear-like star shape for the first SVG
+                            fn sdf_gear_star(p: vec2, r: float) -> float {
+                                return sdf_draw_star(p, r, 10.0, 0.20, 0.58);
+                            }
+                            
+                            // Smooth organic star for the second SVG  
+                            fn sdf_organic_star(p: vec2, r: float) -> float {
+                                return sdf_draw_star(p, r, 9.0, 0.2, 0.84);
+                            }
+
+                            // SDF helper functions
+                            fn sdf_circle(p: vec2, r: float) -> float {
+                                // return length(p) - r;
+                                return sdf_draw_star(p, r, 2.0, 0.34, 0.86);
+                            }
+
+                            fn sdf_rounded(p: vec2, r: float) -> float {
+                                return sdf_draw_star(p, r, 8.0, 0.25, 0.72);
+                            }
+
+                            fn sdf_hexagon(p: vec2, r: float) -> float {
+                                return sdf_draw_star(p, r, 5.0, 0.12, 0.72);
+                            }
+
+                            fn sdf_octagon(p: vec2, r: float) -> float {
+                                return sdf_draw_star(p, r, 4.0, 0.4, 0.76);
+                            }
+
+                            fn sdf_oval(p: vec2, r: vec2) -> float {
+                                let k = vec2(1.0, r.y / r.x);
+                                return (length(p * k) - r.x) / k.y;
+                            }
+                            
+                            fn rotate(p: vec2, angle: float) -> vec2 {
+                                let c = cos(angle);
+                                let s = sin(angle);
+                                return vec2(p.x * c - p.y * s, p.x * s + p.y * c);
+                            }
+                            
+                            fn smoothstep_custom(edge0: float, edge1: float, x: float) -> float {
+                                let t = clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0);
+                                return t * t * (3.0 - 2.0 * t);
+                            }
+                            
+                            // Material 3 ease-in-out function for smooth transitions
+                            fn ease_in_out(t: float) -> float {
+                                if t < 0.5 {
+                                    return 2.0 * t * t;
+                                } else {
+                                    return 1.0 - 2.0 * (1.0 - t) * (1.0 - t);
                                 }
                             }
-                            x += 1.0;
+                            
+                            // Enhanced easing for Material 3 style
+                            fn material3_ease(t: float) -> float {
+                                // Cubic bezier approximation for Material 3 standard easing
+                                let t2 = t * t;
+                                let t3 = t2 * t;
+                                return 3.0 * t2 - 2.0 * t3;
+                            }
+                            
+                            fn pixel(self) -> vec4 {
+                                // Normalize coordinates to [-1, 1]
+                                let uv = (self.pos * 2.0 - 1.0) * vec2(1.0, -1.0);
+                                
+                                // Material 3 style animation timing
+                                // Shape transition cycle (every 14 seconds) for shape morphing
+                                let shape_cycle_time = self.time * 0.14;    // Slow shape transitions
+                                
+                                let shape_index = mod(floor(shape_cycle_time), 7.0);
+                                let raw_shape_progress = fract(shape_cycle_time);
+                                
+                                // Apply Material 3 easing to shape transitions
+                                let eased_shape_progress = material3_ease(raw_shape_progress);
+                                
+                                // Rotation tied to shape progress - exactly one rotation per shape
+                                // Each shape rotates exactly 360 degrees during its display time
+                                let base_rotation = raw_shape_progress * 2.0 * 3.141593; // One full rotation (2π) per shape
+                                
+                                // Scale factor for shapes
+                                let scale = 0.35;
+                                let p = uv / scale;
+                                
+                                // Rotate the coordinate system
+                                let rotated_p = rotate(p, base_rotation);
+                                
+                                // Calculate current and next shape distances
+                                let mut current_dist = 1000.0;
+                                let mut next_dist = 1000.0;
+                                let next_shape_index = mod(shape_index + 1.0, 7.0);
+                                
+                                // Current shape
+                                if shape_index < 0.5 { // Shape 1: Gear-like star (complex star)
+                                    current_dist = sdf_gear_star(rotated_p, 0.8);
+                                } else if shape_index < 1.5 { // Shape 2: Organic star (rounded star)
+                                    current_dist = sdf_organic_star(rotated_p, 0.8);
+                                } else if shape_index < 2.5 { // Shape 3: Hexagon
+                                    current_dist = sdf_hexagon(rotated_p, 0.85);
+                                } else if shape_index < 3.5 { // Shape 4: Circle
+                                    current_dist = sdf_circle(rotated_p, 0.8);
+                                } else if shape_index < 4.5 { // Shape 5: Rounded square/cross
+                                    current_dist = sdf_rounded(rotated_p, 0.8);
+                                } else if shape_index < 5.5 { // Shape 6: Octagon
+                                    current_dist = sdf_octagon(rotated_p, 0.8);
+                                } else { // Shape 7: Rounded square
+                                    current_dist = sdf_oval(rotated_p, vec2(0.7, 0.4));
+                                }
+                                
+                                // Next shape
+                                if next_shape_index < 0.5 { // Shape 1: Gear-like star
+                                    next_dist = sdf_gear_star(rotated_p, 0.8);
+                                } else if next_shape_index < 1.5 { // Shape 2: Organic star
+                                    next_dist = sdf_organic_star(rotated_p, 0.8);
+                                } else if next_shape_index < 2.5 { // Shape 3: Hexagon
+                                    next_dist = sdf_hexagon(rotated_p, 0.85);
+                                } else if next_shape_index < 3.5 { // Shape 4: Circle
+                                    next_dist = sdf_circle(rotated_p, 0.8);
+                                } else if next_shape_index < 4.5 { // Shape 5: Rounded square/cross
+                                    next_dist = sdf_rounded(rotated_p, 0.8);
+                                } else if next_shape_index < 5.5 { // Shape 6: Octagon
+                                    next_dist = sdf_octagon(rotated_p, 0.8);
+                                } else { // Shape 7: Rounded square
+                                    next_dist = sdf_oval(rotated_p, vec2(0.7, 0.4));
+                                }
+                                
+                                // Material 3 style transition - starts late and ends early for longer hold times
+                                let transition_start = 0.7;
+                                let transition_end = 1.0;
+                                let transition_progress = clamp((eased_shape_progress - transition_start) / (transition_end - transition_start), 0.0, 1.0);
+                                let final_transition = ease_in_out(transition_progress);
+                                
+                                let final_distance = mix(current_dist, next_dist, final_transition);
+                                
+                                // Create smooth edges with anti-aliasing
+                                let edge_smoothness = 0.015;
+                                let alpha = 1.0 - smoothstep_custom(-edge_smoothness, edge_smoothness, final_distance);
+                                
+                                // Material 3 purple color with subtle pulsing
+                                let base_color = self.color;
+                                let pulse_speed = 1.5;
+                                let color_variation = 0.92 + 0.08 * sin(self.time * pulse_speed);
+                                let color = base_color * color_variation;
+                                
+                                // Add subtle glow effect for Material 3 style
+                                let glow_intensity = 0.06;
+                                let glow = exp(-abs(final_distance) * 5.0) * glow_intensity;
+                                let final_alpha = min(alpha + glow, 1.0) * self.loading;
+                                
+                                return vec4(color.rgb, final_alpha);
+                            }
                         }
-                    } else {
-                        sdf.arc_round_caps(
-                            center_pos.x,
-                            center_pos.y,
-                            ring_arc_radius,
-                            180.0 * one_deg,
-                            (self.value * 360.0 + 180.0) * one_deg,
-                            offset
-                        );
-                        sdf.fill_premul(self.get_color());
                     }
-                    sdf.rect(0.0, center_pos.y, self.sdf_rect_size.x, 2.0);
-                    sdf.rect(center_pos.x, 0.0, 2.0, self.sdf_rect_size.y);
-                    sdf.fill(#000);
-                }
-            }
-```
-
-fn atan2(y: float, x: float) -> float {
-            if x > 0.0 { return atan(y / x); }
-            else if x < 0.0 {
-                if y >= 0.0 { return atan(y / x) + PI; }
-                else { return atan(y / x) - PI; }
-            } else { // x == 0
-                if y > 0.0 { return PI / 2.0; }
-                else if y < 0.0 { return -PI / 2.0; }
-                else { return 0.0; } // (0,0) 无定义，返回0
-            }
-        }
-
-        fn circle_wave(self) -> vec4 {
-            let uv = self.pos * 2.0 - 1.0; // [-1, 1] 坐标系
-            let len = length(uv);
-            let angle = atan2(uv.y, uv.x); // [-π, π]
-
-            // 转换到 [0, 1] 角度范围
-            let normalized_angle = (angle + PI) / (PI * 2.0);
-
-            // 波浪扰动：半径随角度变化
-            let wave_freq = 8.0; // 波浪数量
-            let wave_amp = 0.15; // 波浪幅度（相对于半径）
-            let radius_offset = sin(angle * wave_freq + self.phase) * wave_amp;
-
-            // 基础半径（归一化后为 0.9，留边距）
-            let base_radius = 0.9;
-            let wave_radius = base_radius + radius_offset;
-
-            // 是否在波浪环内？
-            let in_ring = abs(len - wave_radius) < 0.03; // 环宽度
-
-            // 是否在进度范围内？
-            let show_angle = normalized_angle < self.value;
-
-            // 抗锯齿边缘
-            let aa = 0.01;
-            let edge_fade = smoothstep(self.value - aa, self.value, normalized_angle);
-            let mask = 1.0 - edge_fade;
-
-            // 最终颜色
-            let color = #7b68ee;
-            let alpha = float(in_ring) * float(show_angle) * mask;
-            // let alpha = 0.0;
-
-            return vec4(color.rgb, alpha);
-        }

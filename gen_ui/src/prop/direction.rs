@@ -6,7 +6,7 @@ use toml_edit::Value;
 use crate::{
     error::Error,
     prop::{
-        manuel::{CIRCLE, DOT, HORIZONTAL, POLYGONS, VERTICAL},
+        manuel::{CIRCLE, CLASSIC, DOT, HORIZONTAL, POLYGONS, VERTICAL},
         traits::FromLiveValue,
     },
 };
@@ -20,6 +20,7 @@ pub enum LoadingMode {
     Circle = shader_enum(1),
     Dot = shader_enum(2),
     Polygons = shader_enum(3),
+    Classic = shader_enum(4),
 }
 
 impl TryFrom<&Value> for LoadingMode {
@@ -42,6 +43,7 @@ impl FromStr for LoadingMode {
             CIRCLE => Ok(Self::Circle),
             DOT => Ok(Self::Dot),
             POLYGONS => Ok(Self::Polygons),
+            CLASSIC => Ok(Self::Classic),
             _ => Err(Error::ThemeStyleParse(format!(
                 "Unknown LoadingMode: {}",
                 s
@@ -69,6 +71,7 @@ impl ToLiveValue for LoadingMode {
             LoadingMode::Circle => live_id!(Circle),
             LoadingMode::Dot => live_id!(Dot),
             LoadingMode::Polygons => live_id!(Polygons),
+            LoadingMode::Classic => live_id!(Classic),
         })
     }
 }

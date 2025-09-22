@@ -10,7 +10,6 @@ live_design! {
         }
 
         fn loading_circle(self, color: vec4) -> vec4 {
-
             let uv = self.pos * self.rect_size;
             let center = self.rect_size * 0.5;
             let aspect = self.rect_size.x / self.rect_size.y;
@@ -77,12 +76,95 @@ live_design! {
 
             return o;
         }
+        // // helper: signed distance to regular n-gon of radius 'rad'
+        // fn sd_reg_poly(self, p: vec2, n: float, rad: float) -> float {
+        //     let an = PI * 2.0 / n;
+        //     let a = atan(p.y, p.x);
+        //     let ang = mod(a + an * 0.5, an) - an * 0.5;
+        //     let q = vec2(cos(ang), sin(ang));
+        //     return length(p - rad * q);
+        // }
+
+        // // ellipse distance helper (approximate)
+        // fn sd_ellipse(self, p: vec2, rx: float, ry: float, _rad: float) -> float {
+        //     let q = vec2(p.x / rx, p.y / ry);
+        //     return length(q) - 1.0;
+        // }
+
+        // // produce a mask in [0,1] for different shape ids
+        // fn shape_mask(self, id: float, p: vec2, base_rad: float) -> float {
+        //     let edge = base_rad * 0.06;
+        //     if id == 0.0 {
+        //         let d = length(p) - base_rad;
+        //         return smoothstep(edge, -edge, d);
+        //     }
+        //     else if id == 1.0 {
+        //         let rx = base_rad * 1.25;
+        //         let ry = base_rad * 0.7;
+        //         let d = sd_ellipse(self, p, rx, ry, 1.0);
+        //         return smoothstep(edge, -edge, d * base_rad);
+        //     }
+        //     else if id == 2.0 {
+        //         let rx = base_rad * 1.25;
+        //         let ry = base_rad * 0.6;
+        //         let d1 = sd_ellipse(self, p, rx, ry, 1.0) * base_rad;
+        //         let p2 = vec2(p.y, -p.x);
+        //         let d2 = sd_ellipse(self, p2, rx, ry, 1.0) * base_rad;
+        //         let m1 = smoothstep(edge, -edge, d1);
+        //         let m2 = smoothstep(edge, -edge, d2);
+        //         return max(m1, m2);
+        //     }
+        //     else if id == 3.0 {
+        //         let d = sd_reg_poly(self, p, 4.0, base_rad);
+        //         let corner = base_rad * 0.25;
+        //         return smoothstep(edge, -edge, d - corner);
+        //     }
+        //     else if id == 4.0 {
+        //         let d = sd_reg_poly(self, p, 5.0, base_rad);
+        //         let corner = base_rad * 0.18;
+        //         return smoothstep(edge, -edge, d - corner);
+        //     }
+        //     else if id == 5.0 {
+        //         let d1 = sd_reg_poly(self, p, 4.0, base_rad);
+        //         let ang = 45.0 * (PI/180.0);
+        //         let rp = vec2(p.x * cos(ang) - p.y * sin(ang), p.x * sin(ang) + p.y * cos(ang));
+        //         let d2 = sd_reg_poly(self, rp, 4.0, base_rad);
+        //         return max(smoothstep(edge, -edge, d1), smoothstep(edge, -edge, d2));
+        //     }
+        //     else {
+        //         // id == 6.0 -> combine 5 rotated ellipses
+        //         let step = 360.0 / 5.0;
+        //         let ang0 = (0.0 * step) * (PI / 180.0);
+        //         let ang1 = (1.0 * step) * (PI / 180.0);
+        //         let ang2 = (2.0 * step) * (PI / 180.0);
+        //         let ang3 = (3.0 * step) * (PI / 180.0);
+        //         let ang4 = (4.0 * step) * (PI / 180.0);
+        //         let rx = base_rad * 0.6;
+        //         let ry = base_rad * 0.9;
+        //         let rp0 = vec2(p.x * cos(ang0) - p.y * sin(ang0), p.x * sin(ang0) + p.y * cos(ang0));
+        //         let rp1 = vec2(p.x * cos(ang1) - p.y * sin(ang1), p.x * sin(ang1) + p.y * cos(ang1));
+        //         let rp2 = vec2(p.x * cos(ang2) - p.y * sin(ang2), p.x * sin(ang2) + p.y * cos(ang2));
+        //         let rp3 = vec2(p.x * cos(ang3) - p.y * sin(ang3), p.x * sin(ang3) + p.y * cos(ang3));
+        //         let rp4 = vec2(p.x * cos(ang4) - p.y * sin(ang4), p.x * sin(ang4) + p.y * cos(ang4));
+        //         let d0 = sd_ellipse(self, rp0, rx, ry, 1.0) * base_rad;
+        //         let d1 = sd_ellipse(self, rp1, rx, ry, 1.0) * base_rad;
+        //         let d2 = sd_ellipse(self, rp2, rx, ry, 1.0) * base_rad;
+        //         let d3 = sd_ellipse(self, rp3, rx, ry, 1.0) * base_rad;
+        //         let d4 = sd_ellipse(self, rp4, rx, ry, 1.0) * base_rad;
+        //         let m0 = smoothstep(edge, -edge, d0);
+        //         let m1 = smoothstep(edge, -edge, d1);
+        //         let m2 = smoothstep(edge, -edge, d2);
+        //         let m3 = smoothstep(edge, -edge, d3);
+        //         let m4 = smoothstep(edge, -edge, d4);
+        //         return max(max(max(m0, m1), max(m2, m3)), m4);
+        //     }
+        // }
         fn pixel(self) -> vec4 {
             if self.loading == 0.0 {
                 return self.color;
             }
 
-            let loading_size =  self.rect_size * 0.86;
+            let loading_size =  self.rect_size * 0.9;
             let sdf = Sdf2d::viewport(self.pos * self.rect_size);
             let loading_dot_size = vec2(loading_size.x * 0.2 * 0.96);
             let rotate_time = self.time;
@@ -116,6 +198,47 @@ live_design! {
                     }
                 }
                 LoadingMode::Polygons => {
+                    // let r = self.rect_size;
+                    // let uv = (self.pos * r - r * 0.5) / (r.y * 0.5);
+                    // let shapes = 7.0;
+                    // let speed = 0.6;
+                    // let cycle = fract(self.time * speed);
+                    // let idxf = cycle * shapes;
+                    // let idx = floor(idxf);
+                    // let t = smoothstep(0.0, 1.0, fract(idxf));
+                    // let base_rad = min(r.x, r.y) * 0.35;
+                    // let cur = shape_mask(self, idx, uv, base_rad);
+                    // let next = shape_mask(self, mod(idx + 1.0, shapes), uv, base_rad);
+                    // let mask = mix(cur, next, t);
+                    // let col = self.get_color();
+                    // return vec4(col.rgb, mask * col.a);
+                    sdf.rect(0.0, 0.0, self.rect_size.x, self.rect_size.y);
+                    sdf.stroke(self.get_color(), 2.0);
+                    let start_pos = (self.rect_size - loading_size) * vec2(0.5, 0.5);
+
+                    // sdf.box_all(
+                    //     start_pos.x,
+                    //     start_pos.y,
+                    //     loading_size.x,
+                    //     loading_size.y,
+                    //     loading_size.x * 0.1,
+                    //     loading_size.x * 0.1,
+                    //     loading_size.x * 0.1,
+                    //     loading_size.x * 0.1
+                    // );
+                    sdf.box_all(
+                        start_pos.x,
+                        start_pos.y,
+                        loading_size.x,
+                        loading_size.y * 0.2,
+                        loading_size.x * 0.1,
+                        loading_size.x * 0.1,
+                        loading_size.x * 0.1,
+                        loading_size.x * 0.1
+                    );
+                    sdf.fill(self.get_color());
+                }
+                LoadingMode::Classic => {
                     return self.rotating_radial_pattern();
                 }
             }

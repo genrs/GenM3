@@ -20,7 +20,7 @@ live_design! {
                 start_point.y,
                 self.rect_size.x - self.border_width * 3.0,
                 self.rect_size.y - self.border_width * 3.0,
-                self.size * 0.12
+                self.size * 0.1
             );
             if self.background_visible == 1.0 {
                 sdf.fill_keep(self.background_color);
@@ -31,25 +31,25 @@ live_design! {
             match self.mode {
                 ActiveMode::Round => {
                     sdf.box(
-                        center.x - self.rect_size.x * 0.25,
-                        center.y - self.rect_size.y * 0.25,
-                        self.rect_size.x * 0.5,
-                        self.rect_size.y * 0.5,
-                        self.rect_size.x * 0.5 * 0.125
+                        center.x - self.rect_size.x * 0.3,
+                        center.y - self.rect_size.y * 0.3,
+                        self.rect_size.x * 0.6,
+                        self.rect_size.y * 0.6,
+                        self.rect_size.x * 0.5 * 0.1
                     );
                     sdf.fill(self.stroke_color);
                 }
                 ActiveMode::Tick => {
-                    let stroke_width = self.size * 0.1;
-                    let szs = self.rect_size.x * 0.22;
-                    sdf.move_to(center.x - szs, center.y);
-                    sdf.line_to(center.x, center.y + szs);
-                    sdf.line_to(center.x + szs, center.y - szs);
+                    let stroke_width = self.size * 0.08;
+                    let szs = self.rect_size.x * 0.24;
+                    sdf.move_to(center.x - szs * 1.08, center.y);
+                    sdf.line_to(center.x - szs * 0.44, center.y + szs * 0.8);
+                    sdf.line_to(center.x + szs * 1.24, center.y - szs * 0.8);
                     sdf.stroke(self.stroke_color, stroke_width);
                 }
                 ActiveMode::Cross => {
                     // draw a easy round rectangle
-                    let cross_height_width = vec2(self.rect_size.x * 0.75, self.rect_size.y * 0.25);
+                    let cross_height_width = vec2(self.rect_size.x * 0.75, self.rect_size.y * 0.2);
                     let cross_x_y = vec2(center.x - cross_height_width.x * 0.5, center.y - cross_height_width.y * 0.5);
                     let border_radius = cross_height_width.y * 0.25;
                     sdf.box(

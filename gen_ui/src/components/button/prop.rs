@@ -77,10 +77,10 @@ basic_prop_interconvert! {
             blur_radius: f32 => BLUR_RADIUS, 0.0, |v| v.to_f32(),
             shadow_offset: Vec2 => SHADOW_OFFSET, vec2(0.0, 0.0), |v| v.to_vec2(shadow_offset),
             border_width: f32 => BORDER_WIDTH, 0.0, |v| v.to_f32(),
-            border_radius: Radius => BORDER_RADIUS, Radius::new(4.0), |v| v.try_into(),
+            border_radius: Radius => BORDER_RADIUS, Radius::new(2.0), |v| v.try_into(),
             cursor: MouseCursor => CURSOR, MouseCursor::Hand, |v| v.to_cursor(),
             margin: Margin => MARGIN, Margin::from_f64(0.0), |v| v.to_margin(margin),
-            padding: Padding => PADDING, Padding::from_xy(10.0, 16.0), |v| v.to_padding(padding),
+            padding: Padding => PADDING, Padding::from_xy(9.0, 16.0), |v| v.to_padding(padding),
             flow: Flow => FLOW, Flow::Right, |v| v.to_flow(),
             align: Align => ALIGN, Align::from_f64(0.5), |v| v.to_align(align),
             height: Size => HEIGHT, Size::Fit, |v| v.to_size(),
@@ -196,7 +196,7 @@ impl BasicStyle for ButtonBasicStyle {
                     Vec4::from_live_color(value).unwrap_or(color.border_color.into());
             }
             BORDER_RADIUS => {
-                self.border_radius = Radius::from_live_value(value).unwrap_or(Radius::new(4.0));
+                self.border_radius = Radius::from_live_value(value).unwrap_or(Radius::new(2.0));
             }
             CURSOR => {
                 let cursor = if state.is_disabled() {
@@ -211,7 +211,7 @@ impl BasicStyle for ButtonBasicStyle {
             }
             PADDING => {
                 self.padding =
-                    Padding::from_live_value(value).unwrap_or(Padding::from_xy(10.0, 16.0));
+                    Padding::from_live_value(value).unwrap_or(Padding::from_xy(9.0, 16.0));
             }
             FLOW => {
                 self.flow = Flow::from_live_value(value).unwrap_or(Flow::Right);
@@ -269,10 +269,10 @@ impl BasicStyle for ButtonBasicStyle {
             shadow_offset: vec2(0.0, 0.0),
             border_width: 0.0,
             border_color: border_color.into(),
-            border_radius: Radius::new(4.0),
+            border_radius: Radius::new(2.0),
             cursor,
             margin: Margin::from_f64(0.0),
-            padding: Padding::from_xy(10.0, 16.0),
+            padding: Padding::from_xy(9.0, 16.0),
             flow: Flow::Right,
             align: Align::from_f64(0.5),
             height: Size::Fit,

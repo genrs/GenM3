@@ -245,7 +245,7 @@ basic_prop_interconvert! {
             border_color => BORDER_COLOR, |v| v.try_into()
         };
         {
-            size: f32 => SIZE, 20.0, |v| v.to_f32(),
+            size: f32 => SIZE, 22.0, |v| v.to_f32(),
             background_visible: bool => BACKGROUND_VISIBLE, true, |v| v.to_bool(),
             border_width: f32 => BORDER_WIDTH, 1.0, |v| v.to_f32(),
             mode: ActiveMode => MODE, ActiveMode::Round, |v| v.try_into(),
@@ -277,7 +277,7 @@ impl BasicStyle for CheckboxPartProp {
         };
         Self {
             theme,
-            size: 20.0,
+            size: 22.0,
             background_color: background_color.into(),
             stroke_color: stroke_color.into(),
             border_color: border_color.into(),
@@ -322,7 +322,7 @@ impl BasicStyle for CheckboxPartProp {
                 self.border_color = Vec4::from_live_color(value).unwrap_or(colors.border_color.into());
             }
             SIZE => {
-                self.size = f32::from_live_value(value).unwrap_or(20.0);
+                self.size = f32::from_live_value(value).unwrap_or(22.0);
             }
             BACKGROUND_VISIBLE => {
                 self.background_visible = bool::from_live_value(value).unwrap_or(true);

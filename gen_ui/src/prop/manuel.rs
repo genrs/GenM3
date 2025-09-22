@@ -59,6 +59,7 @@ pub const WIDTH_SCALE: &str = "width_scale";
 pub const CIRCLE: &str = "circle";
 pub const DOT: &str = "dot";
 pub const POLYGONS: &str = "polygons";
+pub const CLASSIC: &str = "classic";
 // --- text ------------------------------------------------------
 pub const FONT_SIZE: &str = "font_size";
 pub const COLOR: &str = "color";
