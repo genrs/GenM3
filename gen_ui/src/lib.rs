@@ -53,4 +53,5 @@ pub struct ComponentAnInit {
     menu: bool,
     progress: bool,
     loading: bool,
+    slider: bool,
 }

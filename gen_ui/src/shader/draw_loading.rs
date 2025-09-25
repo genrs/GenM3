@@ -156,7 +156,7 @@ live_design! {
 
         fn pixel(self) -> vec4 {
             if self.loading == 0.0 {
-                return self.color;
+                return vec4(0.0);
             }
 
             let loading_size = self.rect_size * 0.9;

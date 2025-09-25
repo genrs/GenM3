@@ -52,6 +52,7 @@ pub use traits::*;
 pub use view::*;
 pub use progress::*;
 pub use loading::*;
+pub use slider::*;
 
 use crate::component;
 
@@ -573,6 +574,8 @@ live_design! {
     pub GProgress = <GProgressBase> {}
 
     pub GLoading = <GLoadingBase> {}
+
+    pub GSlider = <GSliderBase> {}
 }
 
 pub fn components_register(cx: &mut Cx) {
@@ -598,6 +601,7 @@ pub fn components_register(cx: &mut Cx) {
     color_picker::live_design(cx);
     progress::live_design(cx);
     loading::live_design(cx);
+    slider::live_design(cx);
 }
 
 component! {

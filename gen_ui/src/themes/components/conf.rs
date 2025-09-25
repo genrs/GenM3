@@ -1,11 +1,11 @@
 use toml_edit::Table;
 
 use crate::components::{
-    ButtonStyle, CardStyle, CheckboxProp, CollapseStyle, DividerProp, ImageProp, LabelProp, LinkProp, LoadingStyle, MenuItemProp, MenuProp, PopupContainerProp, PopupProp, ProgressStyle, RadioProp, SubMenuProp, SvgStyle, SwitchProp, TabbarItemProp, TabbarProp, TagProp, ViewStyle
+    ButtonStyle, CardStyle, CheckboxProp, CollapseStyle, DividerProp, ImageProp, LabelProp, LinkProp, LoadingStyle, MenuItemProp, MenuProp, PopupContainerProp, PopupProp, ProgressStyle, RadioProp, SliderStyle, SubMenuProp, SvgStyle, SwitchProp, TabbarItemProp, TabbarProp, TagProp, ViewStyle
 };
 use crate::error::Error;
 use crate::prop::manuel::{
-    BUTTON, CARD, CHECKBOX, COLLAPSE, DIVIDER, IMAGE, LABEL, LINK, LOADING, MENU, MENU_ITEM, POPUP, POPUP_CONTAINER, PROGRESS, RADIO, SUB_MENU, SVG, SWITCH, TABBAR, TABBAR_ITEM, TAG, VIEW
+    BUTTON, CARD, CHECKBOX, COLLAPSE, DIVIDER, IMAGE, LABEL, LINK, LOADING, MENU, MENU_ITEM, POPUP, POPUP_CONTAINER, PROGRESS, RADIO, SLIDER, SUB_MENU, SVG, SWITCH, TABBAR, TABBAR_ITEM, TAG, VIEW
 };
 use crate::try_from_toml_item;
 
@@ -32,6 +32,7 @@ pub struct ComponentsConf {
     pub menu: MenuProp,
     pub collapse: CollapseStyle,
     pub progress: ProgressStyle,
+    pub slider: SliderStyle,
     pub loading: LoadingStyle
 }
 
@@ -58,6 +59,7 @@ try_from_toml_item! {
         menu => MENU, MenuProp::default(), |item| item.try_into(),
         collapse => COLLAPSE, CollapseStyle::default(), |item| item.try_into(),
         progress => PROGRESS, ProgressStyle::default(), |item| item.try_into(),
+        slider => SLIDER, SliderStyle::default(), |item| item.try_into(),
         loading => LOADING, LoadingStyle::default(), |item| item.try_into()
     }, "[components] should be a table"
 }
@@ -85,6 +87,9 @@ impl From<&ComponentsConf> for Table {
         table.insert(SUB_MENU, (&value.sub_menu).into());
         table.insert(MENU, (&value.menu).into());
         table.insert(COLLAPSE, (&value.collapse).into());
+        table.insert(SLIDER, (&value.slider).into());
+        table.insert(PROGRESS, (&value.progress).into());
+        table.insert(LOADING, (&value.loading).into());
         table
     }
 }

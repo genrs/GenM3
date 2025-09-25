@@ -9,12 +9,9 @@ use crate::{
     ComponentAnInit,
     components::{BasicStyle, Component, LifeCycle, Style},
     error::Error,
-    event_option, getter, lifecycle, play_animation,
-    prop::{
-        ApplyStateMap, LoadingMode,
-        traits::{ToColor, ToFloat},
-    },
-    set_animation, set_index, set_scope_path, setter,
+    lifecycle, play_animation,
+    prop::{ApplyStateMap, LoadingMode, traits::ToFloat},
+    set_animation, set_index, set_scope_path,
     shader::draw_loading::DrawLoading,
     switch_state, sync,
     themes::conf::Conf,
@@ -25,9 +22,7 @@ live_design! {
     link genui_basic;
     use link::genui_animation_prop::*;
 
-    pub GLoadingBase = {{GLoading}}{
-
-    }
+    pub GLoadingBase = {{GLoading}}{}
 }
 
 #[derive(Live, WidgetRef, WidgetSet, LiveRegisterWidget)]
@@ -127,7 +122,7 @@ impl Widget for GLoading {
         }
         if let Some(ne) = self.next_frame.is_event(event) {
             // update time to use for animation
-            self.time = (ne.time * 0.001).fract() as f32;
+            self.time = (ne.time * 0.1).fract() as f32;
             // force updates, so that we can animate in the absence of user-generated events
             self.redraw(cx);
             self.next_frame = cx.new_next_frame();
@@ -136,16 +131,6 @@ impl Widget for GLoading {
 }
 
 impl LiveHook for GLoading {
-    fn after_apply(&mut self, cx: &mut Cx, _apply: &mut Apply, _index: usize, _nodes: &[LiveNode]) {
-        if !self.visible {
-            return;
-        }
-
-        // if let Err(e) = self.render(cx) {
-        //     error!("GLoading render error: {:?}", e);
-        // }
-    }
-
     fn after_new_before_apply(&mut self, cx: &mut Cx) {
         self.merge_conf_prop(cx);
     }
@@ -181,7 +166,7 @@ impl Component for GLoading {
         Ok(())
     }
 
-    fn handle_widget_event(&mut self, cx: &mut Cx, event: &Event, hit: Hit, area: Area) {
+    fn handle_widget_event(&mut self, _cx: &mut Cx, _event: &Event, _hit: Hit, _area: Area) {
         ()
     }
 

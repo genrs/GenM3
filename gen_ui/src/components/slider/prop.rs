@@ -5,40 +5,38 @@ use crate::{
     components::{BasicStyle, ComponentState, Style},
     get_get_mut,
     prop::{
-        ApplyStateMapImpl, Radius,
         manuel::{
-            ABS_POS, ALIGN, BACKGROUND_COLOR, BACKGROUND_VISIBLE, BASIC, BLUR_RADIUS, BORDER_COLOR,
-            BORDER_RADIUS, BORDER_WIDTH, COLOR, CURSOR, DISABLED, FLOW, HEIGHT, LOADING, MARGIN,
-            PADDING, SHADOW_COLOR, SHADOW_OFFSET, SPACING, SPREAD_RADIUS, THEME, WIDTH,
-        },
-        traits::{AbsPos, FromLiveColor, FromLiveValue, NewFrom, ToColor, ToTomlValue},
+            ABS_POS, ALIGN, BACKGROUND_COLOR, BACKGROUND_VISIBLE, BASIC, BLUR_RADIUS, BORDER_COLOR, BORDER_RADIUS, BORDER_WIDTH, COLOR, CURSOR, DISABLED, DRAGGING, FLOW, HEIGHT, HOVER, MARGIN, PADDING, SHADOW_COLOR, SHADOW_OFFSET, SPACING, SPREAD_RADIUS, THEME, WIDTH
+        }, traits::{AbsPos, FromLiveColor, FromLiveValue, NewFrom, ToColor, ToTomlValue}, ApplyStateMapImpl, Radius
     },
     prop_interconvert, state_colors,
     themes::{Color, Theme, TomlValueTo},
 };
 
 prop_interconvert! {
-    ProgressStyle {
-        basic_prop = ProgressBasicStyle;
-        basic => BASIC, ProgressBasicStyle::default(),|v| (v, ProgressState::Basic).try_into(),
-        loading => LOADING, ProgressBasicStyle::from_state(Theme::default(), ProgressState::Loading),|v| (v, ProgressState::Loading).try_into(),
-        disabled => DISABLED, ProgressBasicStyle::from_state(Theme::default(), ProgressState::Disabled),|v| (v, ProgressState::Disabled).try_into()
-    }, "[component.Progress] should be a table"
+    SliderStyle {
+        basic_prop = SliderBasicStyle;
+        basic => BASIC, SliderBasicStyle::default(),|v| (v, SliderState::Basic).try_into(),
+        hover => HOVER, SliderBasicStyle::from_state(Theme::default(), SliderState::Hover),|v| (v, SliderState::Hover).try_into(),
+        loading => DRAGGING, SliderBasicStyle::from_state(Theme::default(), SliderState::Dragging),|v| (v, SliderState::Dragging).try_into(),
+        disabled => DISABLED, SliderBasicStyle::from_state(Theme::default(), SliderState::Disabled),|v| (v, SliderState::Disabled).try_into()
+    }, "[component.Slider] should be a table"
 }
 
-impl Style for ProgressStyle {
-    type State = ProgressState;
+impl Style for SliderStyle {
+    type State = SliderState;
 
-    type Basic = ProgressBasicStyle;
+    type Basic = SliderBasicStyle;
 
     get_get_mut! {
-        ProgressState::Basic => basic,
-        ProgressState::Loading => loading,
-        ProgressState::Disabled => disabled
+        SliderState::Basic => basic,
+        SliderState::Hover => hover,
+        SliderState::Dragging => loading,
+        SliderState::Disabled => disabled
     }
 
     fn len() -> usize {
-        3 * ProgressBasicStyle::len()
+        3 * SliderBasicStyle::len()
     }
 
     fn sync(&mut self, map: &crate::prop::ApplyStateMap<Self::State>) -> ()
@@ -47,18 +45,19 @@ impl Style for ProgressStyle {
     {
         map.sync(
             &mut self.basic,
-            ProgressState::Basic,
+            SliderState::Basic,
             [
-                (ProgressState::Loading, &mut self.loading),
-                (ProgressState::Disabled, &mut self.disabled),
+                (SliderState::Hover, &mut self.hover),
+                (SliderState::Dragging, &mut self.loading),
+                (SliderState::Disabled, &mut self.disabled),
             ],
         );
     }
 }
 
 basic_prop_interconvert! {
-    ProgressBasicStyle {
-        state = ProgressState;
+    SliderBasicStyle {
+        state = SliderState;
         {
             background_color => BACKGROUND_COLOR, |v| v.try_into(),
             shadow_color => SHADOW_COLOR, |v| v.try_into(),
@@ -77,28 +76,28 @@ basic_prop_interconvert! {
             padding: Padding => PADDING, Padding::from_xy(10.0, 16.0), |v| v.to_padding(padding),
             flow: Flow => FLOW, Flow::Right, |v| v.to_flow(),
             align: Align => ALIGN, Align::from_f64(0.5), |v| v.to_align(align),
-            height: Size => HEIGHT, Size::Fixed(16.0), |v| v.to_size(),
+            height: Size => HEIGHT, Size::Fixed(32.0), |v| v.to_size(),
             width: Size => WIDTH, Size::Fill, |v| v.to_size(),
             spacing: f64 => SPACING, 6.0, |v| v.to_f64(),
             abs_pos: AbsPos => ABS_POS, None, |v| Ok(v.to_dvec2().map_or(None, |v| Some(v)))
         }
-    }, "ProgressBasicStyle should be a inline table"
+    }, "SliderBasicStyle should be a inline table"
 }
 
 component_colors! {
-    ProgressColors {
+    SliderColors {
         colors = (Color, Color, Color, Color);
         background_color, border_color, shadow_color, color
     }
 }
 
-impl BasicStyle for ProgressBasicStyle {
-    type State = ProgressState;
+impl BasicStyle for SliderBasicStyle {
+    type State = SliderState;
 
-    type Colors = ProgressColors;
+    type Colors = SliderColors;
 
     fn from_state(theme: Theme, state: Self::State) -> Self {
-        let ProgressColors {
+        let SliderColors {
             background_color,
             border_color,
             shadow_color,
@@ -128,7 +127,7 @@ impl BasicStyle for ProgressBasicStyle {
             padding: Padding::from_xy(10.0, 16.0),
             flow: Flow::Right,
             align: Align::from_f64(0.5),
-            height: Size::Fixed(16.0),
+            height: Size::Fixed(32.0),
             width: Size::Fill,
             spacing: 6.0,
             abs_pos: None,
@@ -137,9 +136,10 @@ impl BasicStyle for ProgressBasicStyle {
 
     state_colors! {
         (bg_level, border_level, shadow_level, color_level),
-        ProgressState::Basic => (100, 500, 400, 600),
-        ProgressState::Loading => (100, 500, 400, 600),
-        ProgressState::Disabled => (100, 300, 200, 500)
+        SliderState::Basic => (100, 500, 400, 600),
+        SliderState::Hover => (100, 500, 400, 600),
+        SliderState::Dragging => (100, 500, 400, 600),
+        SliderState::Disabled => (100, 300, 200, 500)
     }
 
     fn len() -> usize {
@@ -227,7 +227,7 @@ impl BasicStyle for ProgressBasicStyle {
     }
 
     fn sync(&mut self, state: Self::State) -> () {
-        let ProgressColors {
+        let SliderColors {
             background_color,
             border_color,
             shadow_color,
@@ -314,16 +314,17 @@ impl BasicStyle for ProgressBasicStyle {
 }
 
 component_state! {
-    ProgressState {
+    SliderState {
         Basic => BASIC,
-        Loading => LOADING,
+        Hover => HOVER,
+        Dragging => DRAGGING,
         Disabled => DISABLED
     },
-    _ => ProgressState::Basic
+    _ => SliderState::Basic
 }
 
-impl ComponentState for ProgressState {
+impl ComponentState for SliderState {
     fn is_disabled(&self) -> bool {
-        matches!(self, ProgressState::Disabled)
+        matches!(self, SliderState::Disabled)
     }
 }

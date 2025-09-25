@@ -1,0 +1,378 @@
+use makepad_widgets::*;
+
+use crate::{
+    components::SliderBasicStyle,
+    prop::{ProgressMode, traits::ToFloat},
+    shader::draw_view::DrawView,
+};
+
+live_design! {
+    use link::shaders::*;
+    DrawSlider = {{DrawSlider}}{
+        fn get_color(self) -> vec4 { return self.color; }
+        fn count_border_radius(self, max_radius: float) -> vec4 {
+            return vec4(
+                min(max(self.border_radius.x - self.border_width * 0.5, 1.0), max_radius),
+                min(max(self.border_radius.y - self.border_width * 0.5, 1.0), max_radius),
+                min(max(self.border_radius.z - self.border_width * 0.5, 1.0), max_radius),
+                min(max(self.border_radius.w - self.border_width * 0.5, 1.0), max_radius)
+            )
+        }
+        // each wave_r should add `0.4` to make the wave look better (magic number)
+        fn pixel(self) -> vec4 {
+            let sdf = Sdf2d::viewport(self.pos * self.rect_size3);
+            let one_deg = PI / 180.0;
+            // - [draw progress bar] --------------------------------------------------------------
+            match self.mode {
+                ProgressMode::Horizontal => {
+                    // - [draw shadow and blur] -----------------------------------------------------------
+                    if sdf.shape > -1.0 {
+                        if self.spread_radius > 0.0 || self.blur_radius > 0.0 {
+                            let shadow_offset = self.shadow_offset + self.rect_shift;
+                            let total_shadow_size = self.spread_radius + self.blur_radius;
+                            let shadow_lower = vec2(total_shadow_size) + shadow_offset;
+                            let shadow_upper = self.rect_size + vec2(self.spread_radius * 2.0) + shadow_offset;
+                            if self.border_radius.x != 0.0 || self.border_radius.y != 0.0 ||
+                                self.border_radius.z != 0.0 || self.border_radius.w != 0.0 {
+                                let max_border_radius = max(
+                                    max(
+                                        max(self.border_radius.x, self.border_radius.y),
+                                        max(self.border_radius.z, self.border_radius.w)
+                                    ), 1.0
+                                );
+                                let v = GaussShadow::rounded_box_shadow(
+                                    shadow_lower,
+                                    shadow_upper,
+                                    self.pos * self.rect_size3,
+                                    self.blur_radius,
+                                    max_border_radius
+                                );
+                                let shadow_color = vec4(self.get_shadow_color().rgb, self.get_shadow_color().a * v);
+                                sdf.clear(shadow_color);
+                            } else {
+                                let v = GaussShadow::box_shadow(
+                                    shadow_lower,
+                                    shadow_upper,
+                                    self.pos * self.rect_size3,
+                                    self.blur_radius
+                                );
+                                let shadow_color = vec4(self.get_shadow_color().rgb, self.get_shadow_color().a * v);
+                                sdf.clear(shadow_color);
+                            }
+                        }
+                    }
+
+                    // - [basic sdf for draw a view] ------------------------------------------------------
+                    let spacing = mix(6.0, 4.0, self.dragging);
+                    if self.value >= 1.0 {
+                        spacing = 0.0;
+                    }
+                    let total_shadow_size = self.spread_radius + self.blur_radius;
+                    let progress_width = self.sdf_rect_size.x * self.value;
+                    let slider_empty_width = self.sdf_rect_size.x - progress_width;
+                    let slider_empty_height = self.sdf_rect_size.y * self.proportion;
+                    let border_radius = self.count_border_radius(min(self.sdf_rect_size.x, slider_empty_height) * 0.25);
+                    // 使用calculated位置而不是原始rect_size
+                    sdf.box_all(
+                        self.sdf_rect_pos.x + progress_width,
+                        self.sdf_rect_pos.y + (self.sdf_rect_size.y - slider_empty_height) * 0.5,
+                        slider_empty_width,
+                        slider_empty_height,
+                        min(border_radius.x, 1.0),
+                        border_radius.y,
+                        border_radius.z,
+                        min(border_radius.w, 1.0)
+                    );
+                    // - [border with and color if width bigger than 0] -----------------------------------
+                    if self.border_width != 0.0 {
+                        sdf.stroke_keep(self.get_border_color(), self.border_width);
+                    }
+                    // - [background color if visible] ----------------------------------------------------
+                    if self.background_visible == 1.0 {
+                        sdf.fill_premul(self.get_background_color());
+                    }
+
+                    // [draw a small dot in the end of the progress bar] --------------------------
+                    let dot_radius = 3.0;
+                    let dot_pos = vec2(
+                        self.rect_size.x + self.pos.x - dot_radius * 2.0 - self.border_width,
+                        self.pos.y + self.rect_size.y * 0.5
+                    );
+                    sdf.circle(dot_pos.x, dot_pos.y, dot_radius);
+                    sdf.fill_premul(self.get_color());
+
+                    // [draw the progress bar] ----------------------------------------------------
+                    if self.value != 0.0 {
+                        sdf.box_all(
+                            self.sdf_rect_pos.x,
+                            self.sdf_rect_pos.y + (self.sdf_rect_size.y - slider_empty_height) * 0.5,
+                            progress_width - spacing,
+                            slider_empty_height,
+                            border_radius.x,
+                            min(border_radius.y, 1.0),
+                            min(border_radius.z, 1.0),
+                            border_radius.w
+                        );
+                        if self.border_width != 0.0 {
+                            sdf.stroke_keep(self.get_border_color(), self.border_width);
+                        }
+                        sdf.fill(self.get_color());
+                    }
+                    // [draw slider dragger] ----------------------------------------------------
+                    sdf.box(
+                        self.sdf_rect_pos.x + progress_width - spacing * 0.825,
+                        self.sdf_rect_pos.y,
+                        spacing * 0.6,
+                        self.sdf_rect_size.y,
+                        spacing * 0.6 * 0.25
+                    );
+                    sdf.fill(self.get_color());
+                }
+                ProgressMode::Vertical => {
+                    // - [draw shadow and blur] -----------------------------------------------------------
+                    if sdf.shape > -1.0 {
+                        if self.spread_radius > 0.0 || self.blur_radius > 0.0 {
+                            let shadow_offset = self.shadow_offset + self.rect_shift;
+                            let total_shadow_size = self.spread_radius + self.blur_radius;
+                            let shadow_lower = vec2(total_shadow_size) + shadow_offset;
+                            let shadow_upper = self.rect_size + vec2(self.spread_radius * 2.0) + shadow_offset;
+                            if self.border_radius.x != 0.0 || self.border_radius.y != 0.0 ||
+                                self.border_radius.z != 0.0 || self.border_radius.w != 0.0 {
+                                let max_border_radius = max(
+                                    max(
+                                        max(self.border_radius.x, self.border_radius.y),
+                                        max(self.border_radius.z, self.border_radius.w)
+                                    ), 1.0
+                                );
+                                let v = GaussShadow::rounded_box_shadow(
+                                    shadow_lower,
+                                    shadow_upper,
+                                    self.pos * self.rect_size3,
+                                    self.blur_radius,
+                                    max_border_radius
+                                );
+                                let shadow_color = vec4(self.get_shadow_color().rgb, self.get_shadow_color().a * v);
+                                sdf.clear(shadow_color);
+                            } else {
+                                let v = GaussShadow::box_shadow(
+                                    shadow_lower,
+                                    shadow_upper,
+                                    self.pos * self.rect_size3,
+                                    self.blur_radius
+                                );
+                                let shadow_color = vec4(self.get_shadow_color().rgb, self.get_shadow_color().a * v);
+                                sdf.clear(shadow_color);
+                            }
+                        }
+                    }
+
+                    // - [basic sdf for draw a view] ------------------------------------------------------
+                    let spacing = 8.0;
+                    if self.value >= 1.0 {
+                        spacing = 0.0;
+                    }
+                    let total_shadow_size = self.spread_radius + self.blur_radius;
+                    let progress_height = self.sdf_rect_size.y * self.value;
+                    let slider_empty_height = self.sdf_rect_size.y - progress_height;
+                    let slider_empty_width = self.sdf_rect_size.x * 0.5;
+                    let border_radius = self.count_border_radius(min(slider_empty_width, slider_empty_height) * 0.25);
+                    // 使用calculated位置而不是原始rect_size
+                    sdf.box_all(
+                        self.sdf_rect_pos.x + slider_empty_width * 0.5,
+                        self.sdf_rect_pos.y,
+                        slider_empty_width,
+                        slider_empty_height,
+                        border_radius.x,
+                        border_radius.y,
+                        min(border_radius.z, 1.0),
+                        min(border_radius.w, 1.0)
+                    );
+                    // - [border with and color if width bigger than 0] -----------------------------------
+                    if self.border_width != 0.0 {
+                        sdf.stroke_keep(self.get_border_color(), self.border_width);
+                    }
+
+                    // - [background color if visible] ----------------------------------------------------
+                    // keep the mask even if background invisible so stroke can draw
+                    if self.background_visible == 1.0 {
+                        sdf.fill_premul(self.get_background_color());
+                    }
+
+                    // [draw a small dot in the end of the progress bar] --------------------------
+                    let dot_radius = 3.0;
+                    let dot_pos = vec2(
+                        self.pos.x + self.rect_size.x * 0.5 - self.border_width,
+                        self.pos.y + dot_radius * 2.0
+                    );
+                    sdf.circle(dot_pos.x, dot_pos.y, dot_radius);
+                    sdf.fill_premul(self.get_color());
+
+                    // [draw the progress bar] ----------------------------------------------------
+                    if self.value != 0.0 {
+                        let progress_height = self.sdf_rect_size.y * self.value;
+                        sdf.box_all(
+                            self.sdf_rect_pos.x + slider_empty_width * 0.5,
+                            self.sdf_rect_size.y - progress_height + spacing,
+                            slider_empty_width,
+                            progress_height - spacing,
+                            min(border_radius.x, 1.0),
+                            min(border_radius.y, 1.0),
+                            border_radius.z,
+                            border_radius.w
+                        );
+                        if self.border_width != 0.0 {
+                            sdf.stroke_keep(self.get_border_color(), self.border_width);
+                        }
+                        sdf.fill(self.get_color());
+                    }
+
+                    // [draw slider dragger] ----------------------------------------------------
+                    sdf.box(
+                        self.sdf_rect_pos.x,
+                        self.sdf_rect_size.y - progress_height + spacing * 0.16,
+                        self.sdf_rect_size.x,
+                        spacing * 0.68,
+                        spacing * 0.68 * 0.25
+                    );
+                    sdf.fill(self.get_color());
+                }
+                ProgressMode::Circle => {
+                    // [draw a ring progress bar] ------------------------------------------------
+                    let center_pos = vec2(self.pos.x + self.rect_size.x * 0.5, self.pos.y + self.rect_size.y * 0.5);
+                    // compute offset from border_radius (use count_border_radius to account for border)
+                    let border_radius = self.count_border_radius(min(self.sdf_rect_size.x, self.sdf_rect_size.y) * 0.5);
+                    let max_border = max(
+                        max(border_radius.x, border_radius.y),
+                        max(border_radius.z, border_radius.w)
+                    );
+                    let offset = max(max_border, min(self.sdf_rect_size.x, self.sdf_rect_size.y) * 0.2) * 0.5;
+                    let ring_outer_radius = min(self.rect_size.x, self.rect_size.y) * 0.5;
+
+                    let ring_inner_radius = ring_outer_radius - offset * 2.0;
+                    let ring_arc_radius = ring_inner_radius + offset;
+                    let start_angle = self.value * 360.0 - 180.0;
+                    let end_angle = 146.0;
+                    
+                    // [draw the progress part] ----------------------------------------------------
+                    let p_start_angle = 0.0;
+                    let p_end_angle = 360.0;
+                    if self.value != 1.0 {
+                        p_start_angle = 180.0;
+                        p_end_angle = self.value * 360.0 + 146.0;
+                    }
+
+                    if self.value * 360.0 < 36.0 {
+                        if self.value != 0.0 {
+                            sdf.arc_round_caps(
+                                center_pos.x,
+                                center_pos.y,
+                                ring_arc_radius,
+                                p_start_angle * one_deg,
+                                p_end_angle * one_deg,
+                                offset * 2.0
+                            );
+                        }
+                        sdf.fill_premul(self.get_color());
+                        
+                        if self.value != 1.0 {
+                            sdf.arc_round_caps(
+                                center_pos.x,
+                                center_pos.y,
+                                ring_arc_radius,
+                                start_angle * one_deg,
+                                end_angle * one_deg,
+                                offset * 2.0
+                            );
+                        }
+
+                        if self.border_width > 0.0 {
+                            sdf.stroke_keep(self.get_border_color(), self.border_width);
+                        }
+
+                        // keep mask even when background invisible so stroke can draw
+                        if self.background_visible == 1.0 {
+                            sdf.fill_premul(self.get_background_color());
+                        }
+                    } else {
+                        if self.value != 1.0 {
+                            sdf.arc_round_caps(
+                                center_pos.x,
+                                center_pos.y,
+                                ring_arc_radius,
+                                start_angle * one_deg,
+                                end_angle * one_deg,
+                                offset * 2.0
+                            );
+                        }
+
+                        if self.border_width > 0.0 {
+                            sdf.stroke_keep(self.get_border_color(), self.border_width);
+                        }
+
+                        // keep mask even when background invisible so stroke can draw
+                        if self.background_visible == 1.0 {
+                            sdf.fill_premul(self.get_background_color());
+                        }
+
+                        if self.value != 0.0 {
+                            sdf.arc_round_caps(
+                                center_pos.x,
+                                center_pos.y,
+                                ring_arc_radius,
+                                p_start_angle * one_deg,
+                                p_end_angle * one_deg,
+                                offset * 2.0
+                            );
+                        }
+                        sdf.fill_premul(self.get_color());
+                    }
+                    
+                }
+
+            }
+
+
+            return sdf.result
+        }
+    }
+}
+
+#[derive(Live, LiveRegister, LiveHook)]
+#[repr(C)]
+pub struct DrawSlider {
+    #[deref]
+    pub draw_super: DrawView,
+    #[live]
+    pub mode: ProgressMode,
+    #[live]
+    pub color: Vec4,
+    /// 归一化的进度值，范围0.0到1.0
+    #[live]
+    pub value: f32,
+    /// 表示条形占比，范围0.0到1.0
+    #[live(0.8)]
+    pub proportion: f32,
+    #[live]
+    pub dragging: f32,
+}
+
+impl DrawSlider {
+    pub fn apply_type(&mut self, mode: ProgressMode) {
+        self.mode = mode;
+    }
+    pub fn merge(&mut self, prop: &SliderBasicStyle) {
+        self.background_color = prop.background_color;
+        self.border_color = prop.border_color;
+        self.border_width = prop.border_width;
+        self.border_radius = prop.border_radius.into();
+        self.shadow_color = prop.shadow_color.into();
+        self.spread_radius = prop.spread_radius;
+        self.blur_radius = prop.blur_radius;
+        self.shadow_offset = prop.shadow_offset;
+        self.background_visible = prop.background_visible.to_f32();
+        self.color = prop.color.into();
+    }
+    pub fn set_value(&mut self, value: f32) {
+        self.value = value.clamp(0.0, 1.0);
+    }
+}
