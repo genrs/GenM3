@@ -55,3 +55,20 @@ pub fn normalization(value: f32, min: f32, max: f32) -> f32 {
     let r2 = (v - min) / (max - min);
     round_2_decimals_f32(r2)
 }
+
+/// round value to the nearest step
+pub fn round_step(v: f32, step: f32) -> f32 {
+    if step == 0.0 {
+        return v;
+    }
+    if v % step == 0.0 {
+        return v;
+    }
+    let up = (v / step).ceil() * step;
+    let down = (v / step).floor() * step;
+    if (up - v) < (v - down) {
+        round_2_decimals_f32(up)
+    } else {
+        round_2_decimals_f32(down)
+    }
+}

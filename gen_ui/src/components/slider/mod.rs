@@ -8,19 +8,19 @@ pub use prop::*;
 
 use crate::{
     ComponentAnInit, active_event, animation_open_then_redraw,
-    components::{BasicStyle, Component, LifeCycle, Style, slider::event::SliderHoverIn},
+    components::{BasicStyle, Component, LifeCycle, Style},
     error::Error,
-    hit_finger_down, lifecycle, play_animation,
+    lifecycle, play_animation,
     prop::{
         ApplyStateMap, ProgressMode,
-        manuel::{BASIC, DISABLED, DRAGGING, HOVER, LOADING},
+        manuel::{BASIC, DISABLED, DRAGGING, HOVER},
         traits::ToFloat,
     },
     pure_after_apply, set_animation, set_index, set_scope_path,
     shader::draw_slider::DrawSlider as DrawGSlider,
     switch_state, sync,
     themes::conf::Conf,
-    utils::{normalization, round_2_decimals_f32},
+    utils::{normalization, round_2_decimals_f32, round_step},
     visible,
 };
 
@@ -34,7 +34,7 @@ live_design! {
                 default: off,
 
                 off = {
-                    from: {all: Forward {duration: (AN_DURATION)}},
+                    from: {all: Forward {duration: (0.0)}},
                     ease: InOutQuad,
                     apply: {
                         draw_slider: <AN_DRAW_SLIDER> {
@@ -44,7 +44,7 @@ live_design! {
                 }
 
                 hover = {
-                    from: {all: Forward {duration: (AN_DURATION)}},
+                    from: {all: Forward {duration: (0.0)}},
                     ease: InOutQuad,
                     apply: {
                         draw_slider: <AN_DRAW_SLIDER> {
@@ -55,7 +55,7 @@ live_design! {
 
                 on = {
                     from: {
-                        all: Forward {duration: (AN_DURATION),},
+                        all: Forward {duration: (0.0),},
                     },
                     ease: InOutQuad,
                     apply: {
@@ -123,6 +123,8 @@ pub struct GSlider {
     pub value: f32,
     #[live(0.1)]
     pub step: f32,
+    #[live(1.0)]
+    pub proportion: f32,
 }
 
 impl WidgetNode for GSlider {
@@ -249,6 +251,8 @@ impl Component for GSlider {
         self.draw_slider.merge(style);
         self.draw_slider.mode = self.mode;
         self.draw_slider.value = normalization(self.value, self.min, self.max);
+        self.draw_slider.step = self.step;
+        self.draw_slider.proportion = self.proportion.clamp(0.0, 1.0);
         Ok(())
     }
 
@@ -294,7 +298,7 @@ impl Component for GSlider {
             }
             Hit::FingerMove(e) => {
                 match self.mode {
-                    ProgressMode::Horizontal => {
+                    ProgressMode::Horizontal|ProgressMode::Circle => {
                         let real_len = e.abs.x - e.rect.pos.x;
                         // percentage
                         let mut v = real_len / e.rect.size.x;
@@ -303,11 +307,15 @@ impl Component for GSlider {
                         } else if v > 1.0 {
                             v = 1.0;
                         }
-                        self.value =
-                            round_2_decimals_f32((v as f32) * (self.max - self.min) + self.min);
+                        self.value = round_step(
+                            round_2_decimals_f32((v as f32) * (self.max - self.min) + self.min),
+                            self.step,
+                        );
                     }
                     ProgressMode::Vertical => {
-                        let real_len = e.abs.y - e.rect.pos.y;
+                        // For vertical mode, we need to invert the calculation
+                        // because y increases downward, but we want progress to increase upward
+                        let real_len = e.rect.pos.y + e.rect.size.y - e.abs.y;
                         // percentage
                         let mut v = real_len / e.rect.size.y;
                         if v < 0.0 {
@@ -315,10 +323,12 @@ impl Component for GSlider {
                         } else if v > 1.0 {
                             v = 1.0;
                         }
-                        self.value =
-                            round_2_decimals_f32((v as f32) * (self.max - self.min) + self.min);
+                        self.value = round_step(
+                            round_2_decimals_f32((v as f32) * (self.max - self.min) + self.min),
+                            self.step,
+                        );
                     }
-                    ProgressMode::Circle => {}
+                    
                 }
                 self.switch_state_with_animation(cx, SliderState::Dragging);
             }
@@ -332,7 +342,7 @@ impl Component for GSlider {
         }
         self.switch_state(state);
         self.set_animation(cx);
-        // self.redraw(cx);
+        self.redraw(cx);
     }
 
     fn focus_sync(&mut self) -> () {
@@ -406,7 +416,8 @@ impl Component for GSlider {
             ) {
                 disabled_index = Some(index);
             }
-
+            let v = normalization(self.value, self.min, self.max);
+            let proportion = self.proportion.clamp(0.0, 1.0);
             set_animation! {
                 nodes: draw_slider = {
                     basic_index => {
@@ -420,7 +431,8 @@ impl Component for GSlider {
                         shadow_offset => basic_prop.shadow_offset,
                         background_visible => basic_prop.background_visible.to_f64(),
                         color => basic_prop.color,
-                        value => (self.value as f64)
+                        value => (v as f64),
+                        proportion => (proportion as f64)
                     },
                     hover_index => {
                         background_color => hover_prop.background_color,
@@ -433,7 +445,8 @@ impl Component for GSlider {
                         shadow_offset => hover_prop.shadow_offset,
                         background_visible => hover_prop.background_visible.to_f64(),
                         color => hover_prop.color,
-                        value => (self.value as f64)
+                        value => (v as f64),
+                        proportion => (proportion as f64)
                     },
                     dragging_index => {
                         background_color => dragging_prop.background_color,
@@ -446,7 +459,8 @@ impl Component for GSlider {
                         shadow_offset => dragging_prop.shadow_offset,
                         background_visible => dragging_prop.background_visible.to_f64(),
                         color => dragging_prop.color,
-                        value => (self.value as f64)
+                        value => (v as f64),
+                        proportion => (proportion as f64)
                     },
                     disabled_index => {
                         background_color => disabled_prop.background_color,
@@ -459,13 +473,16 @@ impl Component for GSlider {
                         shadow_offset => disabled_prop.shadow_offset,
                         background_visible => disabled_prop.background_visible.to_f64(),
                         color => disabled_prop.color,
-                        value => (self.value as f64)
+                        value => (v as f64),
+                        proportion => (proportion as f64)
                     }
                 }
             }
         } else {
             let state = self.state;
             let style = self.style.get(state);
+            let v = normalization(self.value, self.min, self.max);
+            let proportion = self.proportion.clamp(0.0, 1.0);
             let index = match state {
                 SliderState::Basic => nodes.child_by_path(
                     self.index,
@@ -513,7 +530,8 @@ impl Component for GSlider {
                         shadow_offset => style.shadow_offset,
                         background_visible => style.background_visible.to_f64(),
                         color => style.color,
-                        value => (self.value as f64)
+                        value => (v as f64),
+                        proportion => (proportion as f64)
                     }
                 }
             }

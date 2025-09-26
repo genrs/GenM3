@@ -22,6 +22,10 @@ live_design! {
         fn pixel(self) -> vec4 {
             let sdf = Sdf2d::viewport(self.pos * self.rect_size3);
             let one_deg = PI / 180.0;
+            let is_empty = 0.0;
+            if self.value <= 0.0 {
+                is_empty = 1.0;
+            }
             // - [draw progress bar] --------------------------------------------------------------
             match self.mode {
                 ProgressMode::Horizontal => {
@@ -67,6 +71,7 @@ live_design! {
                     if self.value >= 1.0 {
                         spacing = 0.0;
                     }
+                    
                     let total_shadow_size = self.spread_radius + self.blur_radius;
                     let progress_width = self.sdf_rect_size.x * self.value;
                     let slider_empty_width = self.sdf_rect_size.x - progress_width;
@@ -78,10 +83,10 @@ live_design! {
                         self.sdf_rect_pos.y + (self.sdf_rect_size.y - slider_empty_height) * 0.5,
                         slider_empty_width,
                         slider_empty_height,
-                        min(border_radius.x, 1.0),
+                        mix(1.0, border_radius.x, is_empty),
                         border_radius.y,
                         border_radius.z,
-                        min(border_radius.w, 1.0)
+                        mix(1.0, border_radius.w, is_empty)
                     );
                     // - [border with and color if width bigger than 0] -----------------------------------
                     if self.border_width != 0.0 {
@@ -109,8 +114,8 @@ live_design! {
                             progress_width - spacing,
                             slider_empty_height,
                             border_radius.x,
-                            min(border_radius.y, 1.0),
-                            min(border_radius.z, 1.0),
+                            mix(1.0, border_radius.y, is_empty),
+                            mix(1.0, border_radius.z, is_empty),
                             border_radius.w
                         );
                         if self.border_width != 0.0 {
@@ -167,25 +172,25 @@ live_design! {
                     }
 
                     // - [basic sdf for draw a view] ------------------------------------------------------
-                    let spacing = 8.0;
+                    let spacing = mix(6.0, 4.0, self.dragging);
                     if self.value >= 1.0 {
                         spacing = 0.0;
                     }
                     let total_shadow_size = self.spread_radius + self.blur_radius;
                     let progress_height = self.sdf_rect_size.y * self.value;
                     let slider_empty_height = self.sdf_rect_size.y - progress_height;
-                    let slider_empty_width = self.sdf_rect_size.x * 0.5;
+                    let slider_empty_width = self.sdf_rect_size.x * self.proportion;
                     let border_radius = self.count_border_radius(min(slider_empty_width, slider_empty_height) * 0.25);
                     // 使用calculated位置而不是原始rect_size
                     sdf.box_all(
-                        self.sdf_rect_pos.x + slider_empty_width * 0.5,
+                        self.sdf_rect_pos.x + (self.sdf_rect_size.x -  slider_empty_width) * 0.5,
                         self.sdf_rect_pos.y,
                         slider_empty_width,
                         slider_empty_height,
                         border_radius.x,
                         border_radius.y,
-                        min(border_radius.z, 1.0),
-                        min(border_radius.w, 1.0)
+                        mix(1.0, border_radius.z, is_empty),
+                        mix(1.0, border_radius.w, is_empty)
                     );
                     // - [border with and color if width bigger than 0] -----------------------------------
                     if self.border_width != 0.0 {
@@ -211,7 +216,7 @@ live_design! {
                     if self.value != 0.0 {
                         let progress_height = self.sdf_rect_size.y * self.value;
                         sdf.box_all(
-                            self.sdf_rect_pos.x + slider_empty_width * 0.5,
+                            self.sdf_rect_pos.x + (self.sdf_rect_size.x -  slider_empty_width) * 0.5,
                             self.sdf_rect_size.y - progress_height + spacing,
                             slider_empty_width,
                             progress_height - spacing,
@@ -326,6 +331,11 @@ live_design! {
                         }
                         sdf.fill_premul(self.get_color());
                     }
+
+                    if self.value != 0.0 {
+                        // [draw slider dragger] ----------------------------------------------------
+                        
+                    }
                     
                 }
 
@@ -350,10 +360,12 @@ pub struct DrawSlider {
     #[live]
     pub value: f32,
     /// 表示条形占比，范围0.0到1.0
-    #[live(0.8)]
+    #[live]
     pub proportion: f32,
     #[live]
     pub dragging: f32,
+    #[live(0.1)]
+    pub step: f32,
 }
 
 impl DrawSlider {
