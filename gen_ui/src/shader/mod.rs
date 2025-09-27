@@ -1,16 +1,16 @@
 pub mod animation;
 pub mod draw_checkbox;
-pub mod draw_radio;
-pub mod draw_view;
-pub mod draw_switch;
-pub mod draw_svg;
+pub mod draw_color_picker;
 pub mod draw_image;
-pub mod draw_popup;
 pub mod draw_link;
-pub mod draw_progress;
-pub mod draw_color_panel;
 pub mod draw_loading;
+pub mod draw_popup;
+pub mod draw_progress;
+pub mod draw_radio;
 pub mod draw_slider;
+pub mod draw_svg;
+pub mod draw_switch;
+pub mod draw_view;
 
 use makepad_widgets::Cx;
 
@@ -25,6 +25,7 @@ pub fn shader_register(cx: &mut Cx) {
     draw_link::live_design(cx);
     draw_progress::live_design(cx);
     draw_slider::live_design(cx);
+    draw_color_picker::live_design(cx);
     draw_loading::live_design(cx);
     animation::live_design(cx);
 }

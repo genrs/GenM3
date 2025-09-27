@@ -71,7 +71,7 @@ live_design! {
                     if self.value >= 1.0 {
                         spacing = 0.0;
                     }
-                    
+
                     let total_shadow_size = self.spread_radius + self.blur_radius;
                     let progress_width = self.sdf_rect_size.x * self.value;
                     let slider_empty_width = self.sdf_rect_size.x - progress_width;
@@ -250,20 +250,20 @@ live_design! {
                         max(border_radius.x, border_radius.y),
                         max(border_radius.z, border_radius.w)
                     );
-                    let offset = max(max_border, min(self.sdf_rect_size.x, self.sdf_rect_size.y) * 0.2) * 0.5;
+                    let offset = max(max_border, min(self.sdf_rect_size.x, self.sdf_rect_size.y) * 0.2) * self.proportion;
                     let ring_outer_radius = min(self.rect_size.x, self.rect_size.y) * 0.5;
 
                     let ring_inner_radius = ring_outer_radius - offset * 2.0;
                     let ring_arc_radius = ring_inner_radius + offset;
                     let start_angle = self.value * 360.0 - 180.0;
-                    let end_angle = 146.0;
-                    
+                    let end_angle = 144.0 - (68.0 * (self.proportion - 0.5));
+
                     // [draw the progress part] ----------------------------------------------------
                     let p_start_angle = 0.0;
                     let p_end_angle = 360.0;
                     if self.value != 1.0 {
                         p_start_angle = 180.0;
-                        p_end_angle = self.value * 360.0 + 146.0;
+                        p_end_angle = self.value * 360.0 + end_angle;
                     }
 
                     if self.value * 360.0 < 36.0 {
@@ -278,7 +278,7 @@ live_design! {
                             );
                         }
                         sdf.fill_premul(self.get_color());
-                        
+
                         if self.value != 1.0 {
                             sdf.arc_round_caps(
                                 center_pos.x,
@@ -331,12 +331,6 @@ live_design! {
                         }
                         sdf.fill_premul(self.get_color());
                     }
-
-                    if self.value != 0.0 {
-                        // [draw slider dragger] ----------------------------------------------------
-                        
-                    }
-                    
                 }
 
             }
