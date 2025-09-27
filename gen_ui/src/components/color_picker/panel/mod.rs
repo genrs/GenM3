@@ -74,6 +74,8 @@ pub struct GColorPanel {
     base_color: Vec4, // 基础颜色（如红色）
     #[rust(ColorPickerDragMode::None)]
     drag_mode: ColorPickerDragMode,
+    #[rust]
+    pub state: ColorPanelState,
 }
 
 #[derive(Clone, Debug, DefaultNone)]

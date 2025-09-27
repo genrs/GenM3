@@ -170,6 +170,17 @@ macro_rules! state_colors {
     };
 }
 
+
+/// ## generate state_colors function for single color
+/// ### usage
+/// ```
+/// state_color! {
+///     (color),
+///     LoadingState::Basic => (600),
+///     LoadingState::Loading => (600),
+///     LoadingState::Disabled => (500)
+/// }
+/// ```
 #[macro_export]
 macro_rules! state_color {
     (

@@ -281,6 +281,15 @@ macro_rules! component_colors {
     };
 }
 
+/// ## example
+/// ```rust
+/// component_color! {
+///    LabelColors {
+///         colors = (Color);
+///         color
+///     }
+/// }
+/// ```
 #[macro_export]
 macro_rules! component_color {
     ($color: ident {
