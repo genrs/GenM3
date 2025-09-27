@@ -1,11 +1,12 @@
 use toml_edit::Table;
 
+use crate::components::panel::ColorPanelStyle;
 use crate::components::{
     ButtonStyle, CardStyle, CheckboxProp, CollapseStyle, DividerProp, ImageProp, LabelProp, LinkProp, LoadingStyle, MenuItemProp, MenuProp, PopupContainerProp, PopupProp, ProgressStyle, RadioProp, SliderStyle, SubMenuProp, SvgStyle, SwitchProp, TabbarItemProp, TabbarProp, TagProp, ViewStyle
 };
 use crate::error::Error;
 use crate::prop::manuel::{
-    BUTTON, CARD, CHECKBOX, COLLAPSE, DIVIDER, IMAGE, LABEL, LINK, LOADING, MENU, MENU_ITEM, POPUP, POPUP_CONTAINER, PROGRESS, RADIO, SLIDER, SUB_MENU, SVG, SWITCH, TABBAR, TABBAR_ITEM, TAG, VIEW
+    BUTTON, CARD, CHECKBOX, COLLAPSE, COLOR_PANEL, DIVIDER, IMAGE, LABEL, LINK, LOADING, MENU, MENU_ITEM, POPUP, POPUP_CONTAINER, PROGRESS, RADIO, SLIDER, SUB_MENU, SVG, SWITCH, TABBAR, TABBAR_ITEM, TAG, VIEW
 };
 use crate::try_from_toml_item;
 
@@ -33,7 +34,8 @@ pub struct ComponentsConf {
     pub collapse: CollapseStyle,
     pub progress: ProgressStyle,
     pub slider: SliderStyle,
-    pub loading: LoadingStyle
+    pub loading: LoadingStyle,
+    pub color_panel: ColorPanelStyle
 }
 
 try_from_toml_item! {
@@ -60,7 +62,8 @@ try_from_toml_item! {
         collapse => COLLAPSE, CollapseStyle::default(), |item| item.try_into(),
         progress => PROGRESS, ProgressStyle::default(), |item| item.try_into(),
         slider => SLIDER, SliderStyle::default(), |item| item.try_into(),
-        loading => LOADING, LoadingStyle::default(), |item| item.try_into()
+        loading => LOADING, LoadingStyle::default(), |item| item.try_into(),
+        color_panel => COLOR_PANEL, ColorPanelStyle::default(), |item| item.try_into()
     }, "[components] should be a table"
 }
 

@@ -1,9 +1,11 @@
 pub mod panel;
+mod register;
 
-use makepad_widgets::*;
+pub use register::register as color_picker_register;
+// use makepad_widgets::*;
 
-live_design!{
-    link genui_basic;
-    use link::genui_animation_prop::*;
-    use link::shaders::*;
-}
+// live_design!{
+//     link genui_basic;
+//     use link::genui_animation_prop::*;
+//     use link::shaders::*;
+// }

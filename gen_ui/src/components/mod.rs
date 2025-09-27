@@ -569,7 +569,7 @@ live_design! {
         }
     }
 
-    pub GColorPicker = <GColorPickerBase> {}
+    pub GColorPanel = <GColorPanelBase> {}
 
     pub GProgress = <GProgressBase> {}
 
@@ -598,7 +598,7 @@ pub fn components_register(cx: &mut Cx) {
     router::live_design(cx);
     menu::menu_register(cx);
     collapse::live_design(cx);
-    color_picker::live_design(cx);
+    color_picker::color_picker_register(cx);
     progress::live_design(cx);
     loading::live_design(cx);
     slider::live_design(cx);
