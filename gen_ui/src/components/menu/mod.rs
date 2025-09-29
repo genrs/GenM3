@@ -271,10 +271,6 @@ impl LiveHook for GMenu {
             self.find_active();
         }
     }
-
-    fn after_update_from_doc(&mut self, _cx: &mut Cx) {
-        self.merge_prop_to_slot();
-    }
 }
 
 impl Component for GMenu {

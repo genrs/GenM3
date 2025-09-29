@@ -184,7 +184,6 @@ impl Widget for GRadio {
     fn draw_walk(&mut self, cx: &mut Cx2d, scope: &mut Scope, _walk: Walk) -> DrawStep {
         if self.visible {
             let style = self.style.get(self.state);
-
             self.draw_container
                 .begin(cx, style.container.walk(), style.container.layout());
             if !self.reverse {
@@ -197,7 +196,6 @@ impl Widget for GRadio {
             if self.extra.visible {
                 self.extra.disabled = self.disabled;
                 let _ = self.extra.draw_walk(cx, scope, style.extra.walk());
-                // dbg!(self.extra.style.basic);
             }
             if self.reverse {
                 if self.radio_visible {
@@ -235,7 +233,7 @@ impl LiveHook for GRadio {
         self.merge_conf_prop(cx);
     }
 
-    fn after_apply(&mut self, _cx: &mut Cx, apply: &mut Apply, index: usize, nodes: &[LiveNode]) {
+    fn after_apply(&mut self, _cx: &mut Cx, _apply: &mut Apply, index: usize, nodes: &[LiveNode]) {
         self.set_apply_slot_map(
             nodes,
             index,
@@ -269,10 +267,6 @@ impl LiveHook for GRadio {
                 _ => {}
             },
         );
-    }
-
-    fn after_update_from_doc(&mut self, _cx: &mut Cx) {
-        self.merge_prop_to_slot();
     }
 }
 

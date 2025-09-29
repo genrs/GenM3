@@ -14,5 +14,10 @@ macro_rules! pure_after_apply {
             self.sync();
             self.render_after_apply(cx);
         }
+        
+        #[cfg(feature = "dev")]
+        fn after_update_from_doc(&mut self, cx: &mut Cx) {
+            self.merge_conf_prop(cx);
+        }
     };
 }

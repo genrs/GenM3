@@ -387,10 +387,7 @@ impl LiveHook for GCollapse {
             },
         );
     }
-    
-    fn after_update_from_doc(&mut self, _cx: &mut Cx) {
-        self.merge_prop_to_slot();
-    }
+
 }
 
 impl GCollapse {
