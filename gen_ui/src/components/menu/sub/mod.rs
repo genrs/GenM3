@@ -282,6 +282,15 @@ impl LiveHook for GSubMenu {
 
 impl SlotComponent<SubMenuState> for GSubMenu {
     type Part = SubMenuPart;
+
+    fn merge_prop_to_slot(&mut self) -> () {
+        self.header.style.basic = self.style.basic.header;
+        self.header.style.pressed = self.style.active.header;
+        self.header.style.disabled = self.style.disabled.header;
+        self.body.style.basic = self.style.basic.body;
+        self.body.style.pressed = self.style.active.body;
+        self.body.style.disabled = self.style.disabled.body;
+    }
 }
 
 impl Component for GSubMenu {
@@ -292,12 +301,7 @@ impl Component for GSubMenu {
     fn merge_conf_prop(&mut self, cx: &mut Cx) -> () {
         let style = &cx.global::<Conf>().components.sub_menu;
         self.style = style.clone();
-        self.header.style.basic = self.style.basic.header;
-        self.header.style.pressed = self.style.active.header;
-        self.header.style.disabled = self.style.disabled.header;
-        self.body.style.basic = self.style.basic.body;
-        self.body.style.pressed = self.style.active.body;
-        self.body.style.disabled = self.style.disabled.body;
+        self.merge_prop_to_slot();
     }
 
     fn render(&mut self, cx: &mut Cx) -> Result<(), Self::Error> {

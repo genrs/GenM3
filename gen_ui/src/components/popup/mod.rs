@@ -1,9 +1,9 @@
 mod container;
 mod prop;
- mod register;
+mod register;
 
-pub use prop::*;
 pub use container::*;
+pub use prop::*;
 pub use register::register as popup_register;
 
 use makepad_widgets::*;
@@ -17,7 +17,7 @@ use crate::{
     },
     error::Error,
     lifecycle,
-    prop::{manuel::BASIC, ApplyStateMap, CloseMode, DeferWalks, Position},
+    prop::{ApplyStateMap, CloseMode, DeferWalks, Position, manuel::BASIC},
     pure_after_apply, set_index, set_scope_path,
     shader::draw_popup::DrawPopup,
     themes::conf::Conf,
@@ -203,6 +203,10 @@ impl PopupComponent for GPopup {
         if !self.sync {
             return;
         }
+        self.focus_sync();
+    }
+
+    fn focus_sync(&mut self) -> () {
         self.style.sync(&self.apply_state_map);
     }
 

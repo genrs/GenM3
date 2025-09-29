@@ -241,10 +241,23 @@ impl LiveHook for GTabbarItem {
             },
         );
     }
+
+    fn after_update_from_doc(&mut self, _cx: &mut Cx) {
+        self.merge_prop_to_slot();
+    }
 }
 
 impl SlotComponent<TabbarItemState> for GTabbarItem {
     type Part = TabbarItemPart;
+
+    fn merge_prop_to_slot(&mut self) -> () {
+        self.icon.style.basic = self.style.basic.icon;
+        self.icon.style.hover = self.style.hover.icon;
+        self.icon.style.pressed = self.style.active.icon;
+        self.icon.style.disabled = self.style.disabled.icon;
+        self.text.style.basic = self.style.basic.text;
+        self.text.style.disabled = self.style.disabled.text;
+    }
 }
 
 impl Component for GTabbarItem {
@@ -255,12 +268,7 @@ impl Component for GTabbarItem {
     fn merge_conf_prop(&mut self, cx: &mut Cx) -> () {
         let style = &cx.global::<Conf>().components.tabbar_item;
         self.style = style.clone();
-        self.icon.style.basic = self.style.basic.icon;
-        self.icon.style.hover = self.style.hover.icon;
-        self.icon.style.pressed = self.style.active.icon;
-        self.icon.style.disabled = self.style.disabled.icon;
-        self.text.style.basic = self.style.basic.text;
-        self.text.style.disabled = self.style.disabled.text;
+        self.merge_prop_to_slot();
     }
 
     fn render(&mut self, cx: &mut Cx) -> Result<(), Self::Error> {

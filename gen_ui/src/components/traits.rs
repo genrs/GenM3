@@ -5,8 +5,8 @@ use std::{
 };
 
 use makepad_widgets::{
-    error, live_id, Area, Cx, Cx2d, DVec2, Event, HeapLiveIdPath, Hit, Layout, LiveId,
-    LiveIdAsProp, LiveNode, LiveValue, Scope, Walk, Widget, WidgetNode,
+    Area, Cx, Cx2d, DVec2, Event, HeapLiveIdPath, Hit, Layout, LiveId, LiveIdAsProp, LiveNode,
+    LiveValue, Scope, Walk, Widget, WidgetNode, error, live_id,
 };
 
 use crate::{
@@ -16,8 +16,8 @@ use crate::{
     },
     error::Error,
     prop::{
-        insert_map, ApplySlotMap, ApplySlotMapImpl, ApplyStateMap, ApplyStateMapImpl, Applys,
-        Position, PropMap, SlotMap,
+        ApplySlotMap, ApplySlotMapImpl, ApplyStateMap, ApplyStateMapImpl, Applys, Position,
+        PropMap, SlotMap, insert_map,
     },
     themes::Theme,
 };
@@ -86,6 +86,8 @@ where
     /// ## sync component properties
     /// do before render component
     fn sync(&mut self) -> ();
+    /// ## focus do sync fn again
+    fn focus_sync(&mut self) -> ();
     fn lifecycle(&self) -> LifeCycle;
     fn set_index(&mut self, index: usize) -> ();
     /// ## get current state of component
@@ -246,6 +248,10 @@ where
             self, nodes, index,  prefixs, part_props, next_or, insert,
         );
     }
+    /// ## merge prop to slot component
+    /// - always use in `Component`::`fn merge_conf_prop`
+    /// - auto use in `fn after_apply_from_doc`
+    fn merge_prop_to_slot(&mut self) -> ();
 }
 
 /// # Style

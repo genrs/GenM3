@@ -11,24 +11,24 @@ pub use register::register as checkbox_register;
 use makepad_widgets::*;
 
 use crate::{
-    active_event, animation_open_then_redraw,
+    ComponentAnInit, active_event, animation_open_then_redraw,
     components::{
         lifecycle::LifeCycle,
-        traits::{BasicStyle, Component, Style, SlotComponent, SlotStyle},
+        traits::{BasicStyle, Component, SlotComponent, SlotStyle, Style},
         view::{GView, ViewBasicStyle},
     },
     error::Error,
     event_option, lifecycle, play_animation,
     prop::{
+        ApplyMapImpl, ApplySlotMap, ApplySlotMapImpl, ToStateMap,
         manuel::{ACTIVE, BASIC, DISABLED, HOVER},
         traits::ToFloat,
-        ApplyMapImpl, ApplySlotMap, ApplySlotMapImpl, ToStateMap,
     },
     pure_after_apply, set_animation, set_index, set_scope_path,
     shader::{draw_checkbox::DrawCheckbox, draw_view::DrawView},
     sync,
     themes::conf::Conf,
-    visible, ComponentAnInit,
+    visible,
 };
 
 live_design! {
@@ -186,7 +186,8 @@ impl Widget for GCheckbox {
             let state = self.state;
             let style = self.style.get(state);
 
-            self.draw_container.begin(cx, walk, style.container.layout());
+            self.draw_container
+                .begin(cx, walk, style.container.layout());
             if !self.reverse {
                 if self.checkbox_visible {
                     self.draw_checkbox
@@ -276,10 +277,20 @@ impl LiveHook for GCheckbox {
             },
         );
     }
+
+    fn after_update_from_doc(&mut self, _cx: &mut Cx) {
+        self.merge_prop_to_slot();
+    }
 }
 
 impl SlotComponent<CheckboxState> for GCheckbox {
     type Part = CheckboxPart;
+
+    fn merge_prop_to_slot(&mut self) -> () {
+        self.extra.style.basic = self.style.basic.extra;
+        self.extra.style.hover = self.style.hover.extra;
+        self.extra.style.pressed = self.style.active.extra;
+    }
 }
 
 impl Component for GCheckbox {
@@ -290,9 +301,7 @@ impl Component for GCheckbox {
     fn merge_conf_prop(&mut self, cx: &mut Cx) -> () {
         let style = &cx.global::<Conf>().components.checkbox;
         self.style = style.clone();
-        self.extra.style.basic = self.style.basic.extra;
-        self.extra.style.hover = self.style.hover.extra;
-        self.extra.style.pressed = self.style.active.extra;
+        self.merge_prop_to_slot();
     }
 
     fn render(&mut self, cx: &mut Cx) -> Result<(), Self::Error> {

@@ -271,6 +271,10 @@ impl LiveHook for GMenu {
             self.find_active();
         }
     }
+
+    fn after_update_from_doc(&mut self, _cx: &mut Cx) {
+        self.merge_prop_to_slot();
+    }
 }
 
 impl Component for GMenu {
@@ -281,9 +285,7 @@ impl Component for GMenu {
     fn merge_conf_prop(&mut self, cx: &mut Cx) -> () {
         let style = &cx.global::<Conf>().components.menu;
         self.style = style.clone();
-        self.header.style.basic = self.style.basic.header;
-        self.body.style.basic = self.style.basic.body;
-        self.footer.style.basic = self.style.basic.footer;
+        self.merge_prop_to_slot();
     }
 
     fn render(&mut self, _cx: &mut Cx) -> Result<(), Self::Error> {
@@ -342,6 +344,12 @@ impl Component for GMenu {
 
 impl SlotComponent<MenuState> for GMenu {
     type Part = MenuPart;
+
+    fn merge_prop_to_slot(&mut self) -> () {
+        self.header.style.basic = self.style.basic.header;
+        self.body.style.basic = self.style.basic.body;
+        self.footer.style.basic = self.style.basic.footer;
+    }
 }
 
 impl GMenu {

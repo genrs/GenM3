@@ -7,15 +7,25 @@ pub use prop::*;
 use makepad_widgets::*;
 
 use crate::{
-    active_event, animation_open_then_redraw, area, area_ref, components::{
+    ComponentAnInit, active_event, animation_open_then_redraw, area, area_ref,
+    components::{
         lifecycle::LifeCycle,
-        traits::{BasicStyle, Component, Style, SlotComponent, SlotStyle},
+        traits::{BasicStyle, Component, SlotComponent, SlotStyle, Style},
         view::{GView, ViewBasicStyle, ViewState},
-    }, error::Error, event_option, event_option_ref, getter_setter_ref, hit_hover_in, hit_hover_out, lifecycle, play_animation, prop::{
+    },
+    error::Error,
+    event_option, event_option_ref, getter_setter_ref, hit_hover_in, hit_hover_out, lifecycle,
+    play_animation,
+    prop::{
+        ApplyMapImpl, ApplySlotMap, ApplySlotMapImpl, DeferWalks, SlotDrawer, ToStateMap,
         manuel::{BASIC, HOVER},
         traits::ToFloat,
-        ApplyMapImpl, ApplySlotMap, ApplySlotMapImpl, DeferWalks, SlotDrawer, ToStateMap,
-    }, pure_after_apply, set_animation, set_index, set_scope_path, shader::draw_view::DrawView, sync, themes::conf::Conf, visible, ComponentAnInit
+    },
+    pure_after_apply, set_animation, set_index, set_scope_path,
+    shader::draw_view::DrawView,
+    sync,
+    themes::conf::Conf,
+    visible,
 };
 
 live_design! {
@@ -242,6 +252,10 @@ impl LiveHook for GCard {
             },
         );
     }
+
+    fn after_update_from_doc(&mut self, _cx: &mut Cx) {
+        self.merge_prop_to_slot();
+    }
 }
 
 impl Component for GCard {
@@ -252,12 +266,7 @@ impl Component for GCard {
     fn merge_conf_prop(&mut self, cx: &mut Cx) -> () {
         let style = &cx.global::<Conf>().components.card;
         self.style = style.clone();
-        self.header.style.basic = self.style.basic.header.into();
-        self.header.style.hover = self.style.hover.header.into();
-        self.body.style.basic = self.style.basic.body.into();
-        self.body.style.hover = self.style.hover.body.into();
-        self.footer.style.basic = self.style.basic.footer.into();
-        self.footer.style.hover = self.style.hover.footer.into();
+        self.merge_prop_to_slot();
     }
 
     fn render(&mut self, _cx: &mut Cx) -> Result<(), Self::Error> {
@@ -434,6 +443,15 @@ impl Component for GCard {
 
 impl SlotComponent<CardState> for GCard {
     type Part = CardPart;
+
+    fn merge_prop_to_slot(&mut self) -> () {
+        self.header.style.basic = self.style.basic.header.into();
+        self.header.style.hover = self.style.hover.header.into();
+        self.body.style.basic = self.style.basic.body.into();
+        self.body.style.hover = self.style.hover.body.into();
+        self.footer.style.basic = self.style.basic.footer.into();
+        self.footer.style.hover = self.style.hover.footer.into();
+    }
 }
 
 impl GCard {

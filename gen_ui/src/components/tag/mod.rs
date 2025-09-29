@@ -6,28 +6,28 @@ use makepad_widgets::*;
 pub use prop::*;
 
 use crate::{
-    active_event, animation_open_then_redraw,
+    ComponentAnInit, active_event, animation_open_then_redraw,
     components::{
         label::{GLabel, LabelBasicStyle},
         lifecycle::LifeCycle,
         svg::{GSvg, SvgBasicStyle},
-        traits::{BasicStyle, Component, Style, SlotComponent, SlotStyle},
+        traits::{BasicStyle, Component, SlotComponent, SlotStyle, Style},
         view::ViewBasicStyle,
     },
     error::Error,
     event_option, event_option_ref, hit_finger_down, hit_hover_in, hit_hover_out, lifecycle,
     play_animation,
     prop::{
-        manuel::{BASIC, DISABLED, HOVER, PRESSED},
-        traits::{RectExp, ToFloat},
         ApplyMapImpl, ApplySlotMap, ApplySlotMapImpl, ApplySlotMergeImpl, DeferWalks, SlotDrawer,
         ToSlotMap, ToStateMap,
+        manuel::{BASIC, DISABLED, HOVER, PRESSED},
+        traits::{RectExp, ToFloat},
     },
     pure_after_apply, set_animation, set_index, set_scope_path,
     shader::draw_view::DrawView,
     sync,
     themes::conf::Conf,
-    visible, ComponentAnInit,
+    visible,
 };
 
 live_design! {
@@ -213,20 +213,16 @@ impl LiveHook for GTag {
             },
         );
     }
+
+    fn after_update_from_doc(&mut self, _cx: &mut Cx) {
+        self.merge_prop_to_slot();
+    }
 }
 
 impl SlotComponent<TagState> for GTag {
     type Part = TagPart;
-}
 
-impl Component for GTag {
-    type Error = Error;
-
-    type State = TagState;
-
-    fn merge_conf_prop(&mut self, cx: &mut Cx) -> () {
-        let style = &cx.global::<Conf>().components.tag;
-        self.style = style.clone();
+    fn merge_prop_to_slot(&mut self) -> () {
         self.icon.style.basic = self.style.basic.icon;
         self.icon.style.hover = self.style.hover.icon;
         self.icon.style.pressed = self.style.pressed.icon;
@@ -237,6 +233,18 @@ impl Component for GTag {
         self.close.style.hover = self.style.hover.close;
         self.close.style.pressed = self.style.pressed.close;
         self.close.style.disabled = self.style.disabled.close;
+    }
+}
+
+impl Component for GTag {
+    type Error = Error;
+
+    type State = TagState;
+
+    fn merge_conf_prop(&mut self, cx: &mut Cx) -> () {
+        let style = &cx.global::<Conf>().components.tag;
+        self.style = style.clone();
+        self.merge_prop_to_slot();
     }
 
     fn render(&mut self, cx: &mut Cx) -> Result<(), Self::Error> {

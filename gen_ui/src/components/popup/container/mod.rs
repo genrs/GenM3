@@ -93,6 +93,10 @@ impl PopupComponent for GPopupContainer {
         if !self.sync {
             return;
         }
+        self.focus_sync();
+    }
+
+    fn focus_sync(&mut self) -> () {
         self.style.sync(&self.apply_state_map);
     }
 

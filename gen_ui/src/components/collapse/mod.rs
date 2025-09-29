@@ -7,15 +7,24 @@ pub use prop::*;
 use makepad_widgets::*;
 
 use crate::{
-    active_event, area, components::{
+    ComponentAnInit, active_event, area,
+    components::{
         lifecycle::LifeCycle,
-        traits::{BasicStyle, Component, Style, SlotComponent, SlotStyle},
+        traits::{BasicStyle, Component, SlotComponent, SlotStyle, Style},
         view::{GView, ViewBasicStyle},
-    }, error::Error, event_option, event_option_ref, lifecycle, play_animation, prop::{
+    },
+    error::Error,
+    event_option, event_option_ref, lifecycle, play_animation,
+    prop::{
+        ApplyMapImpl, ApplySlotMap, ApplySlotMapImpl, Position4, ToStateMap,
         manuel::{ACTIVE, BASIC, DISABLED, HOVER},
         traits::ToFloat,
-        ApplyMapImpl, ApplySlotMap, ApplySlotMapImpl, Position4, ToStateMap,
-    }, pure_after_apply, set_animation, set_index, set_scope_path, shader::draw_view::DrawView, sync, themes::conf::Conf, visible, ComponentAnInit
+    },
+    pure_after_apply, set_animation, set_index, set_scope_path,
+    shader::draw_view::DrawView,
+    sync,
+    themes::conf::Conf,
+    visible,
 };
 
 live_design! {
@@ -378,6 +387,10 @@ impl LiveHook for GCollapse {
             },
         );
     }
+    
+    fn after_update_from_doc(&mut self, _cx: &mut Cx) {
+        self.merge_prop_to_slot();
+    }
 }
 
 impl GCollapse {
@@ -411,7 +424,7 @@ impl GCollapse {
 }
 
 impl GCollapseRef {
-    event_option_ref!{
+    event_option_ref! {
         hover_in => CollapseHoverIn,
         hover_out => CollapseHoverOut,
         changed => CollapseChanged
@@ -420,6 +433,17 @@ impl GCollapseRef {
 
 impl SlotComponent<CollapseState> for GCollapse {
     type Part = CollapsePart;
+
+    fn merge_prop_to_slot(&mut self) -> () {
+        self.header.style.basic = self.style.basic.header;
+        self.header.style.hover = self.style.hover.header;
+        self.header.style.pressed = self.style.active.header;
+        self.header.style.disabled = self.style.disabled.header;
+        self.body.style.basic = self.style.basic.body;
+        self.body.style.hover = self.style.hover.body;
+        self.body.style.pressed = self.style.active.body;
+        self.body.style.disabled = self.style.disabled.body;
+    }
 }
 
 impl Component for GCollapse {
@@ -430,14 +454,7 @@ impl Component for GCollapse {
     fn merge_conf_prop(&mut self, cx: &mut Cx) -> () {
         let style = &cx.global::<Conf>().components.collapse;
         self.style = style.clone();
-        self.header.style.basic = self.style.basic.header;
-        self.header.style.hover = self.style.hover.header;
-        self.header.style.pressed = self.style.active.header;
-        self.header.style.disabled = self.style.disabled.header;
-        self.body.style.basic = self.style.basic.body;
-        self.body.style.hover = self.style.hover.body;
-        self.body.style.pressed = self.style.active.body;
-        self.body.style.disabled = self.style.disabled.body;
+        self.merge_prop_to_slot();
     }
 
     fn render(&mut self, cx: &mut Cx) -> Result<(), Self::Error> {

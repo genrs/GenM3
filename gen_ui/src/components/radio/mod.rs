@@ -11,24 +11,24 @@ pub use register::register as radio_register;
 use makepad_widgets::*;
 
 use crate::{
-    active_event, animation_open_then_redraw,
+    ComponentAnInit, active_event, animation_open_then_redraw,
     components::{
         lifecycle::LifeCycle,
-        traits::{BasicStyle, Component, Style, SlotComponent, SlotStyle},
+        traits::{BasicStyle, Component, SlotComponent, SlotStyle, Style},
         view::{GView, ViewBasicStyle},
     },
     error::Error,
     event_option, hit_hover_in, hit_hover_out, lifecycle, play_animation,
     prop::{
+        ApplyMapImpl, ApplySlotMap, ApplySlotMapImpl, ToStateMap,
         manuel::{ACTIVE, BASIC, DISABLED, HOVER},
         traits::ToFloat,
-        ApplyMapImpl, ApplySlotMap, ApplySlotMapImpl, ToStateMap,
     },
     pure_after_apply, set_animation, set_index, set_scope_path,
     shader::{draw_radio::DrawRadio, draw_view::DrawView},
     sync,
     themes::conf::Conf,
-    visible, ComponentAnInit,
+    visible,
 };
 
 live_design! {
@@ -197,6 +197,7 @@ impl Widget for GRadio {
             if self.extra.visible {
                 self.extra.disabled = self.disabled;
                 let _ = self.extra.draw_walk(cx, scope, style.extra.walk());
+                // dbg!(self.extra.style.basic);
             }
             if self.reverse {
                 if self.radio_visible {
@@ -234,7 +235,7 @@ impl LiveHook for GRadio {
         self.merge_conf_prop(cx);
     }
 
-    fn after_apply(&mut self, _cx: &mut Cx, _apply: &mut Apply, index: usize, nodes: &[LiveNode]) {
+    fn after_apply(&mut self, _cx: &mut Cx, apply: &mut Apply, index: usize, nodes: &[LiveNode]) {
         self.set_apply_slot_map(
             nodes,
             index,
@@ -269,10 +270,20 @@ impl LiveHook for GRadio {
             },
         );
     }
+
+    fn after_update_from_doc(&mut self, _cx: &mut Cx) {
+        self.merge_prop_to_slot();
+    }
 }
 
 impl SlotComponent<RadioState> for GRadio {
     type Part = RadioPart;
+
+    fn merge_prop_to_slot(&mut self) -> () {
+        self.extra.style.basic = self.style.basic.extra;
+        self.extra.style.hover = self.style.hover.extra;
+        self.extra.style.pressed = self.style.active.extra;
+    }
 }
 
 impl Component for GRadio {
@@ -283,9 +294,7 @@ impl Component for GRadio {
     fn merge_conf_prop(&mut self, cx: &mut Cx) -> () {
         let style = &cx.global::<Conf>().components.radio;
         self.style = style.clone();
-        self.extra.style.basic = self.style.basic.extra;
-        self.extra.style.hover = self.style.hover.extra;
-        self.extra.style.pressed = self.style.active.extra;
+        self.merge_prop_to_slot();
     }
 
     fn render(&mut self, cx: &mut Cx) -> Result<(), Self::Error> {

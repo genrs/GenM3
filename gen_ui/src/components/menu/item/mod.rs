@@ -1,28 +1,28 @@
 mod prop;
 
 use crate::{
-    active_event, animation_open_then_redraw,
+    ComponentAnInit, active_event, animation_open_then_redraw,
     components::{
         label::{GLabel, LabelBasicStyle},
         lifecycle::LifeCycle,
         menu::event::{MenuItemClicked, MenuItemEvent, MenuItemHoverIn, MenuItemHoverOut},
         svg::{GSvg, SvgBasicStyle},
-        traits::{BasicStyle, Component, Style, SlotComponent, SlotStyle},
+        traits::{BasicStyle, Component, SlotComponent, SlotStyle, Style},
         view::{GView, ViewBasicStyle},
     },
     error::Error,
     event_option, getter, hit_hover_in, hit_hover_out, lifecycle, play_animation,
     prop::{
-        manuel::{ACTIVE, BASIC, DISABLED, HOVER},
-        traits::ToFloat,
         ApplyMapImpl, ApplySlotMap, ApplySlotMapImpl, ApplySlotMergeImpl, DeferWalks, SlotDrawer,
         ToSlotMap, ToStateMap,
+        manuel::{ACTIVE, BASIC, DISABLED, HOVER},
+        traits::ToFloat,
     },
     pure_after_apply, set_animation, set_index, set_scope_path, setter,
     shader::draw_view::DrawView,
     sync,
     themes::conf::Conf,
-    visible, ComponentAnInit,
+    visible,
 };
 use makepad_widgets::*;
 pub use prop::*;
@@ -241,7 +241,12 @@ impl LiveHook for GMenuItem {
         self.set_apply_slot_map(
             nodes,
             index,
-            [live_id!(basic), live_id!(hover), live_id!(active), live_id!(disabled)],
+            [
+                live_id!(basic),
+                live_id!(hover),
+                live_id!(active),
+                live_id!(disabled),
+            ],
             [
                 (MenuItemPart::Container, &live_props),
                 (MenuItemPart::Icon, &SvgBasicStyle::live_props()),
@@ -274,6 +279,10 @@ impl LiveHook for GMenuItem {
             },
         );
     }
+
+    fn after_update_from_doc(&mut self, _cx: &mut Cx) {
+        self.merge_prop_to_slot();
+    }
 }
 
 impl Component for GMenuItem {
@@ -284,16 +293,7 @@ impl Component for GMenuItem {
     fn merge_conf_prop(&mut self, cx: &mut Cx) -> () {
         let style = &cx.global::<Conf>().components.menu_item;
         self.style = style.clone();
-        self.icon.style.basic = self.style.basic.icon;
-        self.icon.style.hover = self.style.hover.icon;
-        self.icon.style.pressed = self.style.active.icon;
-        self.icon.style.disabled = self.style.disabled.icon;
-        self.text.style.basic = self.style.basic.text;
-        self.text.style.disabled = self.style.disabled.text;
-        self.extra.style.basic = self.style.basic.extra;
-        self.extra.style.hover = self.style.hover.extra;
-        self.extra.style.pressed = self.style.active.extra;
-        self.extra.style.disabled = self.style.disabled.extra;
+        self.merge_prop_to_slot();
     }
 
     fn render(&mut self, cx: &mut Cx) -> Result<(), Self::Error> {
@@ -577,6 +577,19 @@ impl Component for GMenuItem {
 
 impl SlotComponent<MenuItemState> for GMenuItem {
     type Part = MenuItemPart;
+
+    fn merge_prop_to_slot(&mut self) -> () {
+        self.icon.style.basic = self.style.basic.icon;
+        self.icon.style.hover = self.style.hover.icon;
+        self.icon.style.pressed = self.style.active.icon;
+        self.icon.style.disabled = self.style.disabled.icon;
+        self.text.style.basic = self.style.basic.text;
+        self.text.style.disabled = self.style.disabled.text;
+        self.extra.style.basic = self.style.basic.extra;
+        self.extra.style.hover = self.style.hover.extra;
+        self.extra.style.pressed = self.style.active.extra;
+        self.extra.style.disabled = self.style.disabled.extra;
+    }
 }
 
 impl GMenuItem {

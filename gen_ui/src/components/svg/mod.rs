@@ -233,10 +233,18 @@ impl LiveHook for GSvg {
             },
         );
     }
+
+    fn after_update_from_doc(&mut self, _cx: &mut Cx) {
+        self.merge_prop_to_slot();
+    }
 }
 
 impl SlotComponent<SvgState> for GSvg {
     type Part = SvgPart;
+
+    fn merge_prop_to_slot(&mut self) -> () {
+        ()
+    }
 }
 
 impl Component for GSvg {
@@ -247,6 +255,7 @@ impl Component for GSvg {
     fn merge_conf_prop(&mut self, cx: &mut Cx) -> () {
         let style = &cx.global::<Conf>().components.svg;
         self.style = style.clone();
+        self.merge_prop_to_slot();
     }
 
     fn render(&mut self, _cx: &mut Cx) -> Result<(), Self::Error> {

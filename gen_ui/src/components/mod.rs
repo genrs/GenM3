@@ -26,6 +26,7 @@ mod view;
 mod color_picker;
 mod slider;
 mod progress;
+// mod rate;
 
 pub use color_picker::*;
 pub use button::*;
@@ -52,6 +53,7 @@ pub use traits::*;
 pub use view::*;
 pub use progress::*;
 pub use loading::*;
+// pub use rate::*;
 pub use slider::*;
 
 use crate::component;
