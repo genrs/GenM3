@@ -26,7 +26,7 @@ mod view;
 mod color_picker;
 mod slider;
 mod progress;
-// mod rate;
+mod rate;
 
 pub use color_picker::*;
 pub use button::*;
@@ -53,7 +53,7 @@ pub use traits::*;
 pub use view::*;
 pub use progress::*;
 pub use loading::*;
-// pub use rate::*;
+pub use rate::*;
 pub use slider::*;
 
 use crate::component;
@@ -578,6 +578,8 @@ live_design! {
     pub GLoading = <GLoadingBase> {}
 
     pub GSlider = <GSliderBase> {}
+
+    pub GRate = <GRateBase> {}
 }
 
 pub fn components_register(cx: &mut Cx) {
@@ -604,6 +606,7 @@ pub fn components_register(cx: &mut Cx) {
     progress::live_design(cx);
     loading::live_design(cx);
     slider::live_design(cx);
+    rate::live_design(cx);
 }
 
 component! {

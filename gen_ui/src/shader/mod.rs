@@ -11,6 +11,7 @@ pub mod draw_slider;
 pub mod draw_svg;
 pub mod draw_switch;
 pub mod draw_view;
+pub mod draw_rate;
 
 use makepad_widgets::Cx;
 
@@ -27,5 +28,6 @@ pub fn shader_register(cx: &mut Cx) {
     draw_slider::live_design(cx);
     draw_color_picker::live_design(cx);
     draw_loading::live_design(cx);
+    draw_rate::live_design(cx);
     animation::live_design(cx);
 }

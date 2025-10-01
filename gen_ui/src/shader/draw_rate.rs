@@ -1,9 +1,3 @@
-# GenM3
-
-- version: `v0.1.0`
-- author: [Will-YiFei Sheng](syf20020816@outlook.com)
-
-```
 use makepad_widgets::*;
 
 use crate::components::RateBasicStyle;
@@ -16,13 +10,13 @@ live_design! {
 
         fn pixel(self) -> vec4 {
             let sdf = Sdf2d::viewport(self.pos * self.rect_size);
-            
+
             // Calculate star size and spacing
             let available_width = self.rect_size.x - self.spacing * (self.count - 1.0);
             let star_size = available_width / self.count;
             let star_radius = min(star_size * 0.4, self.rect_size.y * 0.4);
             let inner_radius = star_radius * 0.5;
-            
+
             // Calculate starting position to center the stars
             let total_width = self.count * star_size + self.spacing * (self.count - 1.0);
             let start_x = (self.rect_size.x - total_width) * 0.5 + star_size * 0.5;
@@ -30,8 +24,8 @@ live_design! {
 
             let angle_outer = -PI * 0.5; // Start from top
             let angle_step = PI * 0.4; // 72 degrees between outer points
-            
-            // // Draw multiple stars
+
+            // Draw multiple stars - each star independently to avoid accumulation
             for i in 0..5 {
                 let star_center_x = start_x + float(i) * (star_size + self.spacing);
                 let star_center = vec2(star_center_x, center_y);
@@ -47,8 +41,8 @@ live_design! {
                 let p7 = star_center + vec2(cos(angle_outer + angle_step * 3.5) * inner_radius, sin(angle_outer + angle_step * 3.5) * inner_radius);
                 let p8 = star_center + vec2(cos(angle_outer + angle_step * 4.0) * star_radius, sin(angle_outer + angle_step * 4.0) * star_radius);
                 let p9 = star_center + vec2(cos(angle_outer + angle_step * 4.5) * inner_radius, sin(angle_outer + angle_step * 4.5) * inner_radius);
-                
-                // Draw the star outline
+
+                // Create a fresh SDF path for each star to avoid accumulation effects
                 sdf.move_to(p0.x, p0.y);
                 sdf.line_to(p1.x, p1.y);
                 sdf.line_to(p2.x, p2.y);
@@ -60,11 +54,11 @@ live_design! {
                 sdf.line_to(p8.x, p8.y);
                 sdf.line_to(p9.x, p9.y);
                 sdf.close_path();
-                
-                // Use stroke to draw the star outline
-                sdf.stroke_keep(self.color, 1.0);
+
+                // Use stroke (without _keep) to render this star independently
+                sdf.stroke(self.color, 1.0);
             }
-            
+
             return sdf.result;
         }
     }

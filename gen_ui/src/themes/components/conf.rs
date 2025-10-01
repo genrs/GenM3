@@ -2,11 +2,11 @@ use toml_edit::Table;
 
 use crate::components::panel::ColorPanelStyle;
 use crate::components::{
-    ButtonStyle, CardStyle, CheckboxProp, CollapseStyle, DividerProp, ImageProp, LabelProp, LinkProp, LoadingStyle, MenuItemProp, MenuProp, PopupContainerProp, PopupProp, ProgressStyle, RadioProp, SliderStyle, SubMenuProp, SvgStyle, SwitchProp, TabbarItemProp, TabbarProp, TagProp, ViewStyle
+    ButtonStyle, CardStyle, CheckboxProp, CollapseStyle, DividerProp, ImageProp, LabelProp, LinkProp, LoadingStyle, MenuItemProp, MenuProp, PopupContainerProp, PopupProp, ProgressStyle, RadioProp, RateStyle, SliderStyle, SubMenuProp, SvgStyle, SwitchProp, TabbarItemProp, TabbarProp, TagProp, ViewStyle
 };
 use crate::error::Error;
 use crate::prop::manuel::{
-    BUTTON, CARD, CHECKBOX, COLLAPSE, COLOR_PANEL, DIVIDER, IMAGE, LABEL, LINK, LOADING, MENU, MENU_ITEM, POPUP, POPUP_CONTAINER, PROGRESS, RADIO, SLIDER, SUB_MENU, SVG, SWITCH, TABBAR, TABBAR_ITEM, TAG, VIEW
+    BUTTON, CARD, CHECKBOX, COLLAPSE, COLOR_PANEL, DIVIDER, IMAGE, LABEL, LINK, LOADING, MENU, MENU_ITEM, POPUP, POPUP_CONTAINER, PROGRESS, RADIO, RATE, SLIDER, SUB_MENU, SVG, SWITCH, TABBAR, TABBAR_ITEM, TAG, VIEW
 };
 use crate::try_from_toml_item;
 
@@ -35,7 +35,8 @@ pub struct ComponentsConf {
     pub progress: ProgressStyle,
     pub slider: SliderStyle,
     pub loading: LoadingStyle,
-    pub color_panel: ColorPanelStyle
+    pub color_panel: ColorPanelStyle,
+    pub rate: RateStyle
 }
 
 try_from_toml_item! {
@@ -63,7 +64,8 @@ try_from_toml_item! {
         progress => PROGRESS, ProgressStyle::default(), |item| item.try_into(),
         slider => SLIDER, SliderStyle::default(), |item| item.try_into(),
         loading => LOADING, LoadingStyle::default(), |item| item.try_into(),
-        color_panel => COLOR_PANEL, ColorPanelStyle::default(), |item| item.try_into()
+        color_panel => COLOR_PANEL, ColorPanelStyle::default(), |item| item.try_into(),
+        rate => RATE, RateStyle::default(), |item| item.try_into()
     }, "[components] should be a table"
 }
 

@@ -151,8 +151,7 @@ impl Widget for GButton {
             return DrawStep::done();
         }
 
-        let state = self.state;
-        let style = self.style.get(state);
+        let style = self.style.get(self.state);
         let _ = self.draw_button.begin(cx, walk, style.layout());
 
         if self.slot.visible() {
