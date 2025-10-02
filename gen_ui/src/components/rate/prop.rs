@@ -177,24 +177,7 @@ impl BasicStyle for RateBasicStyle {
     fn live_props() -> LiveProps {
         vec![
             (live_id!(theme), None.into()),
-            (live_id!(background_color), None.into()),
-            (live_id!(border_color), None.into()),
-            (
-                live_id!(border_radius),
-                Some(vec![
-                    live_id!(top),
-                    live_id!(bottom),
-                    live_id!(left),
-                    live_id!(right),
-                ])
-                .into(),
-            ),
-            (live_id!(border_width), None.into()),
-            (live_id!(shadow_color), None.into()),
-            (live_id!(spread_radius), None.into()),
-            (live_id!(blur_radius), None.into()),
-            (live_id!(shadow_offset), None.into()),
-            (live_id!(background_visible), None.into()),
+            (live_id!(color), None.into()),
             (live_id!(cursor), None.into()),
             (live_id!(width), None.into()),
             (live_id!(height), None.into()),

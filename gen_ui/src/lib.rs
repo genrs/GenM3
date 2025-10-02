@@ -54,4 +54,5 @@ pub struct ComponentAnInit {
     progress: bool,
     loading: bool,
     slider: bool,
+    rate: bool
 }

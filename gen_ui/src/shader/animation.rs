@@ -109,4 +109,11 @@ live_design!{
         proportion: 0.8,
         dragging: 0.0,
     }
+
+    pub AN_DRAW_RATE = {
+        color: #777777,
+        spacing: 4.0,
+        count: 5.0,
+        value: 0.0,
+    }
 }
