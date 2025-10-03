@@ -1,8 +1,17 @@
+mod prop;
+
+pub use prop::*;
+
 use makepad_widgets::*;
 
 use crate::{
-    components::{Component, LifeCycle},
+    components::{Component, GLabel, GSvg, LifeCycle},
     error::Error,
+    lifecycle, play_animation,
+    prop::ApplyStateMap,
+    set_index, set_scope_path,
+    shader::draw_view::DrawView,
+    switch_state, sync,
 };
 
 live_design! {
@@ -16,6 +25,10 @@ live_design! {
 pub struct GSelectItem {
     #[live]
     pub style: SelectItemStyle,
+    #[live]
+    pub active: bool,
+    #[live]
+    pub value: String,
     // --- visible -------------------
     #[live(true)]
     pub visible: bool,
@@ -32,6 +45,15 @@ pub struct GSelectItem {
     pub apply_state_map: ApplyStateMap<SelectItemState>,
     #[live]
     pub draw_item: DrawView,
+    // --- slot --------------------
+    /// prefix icon
+    #[live]
+    pub icon: GSvg,
+    #[live]
+    pub text: GLabel,
+    /// suffix icon
+    #[live]
+    pub suffix: GSvg,
     // --- animator ----------------
     #[live(true)]
     pub animation_open: bool,
@@ -76,15 +98,24 @@ impl WidgetNode for GSelectItem {
 }
 
 impl Widget for GSelectItem {
-    fn draw_walk(&mut self, _cx: &mut Cx2d, _scope: &mut Scope, _walk: Walk) -> DrawStep {}
+    fn draw_walk(&mut self, _cx: &mut Cx2d, scope: &mut Scope, _walk: Walk) -> DrawStep {
+        if !self.visible {
+            return DrawStep::done();
+        }
+
+        self.set_scope_path(&scope.path);
+        return DrawStep::done();
+    }
 
     fn handle_event(&mut self, _cx: &mut Cx, _event: &Event, _scope: &mut Scope) {}
 }
 
+impl LiveHook for GSelectItem {}
+
 impl Component for GSelectItem {
     type Error = Error;
 
-    type State;
+    type State = SelectItemState;
 
     fn merge_conf_prop(&mut self, cx: &mut Cx) -> () {
         todo!()
@@ -94,27 +125,11 @@ impl Component for GSelectItem {
         todo!()
     }
 
-    fn set_scope_path(&mut self, path: &HeapLiveIdPath) -> () {
-        todo!()
-    }
-
     fn handle_widget_event(&mut self, cx: &mut Cx, event: &Event, hit: Hit, area: Area) {
         todo!()
     }
 
-    fn play_animation(&mut self, cx: &mut Cx, state: &[LiveId; 2]) -> () {
-        todo!()
-    }
-
-    fn switch_state(&mut self, state: Self::State) -> () {
-        todo!()
-    }
-
     fn switch_state_with_animation(&mut self, cx: &mut Cx, state: Self::State) -> () {
-        todo!()
-    }
-
-    fn sync(&mut self) -> () {
         todo!()
     }
 
@@ -126,11 +141,10 @@ impl Component for GSelectItem {
         todo!()
     }
 
-    fn lifecycle(&self) -> crate::components::LifeCycle {
-        todo!()
-    }
-
-    fn set_index(&mut self, index: usize) -> () {
-        todo!()
-    }
+    sync!();
+    play_animation!();
+    set_scope_path!();
+    set_index!();
+    lifecycle!();
+    switch_state!();
 }

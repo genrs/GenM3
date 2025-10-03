@@ -6,7 +6,6 @@ use crate::{
         live_props::LiveProps,
         traits::{BasicStyle, ComponentState, Style},
     },
-    error::Error,
     get_get_mut, getter_setter_prop, inherits_view_basic_prop,
     prop::{
         manuel::{

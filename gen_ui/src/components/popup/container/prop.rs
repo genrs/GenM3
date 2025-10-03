@@ -8,7 +8,6 @@ use crate::{
         traits::{BasicStyle, ComponentState, Style},
         view::ViewBasicStyle,
     },
-    error::Error,
     prop::{
         manuel::{
             ABS_POS, ALIGN, BACKGROUND_COLOR, BACKGROUND_VISIBLE, BASIC, CLIP_X, CLIP_Y, CURSOR,

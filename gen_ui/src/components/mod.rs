@@ -44,7 +44,7 @@ pub use menu::*;
 pub use popup::*;
 pub use radio::*;
 pub use router::*;
-// pub use select::*;
+pub use select::*;
 pub use svg::*;
 pub use switch::*;
 pub use tabbar::*;
@@ -607,6 +607,7 @@ pub fn components_register(cx: &mut Cx) {
     loading::live_design(cx);
     slider::live_design(cx);
     rate::live_design(cx);
+    select::select_register(cx);
 }
 
 component! {

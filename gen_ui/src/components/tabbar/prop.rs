@@ -7,7 +7,6 @@ use crate::{
         traits::{BasicStyle, ComponentState, Style},
         ViewBasicStyle, ViewState,
     },
-    error::Error,
     from_inherit_to_view_basic_prop, get_get_mut, inherits_view_basic_prop,
     prop::{
         manuel::{

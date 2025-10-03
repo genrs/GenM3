@@ -96,7 +96,7 @@ macro_rules! component_part {
             ),*
         }
 
-        impl Part for $part {
+        impl crate::components::traits::Part for $part {
             type State = $state;
             fn to_live_id(&self) -> LiveId {
                 match self {
