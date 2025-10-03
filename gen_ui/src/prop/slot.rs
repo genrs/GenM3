@@ -1,16 +1,16 @@
 use makepad_widgets::{Cx2d, DeferWalk, LiveId, Scope};
 
-use crate::{components::LComponent, prop::DeferWalks};
+use crate::{components::GComponent, prop::DeferWalks};
 
 pub struct SlotDrawer<'s> {
-    pub slots: Vec<(LiveId, LComponent<'s>)>,
+    pub slots: Vec<(LiveId, GComponent<'s>)>,
     pub defer_walks: &'s mut DeferWalks,
 }
 
 impl<'s> SlotDrawer<'s> {
     pub fn new<S>(slots: S, defer_walks: &'s mut DeferWalks) -> Self
     where
-        S: IntoIterator<Item = (LiveId, LComponent<'s>)>,
+        S: IntoIterator<Item = (LiveId, GComponent<'s>)>,
     {
         // before new do clear defer walks
         defer_walks.clear();
@@ -22,7 +22,7 @@ impl<'s> SlotDrawer<'s> {
     }
     pub fn draw_walk(&mut self, cx: &mut Cx2d, scope: &mut Scope) -> () {
         let slot_draw_walk =
-            |slot: &mut LComponent, cx: &mut Cx2d, scope: &mut Scope, df_walk: &mut DeferWalk| {
+            |slot: &mut GComponent, cx: &mut Cx2d, scope: &mut Scope, df_walk: &mut DeferWalk| {
                 let res_walk = df_walk.resolve(cx);
                 let _ = slot.draw_walk(cx, scope, res_walk);
             };

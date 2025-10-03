@@ -348,57 +348,6 @@ impl BasicStyle for SvgPartProp {
     }
 }
 
-// impl TryFrom<(&Value, SvgState)> for SvgPartProp {
-//     type Error = Error;
-
-//     fn try_from((value, state): (&Value, SvgState)) -> Result<Self, Self::Error> {
-//         let inline_table = value.as_inline_table().ok_or(Error::ThemeStyleParse(
-//             "[components.svg.svg] should be an inline table".to_string(),
-//         ))?;
-
-//         let theme = Theme::default();
-//         let theme = get_from_itable(inline_table, THEME, || Ok(theme), |v| v.try_into())?;
-//         let color = Self::state_colors(theme, state);
-//         let color = get_from_itable(
-//             inline_table,
-//             BACKGROUND_COLOR,
-//             || Ok(color),
-//             |v| v.try_into(),
-//         )?
-//         .into();
-//         let margin = Margin::from_f64(0.0);
-//         let margin = get_from_itable(inline_table, MARGIN, || Ok(margin), |v| v.to_margin(margin))?;
-//         let cursor = get_from_itable(
-//             inline_table,
-//             CURSOR,
-//             || Ok(MouseCursor::Default),
-//             |v| v.to_cursor(),
-//         )?;
-//         let height = get_from_itable(inline_table, HEIGHT, || Ok(Size::Fit), |v| v.to_size())?;
-//         let width = get_from_itable(
-//             inline_table,
-//             WIDTH,
-//             || Ok(Size::Fixed(16.0)),
-//             |v| v.to_size(),
-//         )?;
-//         let abs_pos = get_from_itable(
-//             inline_table,
-//             ABS_POS,
-//             || Ok(None),
-//             |v| Ok(v.to_dvec2().map_or(None, |v| Some(v))),
-//         )?;
-//         Ok(Self {
-//             theme,
-//             color,
-//             margin,
-//             cursor,
-//             height,
-//             width,
-//             abs_pos,
-//         })
-//     }
-// }
-
 component_state! {
     SvgState {
         Basic => BASIC,

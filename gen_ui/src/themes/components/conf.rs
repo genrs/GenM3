@@ -1,12 +1,13 @@
 use toml_edit::Table;
 
+use crate::components::item::SelectItemStyle;
 use crate::components::panel::ColorPanelStyle;
 use crate::components::{
     ButtonStyle, CardStyle, CheckboxProp, CollapseStyle, DividerProp, ImageProp, LabelProp, LinkProp, LoadingStyle, MenuItemProp, MenuProp, PopupContainerProp, PopupProp, ProgressStyle, RadioProp, RateStyle, SliderStyle, SubMenuProp, SvgStyle, SwitchProp, TabbarItemProp, TabbarProp, TagProp, ViewStyle
 };
 use crate::error::Error;
 use crate::prop::manuel::{
-    BUTTON, CARD, CHECKBOX, COLLAPSE, COLOR_PANEL, DIVIDER, IMAGE, LABEL, LINK, LOADING, MENU, MENU_ITEM, POPUP, POPUP_CONTAINER, PROGRESS, RADIO, RATE, SLIDER, SUB_MENU, SVG, SWITCH, TABBAR, TABBAR_ITEM, TAG, VIEW
+    BUTTON, CARD, CHECKBOX, COLLAPSE, COLOR_PANEL, DIVIDER, IMAGE, LABEL, LINK, LOADING, MENU, MENU_ITEM, POPUP, POPUP_CONTAINER, PROGRESS, RADIO, RATE, SELECT_ITEM, SLIDER, SUB_MENU, SVG, SWITCH, TABBAR, TABBAR_ITEM, TAG, VIEW
 };
 use crate::try_from_toml_item;
 
@@ -36,7 +37,8 @@ pub struct ComponentsConf {
     pub slider: SliderStyle,
     pub loading: LoadingStyle,
     pub color_panel: ColorPanelStyle,
-    pub rate: RateStyle
+    pub rate: RateStyle,
+    pub select_item: SelectItemStyle
 }
 
 try_from_toml_item! {
@@ -65,7 +67,8 @@ try_from_toml_item! {
         slider => SLIDER, SliderStyle::default(), |item| item.try_into(),
         loading => LOADING, LoadingStyle::default(), |item| item.try_into(),
         color_panel => COLOR_PANEL, ColorPanelStyle::default(), |item| item.try_into(),
-        rate => RATE, RateStyle::default(), |item| item.try_into()
+        rate => RATE, RateStyle::default(), |item| item.try_into(),
+        select_item => SELECT_ITEM, SelectItemStyle::default(), |item| item.try_into()
     }, "[components] should be a table"
 }
 
@@ -95,6 +98,7 @@ impl From<&ComponentsConf> for Table {
         table.insert(SLIDER, (&value.slider).into());
         table.insert(PROGRESS, (&value.progress).into());
         table.insert(LOADING, (&value.loading).into());
+        // TODO ... more components
         table
     }
 }

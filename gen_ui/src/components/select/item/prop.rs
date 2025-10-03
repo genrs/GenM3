@@ -253,13 +253,22 @@ impl SelectItemBasicStyle {
         let mut container = ViewBasicStyle::from_state(theme, state.into());
         container.set_cursor(MouseCursor::Hand);
         container.set_background_visible(true);
+        container.set_flow(Flow::Right);
+        container.set_height(Size::Fixed(32.0));
+        container.set_width(Size::Fill);
+        container.set_align(Align { x: 0.0, y: 0.5 });
+        container.set_spacing(12.0);
         container
     }
     pub fn default_icon(theme: Theme, state: SelectItemState) -> SvgBasicStyle {
-        SvgBasicStyle::from_state(theme, state.into())
+        let mut icon = SvgBasicStyle::from_state(theme, state.into());
+        icon.container.height = Size::Fill;
+        icon
     }
     pub fn default_text(theme: Theme, state: SelectItemState) -> LabelBasicStyle {
-        LabelBasicStyle::from_state(theme, state.into())
+        let mut label = LabelBasicStyle::from_state(theme, state.into());
+        label.width = Size::Fill;
+        label
     }
     pub fn default_suffix(theme: Theme, state: SelectItemState) -> SvgBasicStyle {
         SvgBasicStyle::from_state(theme, state.into())

@@ -580,6 +580,18 @@ live_design! {
     pub GSlider = <GSliderBase> {}
 
     pub GRate = <GRateBase> {}
+
+    pub GSelectItem = <GSelectItemBase> {
+        icon: <GSvg> {
+            visible: false
+        }
+
+        text: <GLabel> {
+            text: "Select Item"
+        }
+
+        suffix: <IconCheck> {}
+    }
 }
 
 pub fn components_register(cx: &mut Cx) {
@@ -616,5 +628,22 @@ component! {
     Button => GButton,
     Card => GCard,
     Radio => GRadio,
-    Svg => GSvg
+    Svg => GSvg,
+    Image => GImage,
+    DropDown => GDropDown,
+    Tabbar => GTabbar,
+    TabbarItem => GTabbarItem,
+    Tag => GTag,
+    Link => GLink,
+    Menu => GMenu,
+    MenuItem => GMenuItem,
+    SubMenu => GSubMenu,
+    Collapse => GCollapse,
+    Checkbox => GCheckbox,
+    Switch => GSwitch,
+    Divider => GDivider,
+    Progress => GProgress,
+    Loading => GLoading,
+    Slider => GSlider,
+    Rate => GRate
 }

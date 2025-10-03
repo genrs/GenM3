@@ -166,8 +166,7 @@ impl Widget for GCard {
             return DrawStep::done();
         }
 
-        let state = self.state;
-        let style = self.style.get(state);
+        let style = self.style.get(self.state);
 
         let _ = self.draw_card.begin(cx, walk, style.layout());
         let _ = SlotDrawer::new(
@@ -313,9 +312,8 @@ impl Component for GCard {
         ] {
             crossed_map.remove(&part).map(|map| {
                 slot.apply_state_map.merge(map.to_state());
+                slot.focus_sync();
             });
-
-            slot.focus_sync();
         }
 
         // sync state if is not Basic

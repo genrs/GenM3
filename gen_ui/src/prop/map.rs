@@ -24,7 +24,13 @@ pub type SlotMap<P> = HashMap<P, Applys>;
 /// ApplyMap is a mapping from a state to a LiveValue, used for applying properties in animations or props
 /// means: if in Button, use ApplyMap<ButtonState>
 pub type ApplyStateMap<K> = HashMap<K, PropMap>;
-/// ApplySlotMap is a mapping from a key to a SlotMap, used for applying slots in components
+/// ## ApplySlotMap
+/// ApplySlotMap is a mapping from a key to a SlotMap, used for applying slots in components\
+/// ### usage
+/// ```
+/// #[rust]
+/// apply_slot_map: ApplySlotMap<CardState, CardPart>,
+/// ```
 pub type ApplySlotMap<K, P> = HashMap<K, SlotMap<P>>;
 /// 一个可以深度寻址的Applys，因为被应用到属性实际上可能非常深，但前2层永远是固定的[prop, state]
 /// 后续的层级将会出现：

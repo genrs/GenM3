@@ -1,5 +1,5 @@
 /// # Component enum
-/// This macro generates an enum `LComponent` that can hold multiple component types.
+/// This macro generates an enum `GComponent` that can hold multiple component types.
 /// ## Usage
 /// ```rust
 /// component! {
@@ -8,15 +8,15 @@
 /// ```
 /// ## Code Generation
 /// ```
-/// enum LComponent<'c> {
+/// enum GComponent<'c> {
 ///     Label(&'c mut GLabel),
 ///     View(&'c mut GView),
 ///     ...
 /// }
 ///
-/// impl <'c> From<&'c mut GLabel> for LComponent<'c> {
+/// impl <'c> From<&'c mut GLabel> for GComponent<'c> {
 ///     fn from(component: &'c mut GLabel) -> Self {
-///         LComponent::Label(component)
+///         GComponent::Label(component)
 ///     }
 /// }
 /// ...
@@ -26,44 +26,50 @@ macro_rules! component {
     ($(
         $field: ident => $component: ty
     ),*) => {
-        pub enum LComponent<'c> {
+        pub enum GComponent<'c> {
             $(
                 $field(&'c mut $component)
             ),*
         }
 
-        impl<'c> LComponent<'c> {
+        impl<'c> GComponent<'c> {
             pub fn visible(&self) -> bool {
                 match self {
-                    $(LComponent::$field(c) => c.visible),*
+                    $(GComponent::$field(c) => c.visible),*
                 }
             }
 
             pub fn walk(&mut self, cx: &mut Cx) -> Walk {
                 match self {
-                    $(LComponent::$field(c) => c.walk(cx)),*
+                    $(GComponent::$field(c) => c.walk(cx)),*
                 }
             }
 
             pub fn draw_walk(&mut self, cx: &mut Cx2d, scope: &mut Scope, walk: Walk) -> DrawStep {
                 match self {
-                    $(LComponent::$field(c) => c.draw_walk(cx, scope, walk)),*
+                    $(GComponent::$field(c) => c.draw_walk(cx, scope, walk)),*
                 }
             }
 
             pub fn switch_state_with_animation(&mut self, cx: &mut Cx, state: String) {
                 match self {
-                    $(LComponent::$field(c) => {
+                    $(GComponent::$field(c) => {
                         c.switch_state_with_animation(cx, state.into());
                     }),*
+                }
+            }
+
+            pub fn redraw(&mut self, cx: &mut Cx) {
+                match self {
+                    $(GComponent::$field(c) => c.redraw(cx)),*
                 }
             }
         }
 
         $(
-            impl<'c> From<&'c mut $component> for LComponent<'c> {
+            impl<'c> From<&'c mut $component> for GComponent<'c> {
                 fn from(component: &'c mut $component) -> Self {
-                    LComponent::$field(component)
+                    GComponent::$field(component)
                 }
             }
         )*

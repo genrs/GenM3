@@ -113,6 +113,7 @@ pub const SLIDER: &str = "slider";
 pub const COLOR_PICKER: &str = "color_picker";
 pub const COLOR_PANEL: &str = "color_panel";
 pub const RATE: &str = "rate";
+pub const SELECT_ITEM: &str = "select_item";
 // --- mode ------------------------------------------------------
 pub const MODE: &str = "mode";
 pub const ROUND: &str = "Round";
