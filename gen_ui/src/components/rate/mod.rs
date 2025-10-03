@@ -1,14 +1,16 @@
+mod event;
 mod prop;
 
+pub use event::*;
 pub use prop::*;
 
 use makepad_widgets::*;
 
 use crate::{
-    ComponentAnInit,
+    ComponentAnInit, active_event, animation_open_then_redraw,
     components::{BasicStyle, Component, LifeCycle, Style},
     error::Error,
-    lifecycle, play_animation,
+    event_option, hit_finger_down, hit_finger_up, lifecycle, play_animation,
     prop::{
         ApplyStateMap,
         manuel::{BASIC, DISABLED, HOVER, PRESSED},
@@ -17,7 +19,7 @@ use crate::{
     shader::draw_rate::DrawRate,
     switch_state, sync,
     themes::conf::Conf,
-    utils::{normalization, round_step},
+    utils::{round_step},
     visible,
 };
 
@@ -31,7 +33,7 @@ live_design! {
                 default: off,
 
                 off = {
-                    from: {all: Forward {duration: (AN_DURATION)}},
+                    from: {all: Forward {duration: (AN_DURATION_NO)}},
                     ease: InOutQuad,
                     apply: {
                         draw_rate: <AN_DRAW_RATE> {}
@@ -40,8 +42,8 @@ live_design! {
 
                 on = {
                     from: {
-                        all: Forward {duration: (AN_DURATION),},
-                        pressed: Forward {duration: (AN_DURATION)},
+                        all: Forward {duration: (AN_DURATION_NO),},
+                        pressed: Forward {duration: (AN_DURATION_NO)},
                     },
                     ease: InOutQuad,
                     apply: {
@@ -50,7 +52,7 @@ live_design! {
                 }
 
                 pressed = {
-                    from: {all: Forward {duration: (AN_DURATION)}},
+                    from: {all: Forward {duration: (AN_DURATION_NO)}},
                     ease: InOutQuad,
                     apply: {
                         draw_rate: <AN_DRAW_RATE> {}
@@ -58,7 +60,7 @@ live_design! {
                 }
 
                 disabled = {
-                    from: {all: Forward {duration: (AN_DURATION)}},
+                    from: {all: Forward {duration: (AN_DURATION_NO)}},
                     ease: InOutQuad,
                     apply: {
                         draw_rate: <AN_DRAW_RATE> {}
@@ -81,6 +83,8 @@ pub struct GRate {
     pub value: f32,
     #[live(true)]
     pub allow_half: bool,
+    #[live]
+    pub tmp_value: Option<f32>,
     // --- visible -------------------
     #[live(true)]
     pub visible: bool,
@@ -249,17 +253,74 @@ impl Component for GRate {
         if self.disabled {
             self.switch_state(RateState::Disabled);
         }
+        let value = round_step(self.value, if self.allow_half { 0.5 } else { 1.0 })
+            .clamp(0.0, self.count as f32);
+        if value != self.value {
+            self.value = value;
+        }
         let style = self.style.get(self.state);
         self.draw_rate.merge(style);
-        self.draw_rate.value = round_step(self.value, if self.allow_half { 0.5 } else { 1.0 })
-            .clamp(0.0, self.count as f32);
         self.draw_rate.count = self.count as f32;
-
+        self.draw_rate.value = self.value;
         Ok(())
     }
 
     fn handle_widget_event(&mut self, cx: &mut Cx, event: &Event, hit: Hit, area: Area) {
-        ()
+        animation_open_then_redraw!(self, cx, event);
+
+        match hit {
+            Hit::FingerDown(e) => {
+                if let Some(v) = self.tmp_value {
+                    self.value_for_star(cx, v, false);
+                }
+                self.switch_state_with_animation(cx, RateState::Pressed);
+                hit_finger_down!(self, cx, area, e);
+            }
+            Hit::FingerHoverIn(e) => {
+                cx.set_cursor(self.style.get(self.state).cursor);
+
+                let real_len = e.abs.x - e.rect.pos.x;
+                let mut v = (real_len / e.rect.size.x).clamp(0.0, 1.0);
+                v = v * self.count as f64;
+                self.value_for_star(cx, v as f32, true);
+
+                self.switch_state_with_animation(cx, RateState::Hover);
+                self.play_animation(cx, id!(hover.on));
+                self.active_hover_in(cx, e);
+            }
+            Hit::FingerHoverOut(e) => {
+                // reset tmp_value
+                self.tmp_value = None;
+                self.switch_state_with_animation(cx, RateState::Basic);
+                self.play_animation(cx, id!(hover.off));
+                self.active_hover_out(cx, e);
+            }
+            Hit::FingerUp(e) => {
+                if e.is_over {
+                    if e.has_hovers() {
+                        self.switch_state_with_animation(cx, RateState::Hover);
+                        self.play_animation(cx, id!(hover.on));
+                    } else {
+                        self.switch_state_with_animation(cx, RateState::Basic);
+                        self.play_animation(cx, id!(hover.off));
+                    }
+                    self.active_changed(cx, e.into());
+                } else {
+                    self.switch_state_with_animation(cx, RateState::Basic);
+                    hit_finger_up!(self, cx, e);
+                }
+            }
+            Hit::FingerHoverOver(e) => {
+                let real_len = e.abs.x - e.rect.pos.x;
+                let mut v = (real_len / e.rect.size.x).clamp(0.0, 1.0);
+                v = v * self.count as f64;
+                self.value_for_star(cx, v as f32, true);
+                self.switch_state_with_animation(cx, RateState::Hover);
+                self.play_animation(cx, id!(hover.on));
+                
+            }
+            _ => {}
+        };
     }
 
     fn switch_state_with_animation(&mut self, cx: &mut Cx, state: Self::State) -> () {
@@ -299,7 +360,12 @@ impl Component for GRate {
         };
 
         let nodes = &mut live_file.expanded.nodes;
-        let value = round_step(self.value, if self.allow_half { 0.5 } else { 1.0 })
+        let mut value = if let Some(v) = self.tmp_value {
+            v
+        } else {
+            self.value
+        };
+        value = round_step(value, if self.allow_half { 0.5 } else { 1.0 })
             .clamp(0.0, self.count as f32);
         if self.lifecycle.is_created() || !init_global || self.scope_path.is_none() {
             self.lifecycle.next();
@@ -437,4 +503,54 @@ impl Component for GRate {
     set_index!();
     lifecycle!();
     switch_state!();
+}
+
+impl GRate {
+    active_event! {
+        active_hover_in: RateEvent::HoverIn |meta: FingerHoverEvent| => RateHoverIn { meta },
+        active_hover_out: RateEvent::HoverOut |meta: FingerHoverEvent| => RateHoverOut { meta },
+        active_finger_up: RateEvent::FingerUp |meta: FingerUpEvent| => RateFingerUp { meta },
+        active_finger_down: RateEvent::FingerDown |meta: FingerDownEvent| => RateFingerDown { meta }
+    }
+
+    event_option! {
+        hover_in: RateEvent::HoverIn => RateHoverIn,
+        hover_out: RateEvent::HoverOut => RateHoverOut,
+        finger_up: RateEvent::FingerUp => RateFingerUp,
+        finger_down: RateEvent::FingerDown => RateFingerDown,
+        changed: RateEvent::Changed => RateChanged
+    }
+
+    pub fn active_changed(&mut self, cx: &mut Cx, meta: RateChangedMetaEvent) {
+        if self.event_open {
+            self.scope_path.as_ref().map(|path| {
+                cx.widget_action(
+                    self.widget_uid(),
+                    path,
+                    RateEvent::Changed(RateChanged {
+                        meta,
+                        value: self.value,
+                    }),
+                );
+            });
+        }
+    }
+
+    fn value_for_star(&mut self, _cx: &mut Cx, value: f32, is_hover: bool) -> () {
+        if value == self.value {
+            return;
+        }
+
+        let value = round_step(value, if self.allow_half { 0.5 } else { 1.0 })
+            .clamp(0.0, self.count as f32);
+        if is_hover {
+            self.tmp_value.replace(value);
+        } else {
+            self.value = value;
+        };
+    }
+
+    pub fn set_value(&mut self, cx: &mut Cx, value: f32) -> () {
+        self.value_for_star(cx, value, false);
+    }
 }

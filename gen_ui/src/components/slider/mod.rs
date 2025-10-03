@@ -298,15 +298,10 @@ impl Component for GSlider {
             }
             Hit::FingerMove(e) => {
                 match self.mode {
-                    ProgressMode::Horizontal|ProgressMode::Circle => {
+                    ProgressMode::Horizontal | ProgressMode::Circle => {
                         let real_len = e.abs.x - e.rect.pos.x;
                         // percentage
-                        let mut v = real_len / e.rect.size.x;
-                        if v < 0.0 {
-                            v = 0.0;
-                        } else if v > 1.0 {
-                            v = 1.0;
-                        }
+                        let v = (real_len / e.rect.size.x).clamp(0.0, 1.0);
                         self.value = round_step(
                             round_2_decimals_f32((v as f32) * (self.max - self.min) + self.min),
                             self.step,
@@ -317,18 +312,12 @@ impl Component for GSlider {
                         // because y increases downward, but we want progress to increase upward
                         let real_len = e.rect.pos.y + e.rect.size.y - e.abs.y;
                         // percentage
-                        let mut v = real_len / e.rect.size.y;
-                        if v < 0.0 {
-                            v = 0.0;
-                        } else if v > 1.0 {
-                            v = 1.0;
-                        }
+                        let v = (real_len / e.rect.size.y).clamp(0.0, 1.0);
                         self.value = round_step(
                             round_2_decimals_f32((v as f32) * (self.max - self.min) + self.min),
                             self.step,
                         );
                     }
-                    
                 }
                 self.switch_state_with_animation(cx, SliderState::Dragging);
             }

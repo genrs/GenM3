@@ -72,3 +72,21 @@ pub fn round_step(v: f32, step: f32) -> f32 {
         round_2_decimals_f32(down)
     }
 }
+
+#[cfg(test)]
+mod test{
+    #[test]
+    fn round_step_test() {
+        let n1 = 1.8;
+        let n2 = 2.3;
+        let n3 = 2.54;
+        let step = 0.5;
+        let r1 = super::round_step(n1, step);
+        let r2 = super::round_step(n2, step);
+        let r3 = super::round_step(n3, step);
+        assert_eq!(r1, 2.0);
+        assert_eq!(r2, 2.5); 
+        assert_eq!(r3, 2.5);
+
+    }
+}

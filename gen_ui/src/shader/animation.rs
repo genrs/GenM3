@@ -4,6 +4,9 @@ live_design!{
     link genui_animation_prop;
 
     pub AN_DURATION = 0.25, // default animation duration
+    pub AN_DURATION_FAST = 0.1, // fast animation duration
+    pub AN_DURATION_FASTEST = 0.05, // fastest animation duration
+    pub AN_DURATION_NO = 0.0, // no animation duration
 
     // animation for default draw view
     pub AN_DRAW_VIEW = {
