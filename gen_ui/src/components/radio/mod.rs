@@ -301,8 +301,8 @@ impl Component for GRadio {
                 self.switch_state(RadioState::Basic);
             }
         }
-        let state = self.state;
-        let style = self.style.get(state);
+        
+        let style = self.style.get(self.state);
         self.draw_container.merge(&style.container);
         self.draw_radio.merge(&style.radio);
         let _ = self.extra.render(cx)?;

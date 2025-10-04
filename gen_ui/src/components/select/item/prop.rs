@@ -4,17 +4,12 @@ use toml_edit::Item;
 use crate::{
     component_part, component_state,
     components::{
-        LabelBasicStyle, LabelState, SlotBasicStyle, SlotStyle, SvgBasicStyle, SvgState,
-        ViewColors, ViewState,
-        live_props::LiveProps,
-        traits::{BasicStyle, ComponentState, Style},
-        view::ViewBasicStyle,
+        live_props::LiveProps, traits::{BasicStyle, ComponentState, Style}, view::ViewBasicStyle, LabelBasicStyle, LabelState, SlotBasicStyle, SlotStyle, SvgBasicStyle, SvgState, ViewColors, ViewState
     },
     error::Error,
     from_prop_to_toml, get_get_mut,
     prop::{
-        ApplySlotMapImpl, ApplyStateMapImpl,
-        manuel::{ACTIVE, BASIC, CONTAINER, DISABLED, HOVER, ICON, SUFFIX, TEXT},
+        manuel::{ACTIVE, BASIC, CONTAINER, DISABLED, HOVER, ICON, SUFFIX, TEXT}, ApplySlotMapImpl, ApplyStateMapImpl, Radius
     },
     prop_interconvert,
     themes::Theme,
@@ -258,6 +253,7 @@ impl SelectItemBasicStyle {
         container.set_width(Size::Fill);
         container.set_align(Align { x: 0.0, y: 0.5 });
         container.set_spacing(12.0);
+        container.set_border_radius(Radius::new(2.0));
         container
     }
     pub fn default_icon(theme: Theme, state: SelectItemState) -> SvgBasicStyle {

@@ -1,5 +1,5 @@
   - [ ] input
-  - [ ] loading
+  - [x] loading
   - [ ] time_picker
   - [ ] date_picker
   - [ ] calender
@@ -9,9 +9,10 @@
   - [ ] color_picker
   - [ ] table
   - [ ] number_input
-  - [ ] slider
-  - [ ] progress
+  - [x] slider
+  - [x] progress
   - [ ] tree
+  - [x] rate
   - [ ] upload
   - [ ] badge
   - [ ] audio api
@@ -27,3 +28,4 @@
   - [ ] steps
   - [ ] i18n
   - [ ] contribution (github contribution)
+
