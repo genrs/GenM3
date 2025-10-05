@@ -51,7 +51,7 @@ live_design! {
 #[derive(Live, WidgetRef, WidgetSet, LiveRegisterWidget)]
 pub struct GImage {
     #[live]
-    pub style: ImageProp,
+    pub style: ImageStyle,
     #[animator]
     animator: Animator,
     #[live]

@@ -74,7 +74,7 @@ live_design! {
 pub struct GSwitch {
     // --- prop -------------------
     #[live]
-    pub style: SwitchProp,
+    pub style: SwitchStyle,
     // --- visible -------------------
     #[live(true)]
     pub visible: bool,

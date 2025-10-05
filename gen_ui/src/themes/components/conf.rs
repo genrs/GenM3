@@ -1,28 +1,29 @@
 use toml_edit::Table;
 
+use crate::components::dot::BadgeDotStyle;
 use crate::components::item::SelectItemStyle;
 use crate::components::panel::ColorPanelStyle;
 use crate::components::{
-    ButtonStyle, CardStyle, CheckboxProp, CollapseStyle, DividerProp, ImageProp, LabelProp, LinkProp, LoadingStyle, MenuItemProp, MenuProp, PopupContainerProp, PopupProp, ProgressStyle, RadioProp, RateStyle, SelectStyle, SliderStyle, SubMenuProp, SvgStyle, SwitchProp, TabbarItemProp, TabbarProp, TagProp, ViewStyle
+    ButtonStyle, CardStyle, CheckboxStyle, CollapseStyle, DividerStyle, ImageStyle, LabelStyle, LinkProp, LoadingStyle, MenuItemProp, MenuProp, PopupContainerProp, PopupProp, ProgressStyle, RadioStyle, RateStyle, SelectStyle, SliderStyle, SubMenuProp, SvgStyle, SwitchStyle, TabbarItemProp, TabbarProp, TagProp, ViewStyle
 };
 use crate::error::Error;
 use crate::prop::manuel::{
-    BUTTON, CARD, CHECKBOX, COLLAPSE, COLOR_PANEL, DIVIDER, IMAGE, LABEL, LINK, LOADING, MENU, MENU_ITEM, POPUP, POPUP_CONTAINER, PROGRESS, RADIO, RATE, SELECT, SELECT_ITEM, SLIDER, SUB_MENU, SVG, SWITCH, TABBAR, TABBAR_ITEM, TAG, VIEW
+    BADGE_DOT, BUTTON, CARD, CHECKBOX, COLLAPSE, COLOR_PANEL, DIVIDER, IMAGE, LABEL, LINK, LOADING, MENU, MENU_ITEM, POPUP, POPUP_CONTAINER, PROGRESS, RADIO, RATE, SELECT, SELECT_ITEM, SLIDER, SUB_MENU, SVG, SWITCH, TABBAR, TABBAR_ITEM, TAG, VIEW
 };
 use crate::try_from_toml_item;
 
 #[derive(Debug, Clone, Default)]
 pub struct ComponentsConf {
-    pub label: LabelProp,
+    pub label: LabelStyle,
     pub view: ViewStyle,
     pub button: ButtonStyle,
     pub card: CardStyle,
-    pub radio: RadioProp,
-    pub checkbox: CheckboxProp,
-    pub switch: SwitchProp,
-    pub divider: DividerProp,
+    pub radio: RadioStyle,
+    pub checkbox: CheckboxStyle,
+    pub switch: SwitchStyle,
+    pub divider: DividerStyle,
     pub svg: SvgStyle,
-    pub image: ImageProp,
+    pub image: ImageStyle,
     pub popup: PopupProp,
     pub popup_container: PopupContainerProp,
     pub tabbar: TabbarProp,
@@ -39,21 +40,22 @@ pub struct ComponentsConf {
     pub color_panel: ColorPanelStyle,
     pub rate: RateStyle,
     pub select_item: SelectItemStyle,
-    pub select: SelectStyle
+    pub select: SelectStyle,
+    pub badge_dot: BadgeDotStyle
 }
 
 try_from_toml_item! {
     ComponentsConf {
-        label => LABEL, LabelProp::default(), |item| item.try_into(),
+        label => LABEL, LabelStyle::default(), |item| item.try_into(),
         view => VIEW, ViewStyle::default(), |item| item.try_into(),
         button => BUTTON, ButtonStyle::default(), |item| item.try_into(),
         card => CARD, CardStyle::default(), |item| item.try_into(),
-        radio => RADIO, RadioProp::default(), |item| item.try_into(),
-        checkbox => CHECKBOX, CheckboxProp::default(), |item| item.try_into(),
-        switch => SWITCH, SwitchProp::default(), |item| item.try_into(),
-        divider => DIVIDER, DividerProp::default(), |item| item.try_into(),
+        radio => RADIO, RadioStyle::default(), |item| item.try_into(),
+        checkbox => CHECKBOX, CheckboxStyle::default(), |item| item.try_into(),
+        switch => SWITCH, SwitchStyle::default(), |item| item.try_into(),
+        divider => DIVIDER, DividerStyle::default(), |item| item.try_into(),
         svg => SVG, SvgStyle::default(), |item| item.try_into(),
-        image => IMAGE, ImageProp::default(), |item| item.try_into(),
+        image => IMAGE, ImageStyle::default(), |item| item.try_into(),
         popup => POPUP, PopupProp::default(), |item| item.try_into(),
         popup_container => POPUP_CONTAINER, PopupContainerProp::default(), |item| item.try_into(),
         tabbar => TABBAR, TabbarProp::default(), |item| item.try_into(),
@@ -70,7 +72,8 @@ try_from_toml_item! {
         color_panel => COLOR_PANEL, ColorPanelStyle::default(), |item| item.try_into(),
         rate => RATE, RateStyle::default(), |item| item.try_into(),
         select_item => SELECT_ITEM, SelectItemStyle::default(), |item| item.try_into(),
-        select => SELECT, SelectStyle::default(), |item| item.try_into()
+        select => SELECT, SelectStyle::default(), |item| item.try_into(),
+        badge_dot => BADGE_DOT, BadgeDotStyle::default(), |item| item.try_into()
     }, "[components] should be a table"
 }
 

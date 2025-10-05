@@ -37,7 +37,7 @@ live_design! {
 #[derive(Live, LiveRegisterWidget, WidgetRef, WidgetSet)]
 pub struct GLabel {
     #[live]
-    pub style: LabelProp,
+    pub style: LabelStyle,
     #[live(true)]
     pub visible: bool,
     #[live]
@@ -113,7 +113,7 @@ impl WidgetNode for GLabel {
 }
 
 impl Widget for GLabel {
-    /// calc font height: font_size + (6 * line_spacing), so default height is 19.2
+    /// calc font height: font_size + (6 * line_spacing), so default height is 16
     fn draw_walk(&mut self, cx: &mut Cx2d, scope: &mut Scope, walk: Walk) -> DrawStep {
         if !self.visible {
             return DrawStep::done();

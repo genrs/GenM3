@@ -5,7 +5,7 @@ use crate::{
     basic_prop_interconvert, component_color, component_part, component_state,
     components::{
         live_props::LiveProps,
-        traits::{BasicStyle, ComponentState, Part, Style, SlotBasicStyle, SlotStyle},
+        traits::{BasicStyle, ComponentState, Style, SlotBasicStyle, SlotStyle},
         view::ViewState,
         ViewBasicStyle,
     },

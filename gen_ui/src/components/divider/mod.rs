@@ -18,7 +18,7 @@ live_design! {
 #[derive(Live, WidgetRef, WidgetSet, LiveRegisterWidget)]
 pub struct GDivider {
     #[live]
-    pub style: DividerProp,
+    pub style: DividerStyle,
     // --- visible -------------------
     #[live(true)]
     pub visible: bool,

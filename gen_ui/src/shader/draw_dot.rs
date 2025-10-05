@@ -1,0 +1,103 @@
+use crate::{components::ViewBasicStyle, prop::traits::ToFloat, shader::draw_view::DrawView};
+use makepad_widgets::*;
+
+live_design! {
+    use link::shaders::*;
+    DrawDot = {{DrawDot}}{
+        // [pixel shader] -------------------------------------------------------------------------
+        fn pixel(self) -> vec4 {
+            let sdf = Sdf2d::viewport(self.pos * self.rect_size3);
+            if self.dot == 0.0 {
+                // - [draw shadow and blur] -----------------------------------------------------------
+                if sdf.shape > -1.0 {
+                    if self.spread_radius > 0.0 || self.blur_radius > 0.0 {
+                        let shadow_offset = self.shadow_offset + self.rect_shift;
+                        let total_shadow_size = self.spread_radius + self.blur_radius;
+                        let shadow_lower = vec2(total_shadow_size) + shadow_offset;
+                        let shadow_upper = self.rect_size + vec2(self.spread_radius * 2.0) + shadow_offset;
+                        if self.border_radius.x != 0.0 || self.border_radius.y != 0.0 ||
+                            self.border_radius.z != 0.0 || self.border_radius.w != 0.0 {
+                            let max_border_radius = max(
+                                max(
+                                    max(self.border_radius.x, self.border_radius.y),
+                                    max(self.border_radius.z, self.border_radius.w)
+                                ), 1.0
+                            );
+                            let v = GaussShadow::rounded_box_shadow(
+                                shadow_lower,
+                                shadow_upper,
+                                self.pos * self.rect_size3,
+                                self.blur_radius,
+                                max_border_radius
+                            );
+                            let shadow_color = vec4(self.get_shadow_color().rgb, self.get_shadow_color().a * v);
+                            sdf.clear(shadow_color);
+                        } else {
+                            let v = GaussShadow::box_shadow(
+                                shadow_lower,
+                                shadow_upper,
+                                self.pos * self.rect_size3,
+                                self.blur_radius
+                            );
+                            let shadow_color = vec4(self.get_shadow_color().rgb, self.get_shadow_color().a * v);
+                            sdf.clear(shadow_color);
+                        }
+                    }
+                }
+
+                // - [basic sdf for draw a view] ------------------------------------------------------
+                let total_shadow_size = self.spread_radius + self.blur_radius;
+                let border_radius = self.count_border_radius();
+                // 使用calculated位置而不是原始rect_size
+                sdf.box_all(
+                    self.sdf_rect_pos.x,
+                    self.sdf_rect_pos.y,
+                    self.sdf_rect_size.x,
+                    self.sdf_rect_size.y,
+                    border_radius.x,
+                    border_radius.y,
+                    border_radius.z,
+                    border_radius.w
+                );
+                
+                
+            } else {
+                sdf.circle(self.rect_size.x * 0.5, self.rect_size.y * 0.5, 4.0);
+            }
+            // - [border with and color if width bigger than 0] -----------------------------------
+            if self.border_width != 0.0 {
+                sdf.stroke_keep(self.get_border_color(), self.border_width);
+            }
+            // - [background color if visible] ----------------------------------------------------
+            if self.background_visible == 1.0 {
+                sdf.fill(self.get_background_color());
+            }
+            return sdf.result;
+        }
+    }
+}
+
+#[derive(Live, LiveRegister, LiveHook)]
+#[repr(C)]
+pub struct DrawDot {
+    #[deref]
+    pub draw_super: DrawView,
+    #[live]
+    pub dot: f32,
+}
+
+impl DrawDot {
+    pub fn merge(&mut self, prop: &ViewBasicStyle) {
+        self.background_color = prop.background_color;
+        self.border_color = prop.border_color;
+        self.border_width = prop.border_width;
+        self.border_radius = prop.border_radius.into();
+        self.shadow_color = prop.shadow_color.into();
+        self.spread_radius = prop.spread_radius;
+        self.blur_radius = prop.blur_radius;
+        self.shadow_offset = prop.shadow_offset;
+        self.background_visible = prop.background_visible.to_f32();
+        self.rotation = prop.rotation;
+        self.scale = prop.scale;
+    }
+}

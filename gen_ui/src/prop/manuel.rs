@@ -115,6 +115,8 @@ pub const COLOR_PANEL: &str = "color_panel";
 pub const RATE: &str = "rate";
 pub const SELECT_ITEM: &str = "select_item";
 pub const SELECT: &str = "select";
+pub const BADGE_DOT: &str = "badge_dot";
+pub const BADGE: &str = "badge";
 // --- mode ------------------------------------------------------
 pub const MODE: &str = "mode";
 pub const ROUND: &str = "Round";

@@ -87,7 +87,7 @@ live_design! {
 pub struct GCheckbox {
     // --- prop -------------------
     #[live]
-    pub style: CheckboxProp,
+    pub style: CheckboxStyle,
     // --- visible -------------------
     #[live(true)]
     pub visible: bool,

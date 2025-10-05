@@ -5,7 +5,7 @@
 /// ## usage
 /// ```rust
 /// prop_interconvert! {
-///     LabelProp {
+///     LabelStyle {
 ///         basic_prop = LabelBasicStyle;
 ///         basic => BASIC, LabelBasicStyle::default(), |v| (v, LabelState::Basic).try_into(),
 ///         disabled => DISABLED, LabelBasicStyle::from_state(Theme::default(), LabelState::Disabled), |v| (v, LabelState::Disabled).try_into()

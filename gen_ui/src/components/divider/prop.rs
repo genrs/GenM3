@@ -21,13 +21,13 @@ use crate::{
 };
 
 prop_interconvert! {
-    DividerProp {
+    DividerStyle {
         basic_prop = DividerBasicStyle;
         basic => BASIC, DividerBasicStyle::default(), |v| (v, DividerState::Basic).try_into()
     }, "[component.divider] should be a table"
 }
 
-impl Style for DividerProp {
+impl Style for DividerStyle {
     type State = DividerState;
 
     type Basic = DividerBasicStyle;

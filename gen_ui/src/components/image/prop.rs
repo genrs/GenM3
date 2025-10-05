@@ -20,14 +20,14 @@ use crate::{
 };
 
 prop_interconvert! {
-    ImageProp {
+    ImageStyle {
         basic_prop = ImageBasicStyle;
         basic => BASIC, ImageBasicStyle::default(), |v| (v, ImageState::Basic).try_into(),
         loading => LOADING, ImageBasicStyle::default(), |v| (v, ImageState::Loading).try_into()
     }, "[component.image] should be a table"
 }
 
-impl Style for ImageProp {
+impl Style for ImageStyle {
     type State = ImageState;
 
     type Basic = ImageBasicStyle;

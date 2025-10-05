@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 use makepad_widgets::*;
 use toml_edit::Item;
 
@@ -8,16 +6,16 @@ use crate::{
     components::{
         label::{LabelBasicStyle, LabelState},
         live_props::LiveProps,
-        svg::{SvgBasicStyle, SvgPart, SvgState},
-        traits::{BasicStyle, ComponentState, Part, Style, SlotBasicStyle, SlotStyle},
+        svg::SvgBasicStyle,
+        traits::{BasicStyle, ComponentState, SlotBasicStyle, SlotStyle, Style},
         view::{ViewBasicStyle, ViewState},
     },
     error::Error,
     from_prop_to_toml, get_get_mut,
     prop::{
-        manuel::{BASIC, CLOSE, CONTAINER, DISABLED, HOVER, ICON, PRESSED, TEXT},
-        traits::NewFrom,
         ApplySlotMapImpl, Radius,
+        manuel::{BASIC, CONTAINER, DISABLED, TEXT},
+        traits::NewFrom,
     },
     prop_interconvert,
     themes::Theme,
@@ -25,46 +23,33 @@ use crate::{
 };
 
 prop_interconvert! {
-    BadgeDotProp {
+    BadgeDotStyle {
         basic_prop = BadgeDotBasicStyle;
         basic => BASIC, BadgeDotBasicStyle::default(), |v| (v, BadgeDotState::Basic).try_into(),
-        hover => HOVER, BadgeDotBasicStyle::from_state(Theme::default(), BadgeDotState::Hover), |v| (v, BadgeDotState::Hover).try_into(),
-        pressed => PRESSED, BadgeDotBasicStyle::from_state(Theme::default(), BadgeDotState::Pressed), |v| (v, BadgeDotState::Pressed).try_into(),
         disabled => DISABLED, BadgeDotBasicStyle::from_state(Theme::default(), BadgeDotState::Disabled), |v| (v, BadgeDotState::Disabled).try_into()
-    }, "[component.tag] should be a table"
+    }, "[component.badge.dot] should be a table"
 }
 
-impl SlotStyle for BadgeDotProp {
+impl SlotStyle for BadgeDotStyle {
     type Part = BadgeDotPart;
 
     fn sync_slot(&mut self, map: &crate::prop::ApplySlotMap<Self::State, Self::Part>) -> () {
         map.sync(
             &mut self.basic,
             BadgeDotState::Basic,
-            [
-                (BadgeDotState::Hover, &mut self.hover),
-                (BadgeDotState::Pressed, &mut self.pressed),
-                (BadgeDotState::Disabled, &mut self.disabled),
-            ],
-            [
-                BadgeDotPart::Container,
-                BadgeDotPart::Icon,
-                BadgeDotPart::Text,
-                BadgeDotPart::Close,
-            ],
+            [(BadgeDotState::Disabled, &mut self.disabled)],
+            [BadgeDotPart::Container, BadgeDotPart::Text],
         );
     }
 }
 
-impl Style for BadgeDotProp {
+impl Style for BadgeDotStyle {
     type State = BadgeDotState;
 
     type Basic = BadgeDotBasicStyle;
 
     get_get_mut! {
         BadgeDotState::Basic => basic,
-        BadgeDotState::Hover => hover,
-        BadgeDotState::Pressed => pressed,
         BadgeDotState::Disabled => disabled
     }
 
@@ -83,12 +68,8 @@ impl Style for BadgeDotProp {
 #[derive(Debug, Clone, Live, LiveHook, LiveRegister, Copy)]
 #[live_ignore]
 pub struct BadgeDotBasicStyle {
-    #[live(BadgeDotBasicStyle::default_icon(Theme::default(), BadgeDotState::default()))]
-    pub icon: SvgBasicStyle,
     #[live(BadgeDotBasicStyle::default_text(Theme::default(), BadgeDotState::default()))]
     pub text: LabelBasicStyle,
-    #[live(BadgeDotBasicStyle::default_close(Theme::default(), BadgeDotState::default()))]
-    pub close: SvgBasicStyle,
     #[live(BadgeDotBasicStyle::default_container(Theme::default(), BadgeDotState::default()))]
     pub container: ViewBasicStyle,
 }
@@ -110,40 +91,19 @@ impl SlotBasicStyle for BadgeDotBasicStyle {
         part: Self::Part,
     ) -> () {
         match part {
-            BadgeDotPart::Container => self
-                .container
-                .set_from_str(key, &value.into(), state.into()),
-            BadgeDotPart::Icon => {
-                // if is slot, key is part, value is key + value
-                let icon_part = SvgPart::from_str(key).unwrap();
-                for (key, value) in value.as_kvs() {
-                    self.icon
-                        .set_from_str_slot(key, value, state.into(), icon_part);
-                }
+            BadgeDotPart::Container => {
+                self.container
+                    .set_from_str(key, &value.into(), state.into())
             }
+
             BadgeDotPart::Text => self.text.set_from_str(key, &value.into(), state.into()),
-            BadgeDotPart::Close => {
-                let close_part = SvgPart::from_str(key).unwrap();
-                for (key, value) in value.as_kvs() {
-                    self.close
-                        .set_from_str_slot(key, value, state.into(), close_part);
-                }
-            }
         }
     }
 
     fn sync_slot(&mut self, state: Self::State, part: Self::Part) -> () {
         match part {
             BadgeDotPart::Container => self.container.sync(state.into()),
-            BadgeDotPart::Icon => {
-                self.icon.sync_slot(state.into(), SvgPart::Svg);
-                self.icon.sync_slot(state.into(), SvgPart::Container);
-            }
             BadgeDotPart::Text => self.text.sync(state.into()),
-            BadgeDotPart::Close => {
-                self.close.sync_slot(state.into(), SvgPart::Svg);
-                self.close.sync_slot(state.into(), SvgPart::Container);
-            }
         }
     }
 }
@@ -155,9 +115,7 @@ impl BasicStyle for BadgeDotBasicStyle {
 
     fn from_state(theme: crate::themes::Theme, state: Self::State) -> Self {
         Self {
-            icon: SvgBasicStyle::from_state(theme, state.into()),
             text: Self::default_text(theme, state),
-            close: Self::default_close(theme, state),
             container: Self::default_container(theme, state),
         }
     }
@@ -181,9 +139,7 @@ impl BasicStyle for BadgeDotBasicStyle {
 
     fn sync(&mut self, state: Self::State) -> () {
         self.container.sync(state.into());
-        self.icon.sync(state.into());
         self.text.sync(state.into());
-        self.close.sync(state.into());
     }
 
     fn live_props() -> LiveProps {
@@ -206,9 +162,7 @@ impl BasicStyle for BadgeDotBasicStyle {
 
 from_prop_to_toml! {
     BadgeDotBasicStyle {
-        icon => ICON,
         text => TEXT,
-        close => CLOSE,
         container => CONTAINER
     }
 }
@@ -218,21 +172,19 @@ impl TryFrom<(&Item, BadgeDotState)> for BadgeDotBasicStyle {
 
     fn try_from((value, state): (&Item, BadgeDotState)) -> Result<Self, Self::Error> {
         let inline_table = value.as_inline_table().ok_or(Error::ThemeStyleParse(
-            "[component.tag.$slot] should be an inline table".to_string(),
+            "[component.badge.dot.$slot] should be an inline table".to_string(),
         ))?;
 
         let container = get_from_itable(
             inline_table,
             CONTAINER,
-            || Ok(BadgeDotBasicStyle::default_container(Theme::default(), state)),
+            || {
+                Ok(BadgeDotBasicStyle::default_container(
+                    Theme::default(),
+                    state,
+                ))
+            },
             |v| (v, ViewState::from(state)).try_into(),
-        )?;
-
-        let icon = get_from_itable(
-            inline_table,
-            ICON,
-            || Ok(SvgBasicStyle::default()),
-            |v| (v, state.into()).try_into(),
         )?;
 
         let text = get_from_itable(
@@ -242,19 +194,7 @@ impl TryFrom<(&Item, BadgeDotState)> for BadgeDotBasicStyle {
             |v| (v, state.into()).try_into(),
         )?;
 
-        let close = get_from_itable(
-            inline_table,
-            CLOSE,
-            || Ok(Self::default_close(Theme::default(), state)),
-            |v| (v, state.into()).try_into(),
-        )?;
-
-        Ok(Self {
-            icon,
-            text,
-            close,
-            container,
-        })
+        Ok(Self { text, container })
     }
 }
 
@@ -266,33 +206,23 @@ impl BadgeDotBasicStyle {
         container.align = Align::from_f64(0.5);
         container.background_visible = true;
         container.set_padding(Padding::from_all(4.0, 8.0, 4.0, 8.0));
-        container.set_border_radius(Radius::new(2.0));
+        container.set_border_radius(Radius::new(5.6));
         container.set_flow(Flow::Right);
-        container.set_spacing(4.0);
+        container.set_spacing(0.0);
         container
     }
 
     pub fn default_text(theme: Theme, state: BadgeDotState) -> LabelBasicStyle {
         let mut text = LabelBasicStyle::from_state(theme, state.into());
         text.flow = Flow::Right;
-        text.set_font_size(10.0);
+        text.set_font_size(8.0);
         text
-    }
-
-    pub fn default_close(theme: Theme, state: BadgeDotState) -> SvgBasicStyle {
-        SvgBasicStyle::from_state(theme, state.into())
-    }
-
-    pub fn default_icon(theme: Theme, state: BadgeDotState) -> SvgBasicStyle {
-        SvgBasicStyle::from_state(theme, state.into())
     }
 }
 
 component_state! {
     BadgeDotState {
         Basic => BASIC,
-        Hover => HOVER,
-        Pressed => PRESSED,
         Disabled => DISABLED
     },
     _ => BadgeDotState::Basic
@@ -308,31 +238,7 @@ impl From<BadgeDotState> for ViewState {
     fn from(value: BadgeDotState) -> Self {
         match value {
             BadgeDotState::Basic => ViewState::Basic,
-            BadgeDotState::Hover => ViewState::Hover,
-            BadgeDotState::Pressed => ViewState::Pressed,
             BadgeDotState::Disabled => ViewState::Disabled,
-        }
-    }
-}
-
-impl From<ViewState> for BadgeDotState {
-    fn from(value: ViewState) -> Self {
-        match value {
-            ViewState::Basic => BadgeDotState::Basic,
-            ViewState::Hover => BadgeDotState::Hover,
-            ViewState::Pressed => BadgeDotState::Pressed,
-            ViewState::Disabled => BadgeDotState::Disabled,
-        }
-    }
-}
-
-impl From<BadgeDotState> for SvgState {
-    fn from(value: BadgeDotState) -> Self {
-        match value {
-            BadgeDotState::Basic => SvgState::Basic,
-            BadgeDotState::Hover => SvgState::Hover,
-            BadgeDotState::Pressed => SvgState::Pressed,
-            BadgeDotState::Disabled => SvgState::Disabled,
         }
     }
 }
@@ -340,7 +246,7 @@ impl From<BadgeDotState> for SvgState {
 impl From<BadgeDotState> for LabelState {
     fn from(value: BadgeDotState) -> Self {
         match value {
-            BadgeDotState::Basic | BadgeDotState::Hover | BadgeDotState::Pressed => LabelState::Basic,
+            BadgeDotState::Basic => LabelState::Basic,
             BadgeDotState::Disabled => LabelState::Disabled,
         }
     }
@@ -348,9 +254,7 @@ impl From<BadgeDotState> for LabelState {
 
 component_part! {
     BadgeDotPart {
-        Icon => icon => ICON,
         Text => text => TEXT,
-        Close => close => CLOSE,
         Container => container => CONTAINER
     }, BadgeDotState
 }

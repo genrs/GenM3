@@ -87,7 +87,7 @@ live_design! {
 pub struct GRadio {
     // --- prop -------------------
     #[live]
-    pub style: RadioProp,
+    pub style: RadioStyle,
     // --- visible -------------------
     #[live(true)]
     pub visible: bool,

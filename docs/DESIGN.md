@@ -20,7 +20,7 @@ GenUI 将组件分为三大类，每类都有特定的用途和实现模式：
 ```rust
 #[derive(Live, WidgetRef, WidgetSet, LiveRegisterWidget)]
 pub struct GLabel {
-    #[live] pub style: LabelProp,
+    #[live] pub style: LabelStyle,
     #[live] pub draw_text: DrawText,
     #[rust] pub state: LabelState,
 }

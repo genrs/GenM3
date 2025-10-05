@@ -20,7 +20,7 @@ use crate::{
 use makepad_widgets::*;
 
 prop_interconvert! {
-    SwitchProp {
+    SwitchStyle {
         basic_prop = SwitchBasicStyle;
         basic => BASIC, SwitchBasicStyle::default(),|v| (v, SwitchState::Basic).try_into(),
         hover_basic => HOVER_BASIC, SwitchBasicStyle::from_state(Theme::default(), SwitchState::HoverBasic),|v| (v, SwitchState::HoverBasic).try_into(),
@@ -30,7 +30,7 @@ prop_interconvert! {
     }, "[component.checkbox] should be a table"
 }
 
-impl Style for SwitchProp {
+impl Style for SwitchStyle {
     type State = SwitchState;
 
     type Basic = SwitchBasicStyle;

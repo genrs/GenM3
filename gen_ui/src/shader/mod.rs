@@ -12,6 +12,7 @@ pub mod draw_svg;
 pub mod draw_switch;
 pub mod draw_view;
 pub mod draw_rate;
+pub mod draw_dot;
 
 use makepad_widgets::Cx;
 
@@ -29,5 +30,6 @@ pub fn shader_register(cx: &mut Cx) {
     draw_color_picker::live_design(cx);
     draw_loading::live_design(cx);
     draw_rate::live_design(cx);
+    draw_dot::live_design(cx);
     animation::live_design(cx);
 }

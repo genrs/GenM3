@@ -3,19 +3,19 @@ use crate::{
     components::{
         label::{LabelBasicStyle, LabelState},
         live_props::LiveProps,
-        traits::{BasicStyle, ComponentState, Part, Style, SlotBasicStyle, SlotStyle},
+        traits::{BasicStyle, ComponentState, SlotBasicStyle, SlotStyle, Style},
         view::{ViewBasicStyle, ViewState},
     },
     error::Error,
     from_prop_to_toml, get_get_mut,
     prop::{
+        ActiveMode, ApplySlotMapImpl,
         manuel::{
             ABS_POS, ACTIVE, BACKGROUND_COLOR, BACKGROUND_VISIBLE, BASIC, BORDER_COLOR,
             BORDER_WIDTH, CONTAINER, CURSOR, DISABLED, EXTRA, HOVER, MARGIN, MODE, RADIO, SIZE,
             STROKE_COLOR, THEME,
         },
         traits::{AbsPos, FromLiveColor, FromLiveValue, NewFrom, ToColor, ToTomlValue},
-        ActiveMode, ApplySlotMapImpl,
     },
     prop_interconvert, state_colors,
     themes::{Color, Theme, TomlValueTo},
@@ -25,7 +25,7 @@ use makepad_widgets::*;
 use toml_edit::Item;
 
 prop_interconvert! {
-    RadioProp {
+    RadioStyle {
         basic_prop = RadioBasicStyle;
         basic => BASIC, RadioBasicStyle::default(),|v| (v, RadioState::Basic).try_into(),
         hover => HOVER, RadioBasicStyle::from_state(Theme::default(), RadioState::Hover),|v| (v, RadioState::Hover).try_into(),
@@ -34,7 +34,7 @@ prop_interconvert! {
     }, "[component.radio] should be a table"
 }
 
-impl SlotStyle for RadioProp {
+impl SlotStyle for RadioStyle {
     type Part = RadioPart;
 
     fn sync_slot(&mut self, map: &crate::prop::ApplySlotMap<Self::State, Self::Part>) -> () {
@@ -51,7 +51,7 @@ impl SlotStyle for RadioProp {
     }
 }
 
-impl Style for RadioProp {
+impl Style for RadioStyle {
     type State = RadioState;
 
     type Basic = RadioBasicStyle;

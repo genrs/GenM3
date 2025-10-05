@@ -594,6 +594,8 @@ live_design! {
 
         suffix: <IconCheck> {}
     }
+
+    pub GBadgeDot = <GBadgeDotBase> {}
 }
 
 pub fn components_register(cx: &mut Cx) {
@@ -622,6 +624,7 @@ pub fn components_register(cx: &mut Cx) {
     slider::live_design(cx);
     rate::live_design(cx);
     select::select_register(cx);
+    badge::badge_register(cx);
 }
 
 component! {

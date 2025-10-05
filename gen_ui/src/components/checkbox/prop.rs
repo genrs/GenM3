@@ -18,7 +18,7 @@ use makepad_widgets::*;
 use toml_edit::{Item};
 
 prop_interconvert! {
-    CheckboxProp {
+    CheckboxStyle {
         basic_prop = CheckboxBasicStyle;
         basic => BASIC, CheckboxBasicStyle::default(),|v| (v, CheckboxState::Basic).try_into(),
         hover => HOVER, CheckboxBasicStyle::from_state(Theme::default(), CheckboxState::Hover),|v| (v, CheckboxState::Hover).try_into(),
@@ -28,7 +28,7 @@ prop_interconvert! {
 }
 
 
-impl SlotStyle for CheckboxProp {
+impl SlotStyle for CheckboxStyle {
     type Part = CheckboxPart;
 
     fn sync_slot(&mut self, map: &crate::prop::ApplySlotMap<Self::State, Self::Part>) -> () {
@@ -49,7 +49,7 @@ impl SlotStyle for CheckboxProp {
     }
 }
 
-impl Style for CheckboxProp {
+impl Style for CheckboxStyle {
     type State = CheckboxState;
 
     type Basic = CheckboxBasicStyle;
