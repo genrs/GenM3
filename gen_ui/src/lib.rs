@@ -55,5 +55,6 @@ pub struct ComponentAnInit {
     loading: bool,
     slider: bool,
     rate: bool,
-    select_item: bool
+    select_item: bool,
+    select: bool,
 }

@@ -27,6 +27,7 @@ mod color_picker;
 mod slider;
 mod progress;
 mod rate;
+mod badge;
 
 pub use color_picker::*;
 pub use button::*;
@@ -55,6 +56,7 @@ pub use progress::*;
 pub use loading::*;
 pub use rate::*;
 pub use slider::*;
+pub use badge::*;
 
 use crate::component;
 

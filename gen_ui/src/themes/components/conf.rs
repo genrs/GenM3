@@ -3,11 +3,11 @@ use toml_edit::Table;
 use crate::components::item::SelectItemStyle;
 use crate::components::panel::ColorPanelStyle;
 use crate::components::{
-    ButtonStyle, CardStyle, CheckboxProp, CollapseStyle, DividerProp, ImageProp, LabelProp, LinkProp, LoadingStyle, MenuItemProp, MenuProp, PopupContainerProp, PopupProp, ProgressStyle, RadioProp, RateStyle, SliderStyle, SubMenuProp, SvgStyle, SwitchProp, TabbarItemProp, TabbarProp, TagProp, ViewStyle
+    ButtonStyle, CardStyle, CheckboxProp, CollapseStyle, DividerProp, ImageProp, LabelProp, LinkProp, LoadingStyle, MenuItemProp, MenuProp, PopupContainerProp, PopupProp, ProgressStyle, RadioProp, RateStyle, SelectStyle, SliderStyle, SubMenuProp, SvgStyle, SwitchProp, TabbarItemProp, TabbarProp, TagProp, ViewStyle
 };
 use crate::error::Error;
 use crate::prop::manuel::{
-    BUTTON, CARD, CHECKBOX, COLLAPSE, COLOR_PANEL, DIVIDER, IMAGE, LABEL, LINK, LOADING, MENU, MENU_ITEM, POPUP, POPUP_CONTAINER, PROGRESS, RADIO, RATE, SELECT_ITEM, SLIDER, SUB_MENU, SVG, SWITCH, TABBAR, TABBAR_ITEM, TAG, VIEW
+    BUTTON, CARD, CHECKBOX, COLLAPSE, COLOR_PANEL, DIVIDER, IMAGE, LABEL, LINK, LOADING, MENU, MENU_ITEM, POPUP, POPUP_CONTAINER, PROGRESS, RADIO, RATE, SELECT, SELECT_ITEM, SLIDER, SUB_MENU, SVG, SWITCH, TABBAR, TABBAR_ITEM, TAG, VIEW
 };
 use crate::try_from_toml_item;
 
@@ -38,7 +38,8 @@ pub struct ComponentsConf {
     pub loading: LoadingStyle,
     pub color_panel: ColorPanelStyle,
     pub rate: RateStyle,
-    pub select_item: SelectItemStyle
+    pub select_item: SelectItemStyle,
+    pub select: SelectStyle
 }
 
 try_from_toml_item! {
@@ -68,7 +69,8 @@ try_from_toml_item! {
         loading => LOADING, LoadingStyle::default(), |item| item.try_into(),
         color_panel => COLOR_PANEL, ColorPanelStyle::default(), |item| item.try_into(),
         rate => RATE, RateStyle::default(), |item| item.try_into(),
-        select_item => SELECT_ITEM, SelectItemStyle::default(), |item| item.try_into()
+        select_item => SELECT_ITEM, SelectItemStyle::default(), |item| item.try_into(),
+        select => SELECT, SelectStyle::default(), |item| item.try_into()
     }, "[components] should be a table"
 }
 
