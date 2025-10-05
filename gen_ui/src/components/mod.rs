@@ -28,7 +28,10 @@ mod slider;
 mod progress;
 mod rate;
 mod badge;
+mod container;
 
+
+pub use container::*;
 pub use color_picker::*;
 pub use button::*;
 pub use card::*;
