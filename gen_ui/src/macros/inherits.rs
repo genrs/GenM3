@@ -32,7 +32,13 @@ macro_rules! inherits_view_livehook {
         fn after_new_before_apply(&mut self, cx: &mut Cx) {
             self.deref_widget.after_new_before_apply(cx);
         }
-        fn before_apply(&mut self, cx: &mut Cx, apply: &mut Apply, index: usize, nodes: &[LiveNode]) {
+        fn before_apply(
+            &mut self,
+            cx: &mut Cx,
+            apply: &mut Apply,
+            index: usize,
+            nodes: &[LiveNode],
+        ) {
             self.deref_widget.before_apply(cx, apply, index, nodes);
         }
         fn after_update_from_doc(&mut self, cx: &mut Cx) {
@@ -60,16 +66,15 @@ macro_rules! inherits_view_livehook {
 /// pre-operations for some methods in the livehook trait
 /// - `after_apply`
 /// - `before_apply`
-/// - `apply_value_instance`
 /// **should use in component which need to inherits container**
 /// ### usage
 /// ```
 /// impl XXX {
-///     do_container_livehook_pre!();
+///     do_view_livehook_pre!();
 /// }
 /// ```
 #[macro_export]
-macro_rules! do_container_livehook_pre {
+macro_rules! do_view_livehook_pre {
     () => {
         pub fn walk_from_previous_size(&self, walk: Walk) -> Walk {
             let view_size = self.view_size.unwrap_or(DVec2::default());
@@ -154,7 +159,9 @@ macro_rules! do_container_livehook_pre {
                             self.live_update_order.push(id);
                         }
                         //self.draw_order.push(id);
-                        if let Some((_, node)) = self.children.iter_mut().find(|(id2, _)| *id2 == id) {
+                        if let Some((_, node)) =
+                            self.children.iter_mut().find(|(id2, _)| *id2 == id)
+                        {
                             node.apply(cx, apply, index, nodes)
                         } else {
                             self.children.push((id, WidgetRef::new(cx)));
@@ -176,7 +183,7 @@ macro_rules! do_container_livehook_pre {
 }
 
 #[macro_export]
-macro_rules! inherits_container_find_widgets {
+macro_rules! inherits_view_find_widgets {
     () => {
         fn find_widgets(&self, path: &[LiveId], cached: WidgetCache, results: &mut WidgetSet) {
             match cached {

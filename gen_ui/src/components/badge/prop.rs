@@ -1,22 +1,21 @@
-use std::str::FromStr;
-
 use makepad_widgets::*;
 use toml_edit::Item;
 
 use crate::{
     component_part, component_state,
     components::{
+        ViewColors,
         dot::{BadgeDotBasicStyle, BadgeDotState},
-        label::{LabelBasicStyle, LabelState},
         live_props::LiveProps,
-        svg::{SvgBasicStyle, SvgPart, SvgState},
-        traits::{BasicStyle, ComponentState, Part, SlotBasicStyle, SlotStyle, Style},
-        view::{ViewBasicStyle, ViewState}, ViewColors,
+        traits::{BasicStyle, ComponentState, SlotBasicStyle, SlotStyle, Style},
+        view::{ViewBasicStyle, ViewState},
     },
     error::Error,
     from_prop_to_toml, get_get_mut,
     prop::{
-        manuel::{BASIC, CLOSE, CONTAINER, DISABLED, DOT, HOVER, ICON, PRESSED, TEXT}, traits::NewFrom, ApplySlotMapImpl, ApplyStateMapImpl, Applys, Radius
+        ApplySlotMapImpl, ApplyStateMapImpl, Applys,
+        manuel::{BASIC, CONTAINER, DISABLED, DOT},
+        traits::NewFrom,
     },
     prop_interconvert,
     themes::Theme,
@@ -197,6 +196,9 @@ impl BadgeBasicStyle {
         let mut container = ViewBasicStyle::from_state(theme, state.into());
         container.set_cursor(Default::default());
         container.set_background_visible(true);
+        container.set_padding(Padding::from_f64(0.0));
+        container.set_height(Size::Fit);
+        container.set_width(Size::Fit);
         container
     }
 }

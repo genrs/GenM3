@@ -6,11 +6,24 @@ pub use register::register as badge_register;
 use std::cell::RefCell;
 
 use crate::{
-    animation_open_then_redraw, components::{
-        dot::GBadgeDot, BasicStyle, Component, DrawState, GContainer, LifeCycle, SlotComponent, SlotStyle, Style
-    }, do_container_livehook_pre, error::Error, event_option, event_option_ref, impl_view_trait_live_hook, impl_view_trait_widget_node, inherits_container_find_widgets, lifecycle, play_animation, prop::{
-        manuel::{BASIC, DISABLED}, traits::ToFloat, ApplyMapImpl, ApplySlotMap, ApplySlotMapImpl, ApplySlotMergeImpl, ApplyStateMap, DeferWalks, ToSlotMap
-    }, pure_after_apply, set_animation, set_index, set_scope_path, shader::draw_view::DrawView, switch_state, sync, themes::conf::Conf, visible, ComponentAnInit
+    components::{
+        BasicStyle, Component, DrawState, LifeCycle, SlotComponent, SlotStyle, Style,
+        ViewBasicStyle, ViewTextureCache,
+        dot::{BadgeDotBasicStyle, GBadgeDot},
+        is_texture, needs_draw_list,
+    },
+    do_view_livehook_pre,
+    error::Error,
+    inherits_view_find_widgets, lifecycle, play_animation,
+    prop::{
+        ApplySlotMap, ApplySlotMapImpl, ApplySlotMergeImpl, ToSlotMap,
+        manuel::{BASIC, DISABLED},
+    },
+    pure_after_apply, set_index, set_scope_path,
+    shader::draw_view::DrawView,
+    sync,
+    themes::conf::Conf,
+    visible,
 };
 
 pub use prop::*;
@@ -46,11 +59,69 @@ live_design! {
     }
 }
 
-#[derive(Live, LiveRegisterWidget, WidgetRef, WidgetSet)]
-#[allow(dead_code)]
+#[derive(Live, WidgetRef, WidgetSet, LiveRegisterWidget)]
 pub struct GBadge {
-    #[deref]
-    pub super_widget: GContainer,
+    #[live(true)]
+    pub visible: bool,
+    #[live]
+    pub scroll: DVec2,
+    #[live]
+    pub scroll_bars: Option<LivePtr>,
+    #[live]
+    pub dpi_factor: Option<f64>,
+    #[live]
+    pub optimize: ViewOptimize,
+    #[live(true)]
+    pub grab_key_focus: bool,
+    #[live(false)]
+    pub block_signal_event: bool,
+    #[live(false)]
+    pub capture_overload: bool,
+    #[live]
+    pub event_order: EventOrder,
+    #[live(false)]
+    pub event_open: bool,
+    #[live]
+    pub disabled: bool,
+    // --- texture and cache ------
+    #[rust]
+    pub scope_path: Option<HeapLiveIdPath>,
+    #[rust]
+    pub find_cache: RefCell<SmallVec<[(u64, WidgetSet); 3]>>,
+    #[rust]
+    pub scroll_bars_obj: Option<Box<ScrollBars>>,
+    #[rust]
+    pub view_size: Option<DVec2>,
+    #[rust]
+    pub area: Area,
+    #[rust]
+    pub draw_list: Option<DrawList2d>,
+    #[rust]
+    pub texture_cache: Option<ViewTextureCache>,
+    #[rust]
+    pub defer_walks: SmallVec<[(LiveId, DeferWalk); 1]>,
+    #[rust]
+    pub draw_state: DrawStateWrap<DrawState>,
+    #[rust]
+    pub children: SmallVec<[(LiveId, WidgetRef); 2]>,
+    #[rust]
+    pub live_update_order: SmallVec<[LiveId; 1]>,
+    // --- animation --------------
+    #[animator]
+    pub animator: Animator,
+    #[live(false)]
+    pub animation_open: bool,
+    #[live(true)]
+    pub animation_spread: bool,
+    // --- lifecycle --------------
+    #[rust]
+    pub lifecycle: LifeCycle,
+    #[rust]
+    pub index: usize,
+    #[live(true)]
+    pub sync: bool,
+    #[live]
+    pub draw_badge: DrawView,
     #[live]
     pub style: BadgeStyle,
     #[rust]
@@ -62,7 +133,7 @@ pub struct GBadge {
 }
 
 impl WidgetNode for GBadge {
-    inherits_container_find_widgets!();
+    inherits_view_find_widgets!();
 
     fn walk(&mut self, _cx: &mut Cx) -> Walk {
         let style = self.style.get(self.state);
@@ -86,7 +157,7 @@ impl WidgetNode for GBadge {
     fn redraw(&mut self, cx: &mut Cx) {
         let _ = self.render(cx);
         self.area.redraw(cx);
-        self.draw_view.redraw(cx);
+        self.draw_badge.redraw(cx);
         for (_, child) in &mut self.children {
             child.redraw(cx);
         }
@@ -103,7 +174,180 @@ impl WidgetNode for GBadge {
     visible!();
 }
 
-impl Widget for GBadge {}
+impl Widget for GBadge {
+    fn draw_walk(&mut self, cx: &mut Cx2d, scope: &mut Scope, walk: Walk) -> DrawStep {
+        if !self.visible {
+            return DrawStep::done();
+        }
+        let layout = self.style.get(self.state).layout();
+
+        if self.draw_state.begin(cx, DrawState::Drawing(0, false)) {
+            if !self.visible {
+                self.draw_state.end();
+                self.set_scope_path(&scope.path);
+                return DrawStep::done();
+            }
+            self.defer_walks.clear();
+
+            match self.optimize {
+                ViewOptimize::Texture => {
+                    let walk = self.walk_from_previous_size(walk);
+                    if !cx.will_redraw(self.draw_list.as_mut().unwrap(), walk) {
+                        if let Some(texture_cache) = self.texture_cache.as_ref() {
+                            self.draw_badge
+                                .draw_vars
+                                .set_texture(0, &texture_cache.color_texture);
+                            let mut rect = cx.walk_turtle_with_area(&mut self.area, walk);
+                            // NOTE(eddyb) see comment lower below for why this is
+                            // disabled (it used to match `set_pass_scaled_area`).
+                            if false {
+                                rect.size *= 2.0 / self.dpi_factor.unwrap_or(1.0);
+                            }
+                            self.draw_badge.draw_abs(cx, rect);
+                            self.area = self.draw_badge.area();
+                            cx.set_pass_area(&texture_cache.pass, self.area);
+                        }
+                        self.set_scope_path(&scope.path);
+                        return DrawStep::done();
+                    }
+                    // lets start a pass
+                    if self.texture_cache.is_none() {
+                        self.texture_cache = Some(ViewTextureCache {
+                            pass: Pass::new(cx),
+                            _depth_texture: Texture::new(cx),
+                            color_texture: Texture::new(cx),
+                        });
+                        let texture_cache = self.texture_cache.as_mut().unwrap();
+                        //cache.pass.set_depth_texture(cx, &cache.depth_texture, PassClearDepth::ClearWith(1.0));
+                        texture_cache.color_texture = Texture::new_with_format(
+                            cx,
+                            TextureFormat::RenderBGRAu8 {
+                                size: TextureSize::Auto,
+                                initial: true,
+                            },
+                        );
+                        texture_cache.pass.set_color_texture(
+                            cx,
+                            &texture_cache.color_texture,
+                            PassClearColor::ClearWith(vec4(0.0, 0.0, 0.0, 0.0)),
+                        );
+                    }
+                    let texture_cache = self.texture_cache.as_mut().unwrap();
+                    cx.make_child_pass(&texture_cache.pass);
+                    cx.begin_pass(&texture_cache.pass, self.dpi_factor);
+                    self.draw_list.as_mut().unwrap().begin_always(cx)
+                }
+                ViewOptimize::DrawList => {
+                    let walk = self.walk_from_previous_size(walk);
+                    if self
+                        .draw_list
+                        .as_mut()
+                        .unwrap()
+                        .begin(cx, walk)
+                        .is_not_redrawing()
+                    {
+                        cx.walk_turtle_with_area(&mut self.area, walk);
+                        self.set_scope_path(&scope.path);
+                        return DrawStep::done();
+                    }
+                }
+                _ => (),
+            }
+
+            // ok so.. we have to keep calling draw till we return LiveId(0)
+            let scroll = if let Some(scroll_bars) = &mut self.scroll_bars_obj {
+                scroll_bars.begin_nav_area(cx);
+                scroll_bars.get_scroll_pos()
+            } else {
+                self.scroll
+            };
+
+            let layout = layout.with_scroll(scroll);
+
+            if self.visible {
+                self.draw_badge.begin(cx, walk, layout);
+            } else {
+                cx.begin_turtle(walk, layout);
+            }
+        }
+
+        while let Some(DrawState::Drawing(step, resume)) = self.draw_state.get() {
+            if step < self.children.len() {
+                if let Some((id, child)) = self.children.get_mut(step) {
+                    if child.visible() {
+                        let walk = child.walk(cx);
+                        child.set_disabled(cx, self.disabled);
+
+                        if resume {
+                            scope.with_id(*id, |scope| child.draw_walk(cx, scope, walk))?;
+                        } else if let Some(fw) = cx.defer_walk(walk) {
+                            self.defer_walks.push((*id, fw));
+                        } else {
+                            self.draw_state.set(DrawState::Drawing(step, true));
+                            scope.with_id(*id, |scope| child.draw_walk(cx, scope, walk))?;
+                        }
+                    }
+                }
+                self.draw_state.set(DrawState::Drawing(step + 1, false));
+            } else {
+                self.draw_state.set(DrawState::DeferWalk(0));
+            }
+        }
+
+        while let Some(DrawState::DeferWalk(step)) = self.draw_state.get() {
+            if step < self.defer_walks.len() {
+                let (id, dw) = &mut self.defer_walks[step];
+                if let Some((id, child)) = self.children.iter_mut().find(|(id2, _)| id2 == id) {
+                    let walk = dw.resolve(cx);
+                    child.set_disabled(cx, self.disabled);
+                    scope.with_id(*id, |scope| child.draw_walk(cx, scope, walk))?;
+                }
+                self.draw_state.set(DrawState::DeferWalk(step + 1));
+            } else {
+                if let Some(scroll_bars) = &mut self.scroll_bars_obj {
+                    scroll_bars.draw_scroll_bars(cx);
+                };
+
+                if self.visible {
+                    if is_texture(self.optimize) {
+                        panic!("dont use show_bg and texture caching at the same time");
+                    }
+                    self.draw_badge.end(cx);
+                    self.area = self.draw_badge.area();
+                } else {
+                    cx.end_turtle_with_area(&mut self.area);
+                };
+
+                if let Some(scroll_bars) = &mut self.scroll_bars_obj {
+                    scroll_bars.set_area(self.area);
+                    scroll_bars.end_nav_area(cx);
+                };
+
+                if needs_draw_list(self.optimize) {
+                    let rect = self.area.rect(cx);
+                    self.view_size = Some(rect.size);
+                    self.draw_list.as_mut().unwrap().end(cx);
+
+                    if is_texture(self.optimize) {
+                        let texture_cache = self.texture_cache.as_mut().unwrap();
+                        cx.end_pass(&texture_cache.pass);
+                        self.draw_badge
+                            .draw_vars
+                            .set_texture(0, &texture_cache.color_texture);
+                        self.draw_badge.draw_abs(cx, rect);
+                        let area = self.draw_badge.area();
+                        let texture_cache = self.texture_cache.as_mut().unwrap();
+
+                        cx.set_pass_area(&texture_cache.pass, area);
+                    }
+                }
+                self.draw_state.end();
+            }
+        }
+        self.set_scope_path(&scope.path);
+        DrawStep::done()
+    }
+}
 
 impl LiveHook for GBadge {
     pure_after_apply!();
@@ -116,7 +360,7 @@ impl LiveHook for GBadge {
         self.do_before_apply_pre(cx, apply, index, nodes);
     }
 
-    fn after_apply(&mut self, cx: &mut Cx, apply: &mut Apply, _index: usize, _nodes: &[LiveNode]) {
+    fn after_apply(&mut self, cx: &mut Cx, apply: &mut Apply, index: usize, nodes: &[LiveNode]) {
         let update_order_len = self.live_update_order.len();
         if apply.from.is_update_from_doc() {
             //livecoding
@@ -140,6 +384,28 @@ impl LiveHook for GBadge {
                     Some(Box::new(ScrollBars::new_from_ptr(cx, self.scroll_bars)));
             }
         }
+
+        self.set_apply_slot_map(
+            nodes,
+            index,
+            [live_id!(basic), live_id!(disabled)],
+            [
+                (BadgePart::Container, &ViewBasicStyle::live_props()),
+                (BadgePart::Dot, &BadgeDotBasicStyle::live_props()),
+            ],
+            |_| {},
+            |prefix, component, applys| match prefix.to_string().as_str() {
+                BASIC => {
+                    component.apply_slot_map.insert(BadgeState::Basic, applys);
+                }
+                DISABLED => {
+                    component
+                        .apply_slot_map
+                        .insert(BadgeState::Disabled, applys);
+                }
+                _ => {}
+            },
+        );
     }
 
     fn apply_value_instance(
@@ -173,12 +439,13 @@ impl Component for GBadge {
         self.merge_prop_to_slot();
     }
 
-    fn render(&mut self, _cx: &mut Cx) -> Result<(), Self::Error> {
+    fn render(&mut self, cx: &mut Cx) -> Result<(), Self::Error> {
         if self.disabled {
             self.switch_state(BadgeState::Disabled);
         }
-        let style = self.style.get(self.state).container;
-        self.draw_view.merge(&style);
+        let style = self.style.get(self.state);
+        self.draw_badge.merge(&style.container);
+        self.dot.render(cx)?;
         Ok(())
     }
 
@@ -222,5 +489,5 @@ impl Component for GBadge {
 }
 
 impl GBadge {
-    do_container_livehook_pre!();
+    do_view_livehook_pre!();
 }

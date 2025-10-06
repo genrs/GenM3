@@ -1,9 +1,11 @@
 use makepad_widgets::*;
 
+mod badge;
 mod button;
 mod card;
 mod checkbox;
 mod collapse;
+mod color_picker;
 mod divider;
 mod drop_down;
 mod image;
@@ -14,29 +16,25 @@ mod live_props;
 mod loading;
 mod menu;
 mod popup;
+mod progress;
 mod radio;
+mod rate;
 mod router;
 mod select;
+mod slider;
 mod svg;
 mod switch;
 mod tabbar;
 mod tag;
 mod traits;
 mod view;
-mod color_picker;
-mod slider;
-mod progress;
-mod rate;
-mod badge;
-mod container;
 
-
-pub use container::*;
-pub use color_picker::*;
+pub use badge::*;
 pub use button::*;
 pub use card::*;
 pub use checkbox::*;
 pub use collapse::*;
+pub use color_picker::*;
 pub use divider::*;
 pub use drop_down::*;
 pub use image::*;
@@ -44,22 +42,21 @@ pub use label::*;
 pub use lifecycle::*;
 pub use link::*;
 pub use live_props::*;
+pub use loading::*;
 pub use menu::*;
 pub use popup::*;
+pub use progress::*;
 pub use radio::*;
+pub use rate::*;
 pub use router::*;
 pub use select::*;
+pub use slider::*;
 pub use svg::*;
 pub use switch::*;
 pub use tabbar::*;
 pub use tag::*;
 pub use traits::*;
 pub use view::*;
-pub use progress::*;
-pub use loading::*;
-pub use rate::*;
-pub use slider::*;
-pub use badge::*;
 
 use crate::component;
 
@@ -599,6 +596,8 @@ live_design! {
     }
 
     pub GBadgeDot = <GBadgeDotBase> {}
+
+    pub GBadge = <GBadgeBase> {}
 }
 
 pub fn components_register(cx: &mut Cx) {
