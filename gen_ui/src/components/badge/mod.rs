@@ -16,7 +16,7 @@ use crate::{
     error::Error,
     inherits_view_find_widgets, lifecycle, play_animation,
     prop::{
-        ApplySlotMap, ApplySlotMapImpl, ApplySlotMergeImpl, ToSlotMap,
+        ApplySlotMap, ApplySlotMapImpl, ApplySlotMergeImpl, Position, ToSlotMap,
         manuel::{BASIC, DISABLED},
     },
     pure_after_apply, set_index, set_scope_path,
@@ -130,6 +130,11 @@ pub struct GBadge {
     pub apply_slot_map: ApplySlotMap<BadgeState, BadgePart>,
     #[live]
     pub dot: GBadgeDot,
+    #[live(Position::TopRight)]
+    pub position: Position,
+    /// offset for badge dot
+    #[live]
+    pub offset: Vec2,
 }
 
 impl WidgetNode for GBadge {
@@ -179,7 +184,7 @@ impl Widget for GBadge {
         if !self.visible {
             return DrawStep::done();
         }
-        let layout = self.style.get(self.state).layout();
+        let style = self.style.get(self.state);
 
         if self.draw_state.begin(cx, DrawState::Drawing(0, false)) {
             if !self.visible {
@@ -262,7 +267,7 @@ impl Widget for GBadge {
                 self.scroll
             };
 
-            let layout = layout.with_scroll(scroll);
+            let layout = style.layout().with_scroll(scroll);
 
             if self.visible {
                 self.draw_badge.begin(cx, walk, layout);
@@ -344,6 +349,79 @@ impl Widget for GBadge {
                 self.draw_state.end();
             }
         }
+
+        // draw badge dot for container
+        if self.dot.visible {
+            if self.draw_list.is_none() {
+                self.draw_list = Some(DrawList2d::new(cx));
+            }
+            let container_area = self.area();
+            let area = container_area.rect(cx);
+            if let Some(draw_list) = self.draw_list.as_mut() {
+                draw_list.begin_overlay_reuse(cx);
+                cx.begin_pass_sized_turtle(Layout::flow_down());
+                let dot_walk = self.dot.walk(cx);
+                let _ = self.dot.draw_walk(cx, scope, dot_walk);
+                let dot_rect = self.dot.area().rect(cx);
+                let mut shift = match self.position {
+                    Position::Bottom => DVec2 {
+                        x: -dot_rect.size.x / 2.0 + area.size.x / 2.0,
+                        y: area.size.y + 0.0,
+                    },
+                    Position::BottomLeft => DVec2 {
+                        x: 0.0,
+                        y: area.size.y + 0.0,
+                    },
+                    Position::BottomRight => DVec2 {
+                        x: area.size.x - dot_rect.size.x,
+                        y: area.size.y + 0.0,
+                    },
+                    Position::Top => DVec2 {
+                        x: -dot_rect.size.x / 2.0 + area.size.x / 2.0,
+                        y: -dot_rect.size.y,
+                    },
+                    Position::TopLeft => DVec2 {
+                        x: 0.0,
+                        y: -dot_rect.size.y,
+                    },
+                    Position::TopRight => DVec2 {
+                        x: area.size.x - dot_rect.size.x,
+                        y: -dot_rect.size.y,
+                    },
+                    Position::Left => DVec2 {
+                        x: -dot_rect.size.x,
+                        y: area.size.y / 2.0 - dot_rect.size.y / 2.0,
+                    },
+                    Position::LeftTop => DVec2 {
+                        x: -dot_rect.size.x,
+                        y: 0.0,
+                    },
+                    Position::LeftBottom => DVec2 {
+                        x: -dot_rect.size.x,
+                        y: 0.0 - dot_rect.size.y + area.size.y,
+                    },
+                    Position::Right => DVec2 {
+                        x: area.size.x + 0.0,
+                        y: area.size.y / 2.0 - dot_rect.size.y / 2.0,
+                    },
+                    Position::RightTop => DVec2 {
+                        x: area.size.x + 0.0,
+                        y: 0.0,
+                    },
+                    Position::RightBottom => DVec2 {
+                        x: area.size.x + 0.0,
+                        y: 0.0 - dot_rect.size.y + area.size.y,
+                    },
+                };
+
+                shift.x += self.offset.x as f64;
+                shift.y += self.offset.y as f64;
+
+                cx.end_pass_sized_turtle_with_shift(container_area, shift);
+                draw_list.end(cx);
+            }
+        }
+
         self.set_scope_path(&scope.path);
         DrawStep::done()
     }
