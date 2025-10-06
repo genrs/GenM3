@@ -1,273 +1,240 @@
-// use std::str::FromStr;
+use std::str::FromStr;
 
-// use makepad_widgets::*;
-// use toml_edit::Item;
+use makepad_widgets::*;
+use toml_edit::Item;
 
-// use crate::{
-//     component_part, component_state,
-//     components::{
-//         label::{LabelBasicStyle, LabelState},
-//         live_props::LiveProps,
-//         svg::{SvgBasicStyle, SvgPart, SvgState},
-//         traits::{BasicStyle, ComponentState, Part, SlotBasicStyle, SlotStyle, Style},
-//         view::{ViewBasicStyle, ViewState},
-//     },
-//     error::Error,
-//     from_prop_to_toml, get_get_mut,
-//     prop::{
-//         ApplySlotMapImpl, Radius,
-//         manuel::{BASIC, CLOSE, CONTAINER, DISABLED, HOVER, ICON, PRESSED, TEXT},
-//         traits::NewFrom,
-//     },
-//     prop_interconvert,
-//     themes::Theme,
-//     utils::get_from_itable,
-// };
+use crate::{
+    component_part, component_state,
+    components::{
+        dot::{BadgeDotBasicStyle, BadgeDotState},
+        label::{LabelBasicStyle, LabelState},
+        live_props::LiveProps,
+        svg::{SvgBasicStyle, SvgPart, SvgState},
+        traits::{BasicStyle, ComponentState, Part, SlotBasicStyle, SlotStyle, Style},
+        view::{ViewBasicStyle, ViewState}, ViewColors,
+    },
+    error::Error,
+    from_prop_to_toml, get_get_mut,
+    prop::{
+        manuel::{BASIC, CLOSE, CONTAINER, DISABLED, DOT, HOVER, ICON, PRESSED, TEXT}, traits::NewFrom, ApplySlotMapImpl, ApplyStateMapImpl, Applys, Radius
+    },
+    prop_interconvert,
+    themes::Theme,
+    utils::get_from_itable,
+};
 
-// prop_interconvert! {
-//     BadgeProp {
-//         basic_prop = BadgeBasicStyle;
-//         basic => BASIC, BadgeBasicStyle::default(), |v| (v, BadgeState::Basic).try_into(),
-//         disabled => DISABLED, BadgeBasicStyle::from_state(Theme::default(), BadgeState::Disabled), |v| (v, BadgeState::Disabled).try_into()
-//     }, "[component.badge.dot] should be a table"
-// }
+prop_interconvert! {
+    BadgeStyle {
+        basic_prop = BadgeBasicStyle;
+        basic => BASIC, BadgeBasicStyle::default(), |v| (v, BadgeState::Basic).try_into(),
+        disabled => DISABLED, BadgeBasicStyle::from_state(Theme::default(), BadgeState::Disabled), |v| (v, BadgeState::Disabled).try_into()
+    }, "[component.badge] should be a table"
+}
 
-// impl SlotStyle for BadgeProp {
-//     type Part = BadgePart;
+impl Style for BadgeStyle {
+    type State = BadgeState;
 
-//     fn sync_slot(&mut self, map: &crate::prop::ApplySlotMap<Self::State, Self::Part>) -> () {
-//         map.sync(
-//             &mut self.basic,
-//             BadgeState::Basic,
-//             [(BadgeState::Disabled, &mut self.disabled)],
-//             [
-//                 BadgePart::Container,
-//                 BadgePart::Icon,
-//                 BadgePart::Text,
-//                 BadgePart::Close,
-//             ],
-//         );
-//     }
-// }
+    type Basic = BadgeBasicStyle;
 
-// impl Style for BadgeProp {
-//     type State = BadgeState;
+    get_get_mut! {
+        BadgeState::Basic => basic,
+        BadgeState::Disabled => disabled
+    }
 
-//     type Basic = BadgeBasicStyle;
+    fn len() -> usize {
+        2 * BadgeBasicStyle::len()
+    }
 
-//     get_get_mut! {
-//         BadgeState::Basic => basic,
-//         BadgeState::Disabled => disabled
-//     }
+    fn sync(&mut self, map: &crate::prop::ApplyStateMap<Self::State>) -> ()
+    where
+        Self::State: Eq + std::hash::Hash + Copy,
+    {
+        map.sync(
+            &mut self.basic,
+            BadgeState::Basic,
+            [(BadgeState::Disabled, &mut self.disabled)],
+        );
+    }
+}
 
-//     fn len() -> usize {
-//         2 * BadgeBasicStyle::len()
-//     }
+impl SlotStyle for BadgeStyle {
+    type Part = BadgePart;
 
-//     fn sync(&mut self, _map: &crate::prop::ApplyStateMap<Self::State>) -> ()
-//     where
-//         Self::State: Eq + std::hash::Hash + Copy,
-//     {
-//         ()
-//     }
-// }
+    fn sync_slot(&mut self, map: &crate::prop::ApplySlotMap<Self::State, Self::Part>) -> () {
+        map.sync(
+            &mut self.basic,
+            BadgeState::Basic,
+            [(BadgeState::Disabled, &mut self.disabled)],
+            [BadgePart::Container, BadgePart::Dot],
+        );
+    }
+}
 
-// #[derive(Debug, Clone, Live, LiveHook, LiveRegister, Copy)]
-// #[live_ignore]
-// pub struct BadgeBasicStyle {
-//     #[live(BadgeBasicStyle::default_text(Theme::default(), BadgeState::default()))]
-//     pub text: LabelBasicStyle,
-//     #[live(BadgeBasicStyle::default_container(Theme::default(), BadgeState::default()))]
-//     pub container: ViewBasicStyle,
-// }
+#[derive(Debug, Clone, Live, LiveHook, LiveRegister, Copy)]
+#[live_ignore]
+pub struct BadgeBasicStyle {
+    #[live(BadgeBasicStyle::default_container(Theme::default(), BadgeState::Basic))]
+    pub container: ViewBasicStyle,
+    #[live(BadgeBasicStyle::default_dot(Theme::default(), BadgeState::Basic))]
+    pub dot: BadgeDotBasicStyle,
+}
 
-// impl Default for BadgeBasicStyle {
-//     fn default() -> Self {
-//         Self::from_state(Theme::default(), BadgeState::default())
-//     }
-// }
+impl BasicStyle for BadgeBasicStyle {
+    type State = BadgeState;
 
-// impl SlotBasicStyle for BadgeBasicStyle {
-//     type Part = BadgePart;
+    type Colors = ViewColors;
 
-//     fn set_from_str_slot(
-//         &mut self,
-//         key: &str,
-//         value: &crate::prop::Applys,
-//         state: Self::State,
-//         part: Self::Part,
-//     ) -> () {
-//         match part {
-//             BadgePart::Container => self
-//                 .container
-//                 .set_from_str(key, &value.into(), state.into()),
-//             BadgePart::Icon => {
-//                 // if is slot, key is part, value is key + value
-//                 let icon_part = SvgPart::from_str(key).unwrap();
-//                 for (key, value) in value.as_kvs() {
-//                     self.icon
-//                         .set_from_str_slot(key, value, state.into(), icon_part);
-//                 }
-//             }
-//             BadgePart::Text => self.text.set_from_str(key, &value.into(), state.into()),
-//             BadgePart::Close => {
-//                 let close_part = SvgPart::from_str(key).unwrap();
-//                 for (key, value) in value.as_kvs() {
-//                     self.close
-//                         .set_from_str_slot(key, value, state.into(), close_part);
-//                 }
-//             }
-//         }
-//     }
+    fn from_state(theme: crate::themes::Theme, state: Self::State) -> Self {
+        Self {
+            container: Self::default_container(theme, state),
+            dot: Self::default_dot(theme, state),
+        }
+    }
 
-//     fn sync_slot(&mut self, state: Self::State, part: Self::Part) -> () {
-//         match part {
-//             BadgePart::Container => self.container.sync(state.into()),
-//             BadgePart::Text => self.text.sync(state.into()),
-//         }
-//     }
-// }
+    fn state_colors(theme: crate::themes::Theme, state: Self::State) -> Self::Colors {
+        ViewBasicStyle::state_colors(theme, state.into())
+    }
 
-// impl BasicStyle for BadgeBasicStyle {
-//     type State = BadgeState;
+    fn len() -> usize {
+        3 * ViewBasicStyle::len()
+    }
 
-//     type Colors = ();
+    fn set_from_str(&mut self, _key: &str, _value: &LiveValue, _state: Self::State) -> () {
+        ()
+    }
 
-//     fn from_state(theme: crate::themes::Theme, state: Self::State) -> Self {
-//         Self {
-//             text: Self::default_text(theme, state),
-//             container: Self::default_container(theme, state),
-//         }
-//     }
+    fn sync(&mut self, state: Self::State) -> () {
+        self.dot.sync(state.into());
+    }
 
-//     fn state_colors(_theme: crate::themes::Theme, _state: Self::State) -> Self::Colors {
-//         ()
-//     }
+    fn live_props() -> LiveProps {
+        vec![
+            (live_id!(container), ViewBasicStyle::live_props().into()),
+            (live_id!(header), ViewBasicStyle::live_props().into()),
+            (live_id!(body), ViewBasicStyle::live_props().into()),
+            (live_id!(footer), ViewBasicStyle::live_props().into()),
+        ]
+    }
 
-//     fn len() -> usize {
-//         ViewBasicStyle::len() + SvgBasicStyle::len() + LabelBasicStyle::len() + SvgBasicStyle::len()
-//     }
+    fn walk(&self) -> Walk {
+        self.container.walk()
+    }
+    fn layout(&self) -> Layout {
+        self.container.layout()
+    }
+}
 
-//     fn set_from_str(
-//         &mut self,
-//         _key: &str,
-//         _value: &makepad_widgets::LiveValue,
-//         _state: Self::State,
-//     ) -> () {
-//         ()
-//     }
+impl SlotBasicStyle for BadgeBasicStyle {
+    type Part = BadgePart;
 
-//     fn sync(&mut self, state: Self::State) -> () {
-//         self.container.sync(state.into());
-//         self.text.sync(state.into());
-//     }
+    fn set_from_str_slot(
+        &mut self,
+        key: &str,
+        value: &Applys,
+        state: Self::State,
+        part: Self::Part,
+    ) -> () {
+        match part {
+            BadgePart::Container => self
+                .container
+                .set_from_str(key, &value.into(), state.into()),
+            BadgePart::Dot => self.dot.set_from_str(key, &value.into(), state.into()),
+        }
+    }
 
-//     fn live_props() -> LiveProps {
-//         vec![
-//             (live_id!(text), LabelBasicStyle::live_props().into()),
-//             (live_id!(container), ViewBasicStyle::live_props().into()),
-//         ]
-//     }
+    fn sync_slot(&mut self, state: Self::State, part: Self::Part) -> () {
+        match part {
+            BadgePart::Container => self.container.sync(state.into()),
+            BadgePart::Dot => self.dot.sync(state.into()),
+        }
+    }
+}
 
-//     fn walk(&self) -> Walk {
-//         self.container.walk()
-//     }
+impl Default for BadgeBasicStyle {
+    fn default() -> Self {
+        Self::from_state(Theme::default(), BadgeState::Basic)
+    }
+}
 
-//     fn layout(&self) -> Layout {
-//         self.container.layout()
-//     }
-// }
+from_prop_to_toml! {
+    BadgeBasicStyle {
+        container => CONTAINER,
+        dot => DOT
+    }
+}
 
-// from_prop_to_toml! {
-//     BadgeBasicStyle {
-//         text => TEXT,
-//         container => CONTAINER
-//     }
-// }
+impl TryFrom<(&Item, BadgeState)> for BadgeBasicStyle {
+    type Error = Error;
 
-// impl TryFrom<(&Item, BadgeState)> for BadgeBasicStyle {
-//     type Error = Error;
+    fn try_from((value, state): (&Item, BadgeState)) -> Result<Self, Self::Error> {
+        let inline_table = value.as_inline_table().ok_or(Error::ThemeStyleParse(
+            "[component.badge.$slot] should be an inline table".to_string(),
+        ))?;
 
-//     fn try_from((value, state): (&Item, BadgeState)) -> Result<Self, Self::Error> {
-//         let inline_table = value.as_inline_table().ok_or(Error::ThemeStyleParse(
-//             "[component.badge.dot.$slot] should be an inline table".to_string(),
-//         ))?;
+        let container = get_from_itable(
+            inline_table,
+            CONTAINER,
+            || Ok(BadgeBasicStyle::default_container(Theme::default(), state)),
+            |v| (v, ViewState::from(state)).try_into(),
+        )?;
 
-//         let container = get_from_itable(
-//             inline_table,
-//             CONTAINER,
-//             || Ok(BadgeBasicStyle::default_container(Theme::default(), state)),
-//             |v| (v, ViewState::from(state)).try_into(),
-//         )?;
+        let dot = get_from_itable(
+            inline_table,
+            DOT,
+            || Ok(BadgeBasicStyle::default_dot(Theme::default(), state)),
+            |v| (v, BadgeDotState::from(state)).try_into(),
+        )?;
 
-//         let text = get_from_itable(
-//             inline_table,
-//             TEXT,
-//             || Ok(Self::default_text(Theme::default(), state)),
-//             |v| (v, state.into()).try_into(),
-//         )?;
+        Ok(Self { container, dot })
+    }
+}
 
-//         Ok(Self { text, container })
-//     }
-// }
+impl BadgeBasicStyle {
+    pub fn default_dot(theme: Theme, state: BadgeState) -> BadgeDotBasicStyle {
+        BadgeDotBasicStyle::from_state(theme, state.into())
+    }
+    pub fn default_container(theme: Theme, state: BadgeState) -> ViewBasicStyle {
+        let mut container = ViewBasicStyle::from_state(theme, state.into());
+        container.set_cursor(Default::default());
+        container.set_background_visible(true);
+        container
+    }
+}
 
-// impl BadgeBasicStyle {
-//     pub fn default_container(theme: Theme, state: BadgeState) -> ViewBasicStyle {
-//         let mut container = ViewBasicStyle::from_state(theme, state.into());
-//         container.height = Size::Fit;
-//         container.width = Size::Fit;
-//         container.align = Align::from_f64(0.5);
-//         container.background_visible = true;
-//         container.set_padding(Padding::from_all(4.0, 8.0, 4.0, 8.0));
-//         container.set_border_radius(Radius::new(2.0));
-//         container.set_flow(Flow::Right);
-//         container.set_spacing(4.0);
-//         container
-//     }
+component_state! {
+    BadgeState {
+        Basic => BASIC,
+        Disabled => DISABLED
+    }, _ => BadgeState::Basic
+}
 
-//     pub fn default_text(theme: Theme, state: BadgeState) -> LabelBasicStyle {
-//         let mut text = LabelBasicStyle::from_state(theme, state.into());
-//         text.flow = Flow::Right;
-//         text.set_font_size(10.0);
-//         text
-//     }
-// }
+impl ComponentState for BadgeState {
+    fn is_disabled(&self) -> bool {
+        matches!(self, BadgeState::Disabled)
+    }
+}
 
-// component_state! {
-//     BadgeState {
-//         Basic => BASIC,
-//         Disabled => DISABLED
-//     },
-//     _ => BadgeState::Basic
-// }
+impl From<BadgeState> for ViewState {
+    fn from(value: BadgeState) -> Self {
+        match value {
+            BadgeState::Basic => ViewState::Basic,
+            BadgeState::Disabled => ViewState::Disabled,
+        }
+    }
+}
 
-// impl ComponentState for BadgeState {
-//     fn is_disabled(&self) -> bool {
-//         matches!(self, BadgeState::Disabled)
-//     }
-// }
+impl From<BadgeState> for BadgeDotState {
+    fn from(value: BadgeState) -> Self {
+        match value {
+            BadgeState::Basic => BadgeDotState::Basic,
+            BadgeState::Disabled => BadgeDotState::Disabled,
+        }
+    }
+}
 
-// impl From<BadgeState> for ViewState {
-//     fn from(value: BadgeState) -> Self {
-//         match value {
-//             BadgeState::Basic => ViewState::Basic,
-//             BadgeState::Disabled => ViewState::Disabled,
-//         }
-//     }
-// }
-
-// impl From<BadgeState> for LabelState {
-//     fn from(value: BadgeState) -> Self {
-//         match value {
-//             BadgeState::Basic => LabelState::Basic,
-//             BadgeState::Disabled => LabelState::Disabled,
-//         }
-//     }
-// }
-
-// component_part! {
-//     BadgePart {
-//         Text => text => TEXT,
-//         Container => container => CONTAINER
-//     }, BadgeState
-// }
+component_part! {
+    BadgePart {
+        Container => container => CONTAINER,
+        Dot => dot => DOT
+    }, BadgeState
+}

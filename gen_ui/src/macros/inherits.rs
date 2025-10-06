@@ -70,7 +70,7 @@ macro_rules! inherits_view_livehook {
 /// ```
 #[macro_export]
 macro_rules! do_container_livehook_pre {
-    ($widget_ty: ty) => {
+    () => {
         pub fn walk_from_previous_size(&self, walk: Walk) -> Walk {
             let view_size = self.view_size.unwrap_or(DVec2::default());
             Walk {
@@ -88,31 +88,31 @@ macro_rules! do_container_livehook_pre {
                 margin: walk.margin,
             }
         }
-        #[allow(unused_variables)]
-        fn do_after_apply_pre(&mut self, cx: &mut Cx, apply: &mut Apply, index: usize, nodes: &[LiveNode]) {
-            if apply.from.is_update_from_doc() {
-                //livecoding
-                // update/delete children list
-                for (idx, id) in self.live_update_order.iter().enumerate() {
-                    // lets remove this id from the childlist
-                    if let Some(pos) = self.children.iter().position(|(i, _v)| *i == *id) {
-                        // alright so we have the position its in now, and the position it should be in
-                        self.children.swap(idx, pos);
-                    }
-                }
-                // if we had more truncate
-                self.children.truncate(self.live_update_order.len());
-            }
-            if needs_draw_list(self.optimize) && self.draw_list.is_none() {
-                self.draw_list = Some(DrawList2d::new(cx));
-            }
-            if self.scroll_bars.is_some() {
-                if self.scroll_bars_obj.is_none() {
-                    self.scroll_bars_obj =
-                        Some(Box::new(ScrollBars::new_from_ptr(cx, self.scroll_bars)));
-                }
-            }
-        }
+        // #[allow(unused_variables)]
+        // fn do_after_apply_pre(&mut self, cx: &mut Cx, apply: &mut Apply, index: usize, nodes: &[LiveNode]) {
+        //     if apply.from.is_update_from_doc() {
+        //         //livecoding
+        //         // update/delete children list
+        //         for (idx, id) in self.live_update_order.iter().enumerate() {
+        //             // lets remove this id from the childlist
+        //             if let Some(pos) = self.children.iter().position(|(i, _v)| *i == *id) {
+        //                 // alright so we have the position its in now, and the position it should be in
+        //                 self.children.swap(idx, pos);
+        //             }
+        //         }
+        //         // if we had more truncate
+        //         self.children.truncate(self.live_update_order.len());
+        //     }
+        //     if crate::components::view::needs_draw_list(self.optimize) && self.draw_list.is_none() {
+        //         self.draw_list = Some(DrawList2d::new(cx));
+        //     }
+        //     if self.scroll_bars.is_some() {
+        //         if self.scroll_bars_obj.is_none() {
+        //             self.scroll_bars_obj =
+        //                 Some(Box::new(ScrollBars::new_from_ptr(cx, self.scroll_bars)));
+        //         }
+        //     }
+        // }
 
         fn do_before_apply_pre(
             &mut self,

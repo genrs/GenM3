@@ -1,5 +1,5 @@
 use makepad_widgets::*;
-use toml_edit::Item;
+use toml_edit::{InlineTable, Item, Value};
 
 use crate::{
     component_part, component_state,
@@ -166,6 +166,17 @@ from_prop_to_toml! {
         container => CONTAINER
     }
 }
+impl TryFrom<(&Value, BadgeDotState)> for BadgeDotBasicStyle {
+    type Error = Error;
+
+    fn try_from((value, state): (&Value, BadgeDotState)) -> Result<Self, Self::Error> {
+        let inline_table = value.as_inline_table().ok_or(Error::ThemeStyleParse(
+            "[component.badge.dot] should be an inline table".to_string(),
+        ))?;
+
+        (inline_table, state).try_into()
+    }
+}
 
 impl TryFrom<(&Item, BadgeDotState)> for BadgeDotBasicStyle {
     type Error = Error;
@@ -175,6 +186,14 @@ impl TryFrom<(&Item, BadgeDotState)> for BadgeDotBasicStyle {
             "[component.badge.dot.$slot] should be an inline table".to_string(),
         ))?;
 
+        (inline_table, state).try_into()
+    }
+}
+
+impl TryFrom<(&InlineTable, BadgeDotState)> for BadgeDotBasicStyle {
+    type Error = Error;
+
+    fn try_from((inline_table, state): (&InlineTable, BadgeDotState)) -> Result<Self, Self::Error> {
         let container = get_from_itable(
             inline_table,
             CONTAINER,
