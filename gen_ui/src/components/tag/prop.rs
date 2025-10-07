@@ -9,7 +9,7 @@ use crate::{
         label::{LabelBasicStyle, LabelState},
         live_props::LiveProps,
         svg::{SvgBasicStyle, SvgPart, SvgState},
-        traits::{BasicStyle, ComponentState, Part, Style, SlotBasicStyle, SlotStyle},
+        traits::{BasicStyle, ComponentState, Style, SlotBasicStyle, SlotStyle},
         view::{ViewBasicStyle, ViewState},
     },
     error::Error,

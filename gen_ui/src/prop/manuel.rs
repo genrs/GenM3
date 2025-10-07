@@ -70,6 +70,8 @@ pub const PRESSED: &str = "pressed";
 pub const DISABLED: &str = "disabled";
 pub const BASIC: &str = "basic";
 pub const ACTIVE: &str = "active";
+pub const FOCUS: &str = "focus";
+pub const EMPTY: &str = "empty";
 pub const HOVER_BASIC: &str = "hover_basic";
 pub const HOVER_ACTIVE: &str = "hover_active";
 pub const LOADING: &str = "loading";
@@ -85,6 +87,7 @@ pub const ICON: &str = "icon";
 pub const TEXT: &str = "text";
 pub const CLOSE: &str = "close";
 pub const SUFFIX: &str = "suffix";
+pub const PREFIX: &str = "prefix";
 // --- component -------------------------------------------------
 pub const LABEL: &str = "label";
 pub const VIEW: &str = "view";

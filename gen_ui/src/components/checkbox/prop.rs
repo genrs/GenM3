@@ -2,7 +2,7 @@ use crate::{
     basic_prop_interconvert, component_colors, component_part, component_state, components::{
         label::{LabelBasicStyle, LabelState},
         live_props::LiveProps,
-        traits::{BasicStyle, ComponentState, Part, Style, SlotBasicStyle, SlotStyle},
+        traits::{BasicStyle, ComponentState, Style, SlotBasicStyle, SlotStyle},
         view::{ViewBasicStyle, ViewState},
     }, error::Error, from_prop_to_toml, get_get_mut, prop::{
         manuel::{

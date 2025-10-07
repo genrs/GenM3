@@ -9,6 +9,7 @@ mod color_picker;
 mod divider;
 mod drop_down;
 mod image;
+mod input;
 mod label;
 mod lifecycle;
 mod link;
@@ -38,6 +39,7 @@ pub use color_picker::*;
 pub use divider::*;
 pub use drop_down::*;
 pub use image::*;
+pub use input::*;
 pub use label::*;
 pub use lifecycle::*;
 pub use link::*;
@@ -595,9 +597,18 @@ live_design! {
         suffix: <IconCheck> {}
     }
 
-    pub GBadgeDot = <GBadgeDotBase> {}
+    pub GBadgeDot = <GBadgeDotBase> {
+        text: <GLabel>{
+            visible: false
+        },
+        dot: true
+    }
 
-    pub GBadge = <GBadgeBase> {}
+    pub GBadge = <GBadgeBase> {
+        dot: <GBadgeDot> {}
+    }
+
+    pub GInput = <GInputBase> {}
 }
 
 pub fn components_register(cx: &mut Cx) {
@@ -627,6 +638,7 @@ pub fn components_register(cx: &mut Cx) {
     rate::live_design(cx);
     select::select_register(cx);
     badge::badge_register(cx);
+    input::live_design(cx);
 }
 
 component! {

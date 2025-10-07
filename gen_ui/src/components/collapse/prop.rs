@@ -6,7 +6,7 @@ use crate::{
         label::LabelState,
         live_props::LiveProps,
         svg::SvgState,
-        traits::{BasicStyle, ComponentState, Part, Style, SlotBasicStyle, SlotStyle},
+        traits::{BasicStyle, ComponentState, Style, SlotBasicStyle, SlotStyle},
         view::{ViewBasicStyle, ViewState}, ViewColors,
     }, error::Error, from_prop_to_toml, get_get_mut, prop::{
         manuel::{BASIC, BODY, CONTAINER, DISABLED, HEADER, HOVER, PRESSED},
