@@ -95,7 +95,6 @@ impl SlotBasicStyle for BadgeDotBasicStyle {
                 self.container
                     .set_from_str(key, &value.into(), state.into())
             }
-
             BadgeDotPart::Text => self.text.set_from_str(key, &value.into(), state.into()),
         }
     }

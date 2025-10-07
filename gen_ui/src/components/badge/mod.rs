@@ -1,11 +1,14 @@
 pub mod dot;
+mod event;
 mod prop;
 mod register;
 
+pub use event::*;
 pub use register::register as badge_register;
 use std::cell::RefCell;
 
 use crate::{
+    ComponentAnInit, active_event, animation_open_then_redraw,
     components::{
         BasicStyle, Component, DrawState, LifeCycle, SlotComponent, SlotStyle, Style,
         ViewBasicStyle, ViewTextureCache,
@@ -14,12 +17,14 @@ use crate::{
     },
     do_view_livehook_pre,
     error::Error,
-    inherits_view_find_widgets, lifecycle, play_animation,
+    event_option, hit_finger_up, hit_hover_out, inherits_view_find_widgets,
+    lifecycle, play_animation,
     prop::{
         ApplySlotMap, ApplySlotMapImpl, ApplySlotMergeImpl, Position, ToSlotMap,
         manuel::{BASIC, DISABLED},
+        traits::ToFloat,
     },
-    pure_after_apply, set_index, set_scope_path,
+    pure_after_apply, set_animation, set_index, set_scope_path,
     shader::draw_view::DrawView,
     sync,
     themes::conf::Conf,
@@ -28,7 +33,7 @@ use crate::{
 
 pub use prop::*;
 
-use makepad_widgets::*;
+use makepad_widgets::{event::FingerLongPressEvent, *};
 
 live_design! {
     link genui_basic;
@@ -366,51 +371,51 @@ impl Widget for GBadge {
                 let mut shift = match self.position {
                     Position::Bottom => DVec2 {
                         x: -dot_rect.size.x / 2.0 + area.size.x / 2.0,
-                        y: area.size.y + 0.0,
+                        y: area.size.y - dot_rect.size.y / 2.0,
                     },
                     Position::BottomLeft => DVec2 {
                         x: 0.0,
-                        y: area.size.y + 0.0,
+                        y: area.size.y - dot_rect.size.y / 2.0,
                     },
                     Position::BottomRight => DVec2 {
                         x: area.size.x - dot_rect.size.x,
-                        y: area.size.y + 0.0,
+                        y: area.size.y - dot_rect.size.y / 2.0,
                     },
                     Position::Top => DVec2 {
                         x: -dot_rect.size.x / 2.0 + area.size.x / 2.0,
-                        y: -dot_rect.size.y,
+                        y: -dot_rect.size.y + dot_rect.size.y / 2.0,
                     },
                     Position::TopLeft => DVec2 {
                         x: 0.0,
-                        y: -dot_rect.size.y,
+                        y: -dot_rect.size.y + dot_rect.size.y / 2.0,
                     },
                     Position::TopRight => DVec2 {
                         x: area.size.x - dot_rect.size.x,
-                        y: -dot_rect.size.y,
+                        y: -dot_rect.size.y + dot_rect.size.y / 2.0,
                     },
                     Position::Left => DVec2 {
-                        x: -dot_rect.size.x,
+                        x: -dot_rect.size.x / 2.0,
                         y: area.size.y / 2.0 - dot_rect.size.y / 2.0,
                     },
                     Position::LeftTop => DVec2 {
-                        x: -dot_rect.size.x,
-                        y: 0.0,
+                        x: -dot_rect.size.x / 2.0,
+                        y: -dot_rect.size.y / 2.0,
                     },
                     Position::LeftBottom => DVec2 {
-                        x: -dot_rect.size.x,
-                        y: 0.0 - dot_rect.size.y + area.size.y,
+                        x: -dot_rect.size.x / 2.0,
+                        y: -dot_rect.size.y / 2.0 + area.size.y,
                     },
                     Position::Right => DVec2 {
-                        x: area.size.x + 0.0,
+                        x: area.size.x - dot_rect.size.x / 2.0,
                         y: area.size.y / 2.0 - dot_rect.size.y / 2.0,
                     },
                     Position::RightTop => DVec2 {
-                        x: area.size.x + 0.0,
-                        y: 0.0,
+                        x: area.size.x - dot_rect.size.x / 2.0,
+                        y: -dot_rect.size.y / 2.0,
                     },
                     Position::RightBottom => DVec2 {
-                        x: area.size.x + 0.0,
-                        y: 0.0 - dot_rect.size.y + area.size.y,
+                        x: area.size.x - dot_rect.size.x / 2.0,
+                        y: -dot_rect.size.y / 2.0 + area.size.y,
                     },
                 };
 
@@ -424,6 +429,75 @@ impl Widget for GBadge {
 
         self.set_scope_path(&scope.path);
         DrawStep::done()
+    }
+
+    fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
+        if !self.visible && event.requires_visibility() {
+            return;
+        }
+
+        self.set_animation(cx);
+        cx.global::<ComponentAnInit>().badge = true;
+
+        animation_open_then_redraw!(self, cx, event);
+
+        if self.block_signal_event {
+            if let Event::Signal = event {
+                return;
+            }
+        }
+        if let Some(scroll_bars) = &mut self.scroll_bars_obj {
+            let mut actions = Vec::new();
+            scroll_bars.handle_main_event(cx, event, scope, &mut actions);
+            if actions.len() > 0 {
+                cx.redraw_area_and_children(self.area);
+            };
+        }
+
+        // If the UI tree has changed significantly (e.g. AdaptiveView varaints changed),
+        // we need to clear the cache and re-query widgets.
+        if cx.widget_query_invalidation_event.is_some() {
+            self.find_cache.borrow_mut().clear();
+        }
+
+        match &self.event_order {
+            EventOrder::Up => {
+                for (id, child) in self.children.iter_mut().rev() {
+                    scope.with_id(*id, |scope| {
+                        child.handle_event(cx, event, scope);
+                    });
+                }
+            }
+            EventOrder::Down => {
+                for (id, child) in self.children.iter_mut() {
+                    scope.with_id(*id, |scope| {
+                        child.handle_event(cx, event, scope);
+                    });
+                }
+            }
+            EventOrder::List(list) => {
+                for id in list {
+                    if let Some((_, child)) = self.children.iter_mut().find(|(id2, _)| id2 == id) {
+                        scope.with_id(*id, |scope| {
+                            child.handle_event(cx, event, scope);
+                        });
+                    }
+                }
+            }
+        }
+
+        if self.visible || self.animator.live_ptr.is_some() {
+            let hit = event.hits_with_capture_overload(cx, self.area(), self.capture_overload);
+            if self.disabled {
+                self.handle_when_disabled(cx, event, hit);
+            } else {
+                self.handle_widget_event(cx, event, hit, self.area());
+            }
+        }
+
+        if let Some(scroll_bars) = &mut self.scroll_bars_obj {
+            scroll_bars.handle_scroll_event(cx, event, scope, &mut Vec::new());
+        }
     }
 }
 
@@ -527,8 +601,64 @@ impl Component for GBadge {
         Ok(())
     }
 
-    fn handle_widget_event(&mut self, cx: &mut Cx, event: &Event, hit: Hit, area: Area) {
-        ()
+    fn handle_widget_event(&mut self, cx: &mut Cx, _event: &Event, hit: Hit, area: Area) {
+        match hit {
+            Hit::FingerDown(e) => {
+                if self.grab_key_focus {
+                    cx.set_key_focus(area);
+                }
+                self.active_finger_down(cx, e);
+            }
+            Hit::FingerMove(e) => {
+                self.active_move(cx, e);
+            }
+            Hit::FingerLongPress(e) => {
+                self.active_long_press(cx, e);
+            }
+            Hit::FingerUp(e) => {
+                if e.is_over {
+                    if e.has_hovers() {
+                    } else {
+                        self.switch_state_with_animation(cx, BadgeState::Basic);
+                        self.play_animation(cx, id!(hover.off));
+                    }
+                    self.active_clicked(cx, e);
+                } else {
+                    self.switch_state_with_animation(cx, BadgeState::Basic);
+                    hit_finger_up!(self, cx, e);
+                }
+            }
+            Hit::FingerHoverIn(e) => {
+                cx.set_cursor(self.style.get(self.state).container.cursor);
+                self.active_hover_in(cx, e);
+            }
+            Hit::FingerHoverOut(e) => {
+                self.switch_state_with_animation(cx, BadgeState::Basic);
+                hit_hover_out!(self, cx, e);
+            }
+            Hit::FingerHoverOver(e) => {
+                cx.set_cursor(self.style.get(self.state).container.cursor);
+                self.active_hover_over(cx, e);
+            }
+            Hit::KeyDown(e) => {
+                self.active_key_down(cx, e);
+            }
+            Hit::KeyUp(e) => {
+                self.switch_state_with_animation(cx, BadgeState::Basic);
+                self.active_key_up(cx, e);
+            }
+            _ => (),
+        }
+    }
+
+    fn handle_when_disabled(&mut self, cx: &mut Cx, _event: &Event, hit: Hit) -> () {
+        match hit {
+            Hit::FingerHoverIn(_) => {
+                self.switch_state_and_redraw(cx, BadgeState::Disabled);
+                cx.set_cursor(self.style.get(self.state).container.cursor);
+            }
+            _ => {}
+        }
     }
 
     fn switch_state_with_animation(&mut self, cx: &mut Cx, state: Self::State) -> () {
@@ -551,7 +681,112 @@ impl Component for GBadge {
     }
 
     fn set_animation(&mut self, cx: &mut Cx) -> () {
-        ()
+        let init_global = cx.global::<ComponentAnInit>().badge;
+
+        let live_ptr = match self.animator.live_ptr {
+            Some(ptr) => ptr.file_id.0,
+            None => return,
+        };
+
+        let mut registry = cx.live_registry.borrow_mut();
+        let live_file = match registry.live_files.get_mut(live_ptr as usize) {
+            Some(lf) => lf,
+            None => return,
+        };
+
+        let nodes = &mut live_file.expanded.nodes;
+
+        if self.lifecycle.is_created() || !init_global || self.scope_path.is_none() {
+            self.lifecycle.next();
+            let basic_prop = self.style.get(BadgeState::Basic).container;
+            let disabled_prop = self.style.get(BadgeState::Disabled).container;
+            let (mut basic_index, mut disabled_index) = (None, None);
+            if let Some(index) = nodes.child_by_path(
+                self.index,
+                &[
+                    live_id!(animator).as_field(),
+                    live_id!(hover).as_instance(),
+                    live_id!(off).as_instance(),
+                ],
+            ) {
+                basic_index = Some(index);
+            }
+
+            if let Some(index) = nodes.child_by_path(
+                self.index,
+                &[
+                    live_id!(animator).as_field(),
+                    live_id!(hover).as_instance(),
+                    live_id!(disabled).as_instance(),
+                ],
+            ) {
+                disabled_index = Some(index);
+            }
+
+            set_animation! {
+                nodes: draw_badge = {
+                    basic_index => {
+                        background_color => basic_prop.background_color,
+                        border_color =>basic_prop.border_color,
+                        border_radius => basic_prop.border_radius,
+                        border_width =>(basic_prop.border_width as f64),
+                        shadow_color => basic_prop.shadow_color,
+                        spread_radius => (basic_prop.spread_radius as f64),
+                        blur_radius => (basic_prop.blur_radius as f64),
+                        shadow_offset => basic_prop.shadow_offset,
+                        background_visible => basic_prop.background_visible.to_f64()
+                    },
+                    disabled_index => {
+                        background_color => disabled_prop.background_color,
+                        border_color => disabled_prop.border_color,
+                        border_radius => disabled_prop.border_radius,
+                        border_width => (disabled_prop.border_width as f64),
+                        shadow_color => disabled_prop.shadow_color,
+                        spread_radius => (disabled_prop.spread_radius as f64),
+                        blur_radius => (disabled_prop.blur_radius as f64),
+                        shadow_offset => disabled_prop.shadow_offset,
+                        background_visible => disabled_prop.background_visible.to_f64()
+                    }
+                }
+            }
+        } else {
+            let state = self.state;
+            let style = self.style.get(state).container;
+            let index = match state {
+                BadgeState::Basic => nodes.child_by_path(
+                    self.index,
+                    &[
+                        live_id!(animator).as_field(),
+                        live_id!(hover).as_instance(),
+                        live_id!(off).as_instance(),
+                    ],
+                ),
+
+                BadgeState::Disabled => nodes.child_by_path(
+                    self.index,
+                    &[
+                        live_id!(animator).as_field(),
+                        live_id!(hover).as_instance(),
+                        live_id!(disabled).as_instance(),
+                    ],
+                ),
+            };
+            set_animation! {
+                nodes: draw_badge = {
+                    index => {
+                        background_color => style.background_color,
+                        border_color => style.border_color,
+                        border_radius => style.border_radius,
+                        border_width => (style.border_width as f64),
+                        shadow_color => style.shadow_color,
+                        spread_radius => (style.spread_radius as f64),
+                        blur_radius => (style.blur_radius as f64),
+                        shadow_offset => style.shadow_offset,
+                        background_visible => style.background_visible.to_f64()
+                    }
+                }
+            }
+        }
     }
 
     fn switch_state(&mut self, state: Self::State) -> () {
@@ -568,4 +803,28 @@ impl Component for GBadge {
 
 impl GBadge {
     do_view_livehook_pre!();
+    active_event! {
+        active_hover_in: BadgeEvent::HoverIn |meta: FingerHoverEvent| => BadgeHoverIn {meta},
+        active_hover_over: BadgeEvent::HoverOver |meta: FingerHoverEvent| => BadgeHoverOver {meta},
+        active_hover_out: BadgeEvent::HoverOut |meta: FingerHoverEvent| => BadgeHoverOut {meta},
+        active_finger_down: BadgeEvent::FingerDown |meta: FingerDownEvent| => BadgeFingerDown {meta},
+        active_finger_up: BadgeEvent::FingerUp |meta: FingerUpEvent| => BadgeFingerUp {meta},
+        active_long_press: BadgeEvent::LongPress |meta: FingerLongPressEvent| => BadgeLongPress {meta},
+        active_move: BadgeEvent::Move |meta: FingerMoveEvent| => BadgeMove {meta},
+        active_key_down: BadgeEvent::KeyDown |meta: KeyEvent| => BadgeKeyDown {meta},
+        active_key_up: BadgeEvent::KeyUp |meta: KeyEvent| => BadgeKeyUp {meta},
+        active_clicked: BadgeEvent::Clicked |meta: FingerUpEvent| => BadgeClicked {meta}
+    }
+    event_option! {
+        hover_in: BadgeEvent::HoverIn => BadgeHoverIn,
+        hover_over: BadgeEvent::HoverOver => BadgeHoverOver,
+        hover_out: BadgeEvent::HoverOut => BadgeHoverOut,
+        finger_down: BadgeEvent::FingerDown => BadgeFingerDown,
+        finger_up: BadgeEvent::FingerUp => BadgeFingerUp,
+        long_press: BadgeEvent::LongPress => BadgeLongPress,
+        finger_move: BadgeEvent::Move => BadgeMove,
+        key_down: BadgeEvent::KeyDown => BadgeKeyDown,
+        key_up: BadgeEvent::KeyUp => BadgeKeyUp,
+        clicked: BadgeEvent::Clicked => BadgeClicked
+    }
 }

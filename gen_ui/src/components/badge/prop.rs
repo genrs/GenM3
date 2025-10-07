@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use makepad_widgets::*;
 use toml_edit::Item;
 
@@ -5,7 +7,7 @@ use crate::{
     component_part, component_state,
     components::{
         ViewColors,
-        dot::{BadgeDotBasicStyle, BadgeDotState},
+        dot::{BadgeDotBasicStyle, BadgeDotPart, BadgeDotState},
         live_props::LiveProps,
         traits::{BasicStyle, ComponentState, SlotBasicStyle, SlotStyle, Style},
         view::{ViewBasicStyle, ViewState},
@@ -109,9 +111,7 @@ impl BasicStyle for BadgeBasicStyle {
     fn live_props() -> LiveProps {
         vec![
             (live_id!(container), ViewBasicStyle::live_props().into()),
-            (live_id!(header), ViewBasicStyle::live_props().into()),
-            (live_id!(body), ViewBasicStyle::live_props().into()),
-            (live_id!(footer), ViewBasicStyle::live_props().into()),
+            (live_id!(dot), BadgeDotBasicStyle::live_props().into()),
         ]
     }
 
@@ -137,14 +137,23 @@ impl SlotBasicStyle for BadgeBasicStyle {
             BadgePart::Container => self
                 .container
                 .set_from_str(key, &value.into(), state.into()),
-            BadgePart::Dot => self.dot.set_from_str(key, &value.into(), state.into()),
+            BadgePart::Dot => {
+                let dot_part = BadgeDotPart::from_str(key).unwrap();
+                for (key, value) in value.as_kvs() {
+                    self.dot
+                        .set_from_str_slot(key, value, state.into(), dot_part);
+                }
+            }
         }
     }
 
     fn sync_slot(&mut self, state: Self::State, part: Self::Part) -> () {
         match part {
             BadgePart::Container => self.container.sync(state.into()),
-            BadgePart::Dot => self.dot.sync(state.into()),
+            BadgePart::Dot => {
+                self.dot.sync_slot(state.into(), BadgeDotPart::Text);
+                self.dot.sync_slot(state.into(), BadgeDotPart::Container);
+            }
         }
     }
 }

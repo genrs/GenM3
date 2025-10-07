@@ -93,6 +93,7 @@ impl From<&Applys> for LiveValue {
         match value {
             Applys::Value(live_value) => live_value.clone(),
             Applys::Deep(_map) => {
+                dbg!(_map);
                 unreachable!("Cannot convert a Deep Applys to LiveValue directly, expected Value");
             }
         }
