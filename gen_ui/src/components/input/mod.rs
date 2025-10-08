@@ -19,19 +19,10 @@ use makepad_widgets::{
 use unicode_segmentation::UnicodeSegmentation;
 
 use crate::{
-    ComponentAnInit,
-    components::{BasicStyle, Component, GView, LifeCycle, SlotComponent, SlotStyle, Style},
-    error::Error,
-    lifecycle, play_animation,
-    prop::{ApplyMapImpl, ApplySlotMap, ApplySlotMapImpl, ToStateMap, traits::ToFloat},
-    pure_after_apply, set_animation, set_index, set_scope_path,
-    shader::{
+    animation_open_then_redraw, components::{BasicStyle, Component, GView, LifeCycle, SlotComponent, SlotStyle, Style}, error::Error, lifecycle, play_animation, prop::{traits::ToFloat, ApplyMapImpl, ApplySlotMap, ApplySlotMapImpl, ToStateMap}, pure_after_apply, set_animation, set_index, set_scope_path, shader::{
         draw_input::{DrawCursor, DrawSelection},
         draw_view::DrawView,
-    },
-    sync,
-    themes::conf::Conf,
-    visible,
+    }, sync, themes::conf::Conf, visible, ComponentAnInit
 };
 
 live_design! {
@@ -207,11 +198,11 @@ pub struct GInput {
 }
 
 impl WidgetNode for GInput {
-    fn uid_to_widget(&self, uid: WidgetUid) -> WidgetRef {
+    fn uid_to_widget(&self, _uid: WidgetUid) -> WidgetRef {
         WidgetRef::empty()
     }
 
-    fn find_widgets(&self, path: &[LiveId], cached: WidgetCache, results: &mut WidgetSet) {
+    fn find_widgets(&self, _path: &[LiveId], _cached: WidgetCache, _results: &mut WidgetSet) {
         ()
     }
 
@@ -261,7 +252,7 @@ impl LiveHook for GInput {
 
 impl Widget for GInput {
     fn text(&self) -> String {
-        self.text.clone()
+        self.text.to_string()
     }
 
     fn set_text(&mut self, cx: &mut Cx, text: &str) {
@@ -290,7 +281,6 @@ impl Widget for GInput {
             return DrawStep::done();
         }
         let style = self.style.get(self.state).container;
-
         self.draw_input.begin(cx, walk, style.layout());
         self.draw_selection.append_to_draw_call(cx);
         self.layout_text(cx);
@@ -319,15 +309,77 @@ impl Widget for GInput {
         );
     }
 
-    fn disabled(&self, cx: &Cx) -> bool {
+    fn disabled(&self, _cx: &Cx) -> bool {
         // self.animator_in_state(cx, id!(disabled.on))
         self.disabled
     }
 
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
-        if self.animator_handle_event(cx, event).must_redraw() {
-            self.draw_input.redraw(cx);
+        if !self.visible {
+            return;
         }
+
+        self.set_animation(cx);
+        cx.global::<ComponentAnInit>().button = true;
+        let area = self.area();
+        let hit = event.hits(cx, area);
+        if self.disabled {
+            self.handle_when_disabled(cx, event, hit);
+        } else {
+            self.handle_widget_event(cx, event, hit, area);
+        }
+    }
+}
+
+impl SlotComponent<InputState> for GInput {
+    type Part = InputPart;
+
+    fn merge_prop_to_slot(&mut self) -> () {
+        self.prefix.style.basic = self.style.basic.prefix;
+        self.prefix.style.hover = self.style.hover.prefix;
+        self.prefix.style.pressed = self.style.focus.prefix;
+        self.prefix.style.disabled = self.style.disabled.prefix;
+        self.suffix.style.basic = self.style.basic.suffix;
+        self.suffix.style.hover = self.style.hover.suffix;
+        self.suffix.style.pressed = self.style.focus.suffix;
+        self.suffix.style.disabled = self.style.disabled.suffix;
+    }
+}
+
+impl Component for GInput {
+    type Error = Error;
+
+    type State = InputState;
+
+    fn merge_conf_prop(&mut self, cx: &mut Cx) -> () {
+        let style = &cx.global::<Conf>().components.input;
+        self.style = style.clone();
+        self.merge_prop_to_slot();
+    }
+
+    fn render(&mut self, cx: &mut Cx) -> Result<(), Self::Error> {
+        if self.disabled {
+            self.switch_state(InputState::Disabled);
+        }
+        let style = self.style.get(self.state).container;
+        self.draw_input.merge(&style.into());
+        let _ = self.prefix.render(cx)?;
+        let _ = self.suffix.render(cx)?;
+        Ok(())
+    }
+
+    fn handle_when_disabled(&mut self, cx: &mut Cx, _event: &Event, hit: Hit) -> () {
+        match hit {
+            Hit::FingerHoverIn(_) => {
+                self.switch_state_and_redraw(cx, InputState::Disabled);
+                cx.set_cursor(self.style.get(self.state).container.cursor);
+            }
+            _ => {}
+        }
+    }
+
+    fn handle_widget_event(&mut self, cx: &mut Cx, event: &Event, hit: Hit, area: Area) {
+        animation_open_then_redraw!(self, cx, event);
 
         if self.blink_timer.is_event(event).is_some() {
             if self.animator_in_state(cx, id!(blink.off)) {
@@ -339,7 +391,7 @@ impl Widget for GInput {
         }
 
         let uid = self.widget_uid();
-        match event.hits(cx, self.draw_input.area()) {
+        match hit {
             Hit::FingerHoverIn(_) => {
                 self.animator_play(cx, id!(hover.on));
             }
@@ -613,7 +665,7 @@ impl Widget for GInput {
                         replace_with: input,
                     },
                 );
-                self.animator_play(cx, id!(empty.off));
+                self.animator_play(cx, id!(input.empty));
                 self.draw_input.redraw(cx);
                 cx.widget_action(
                     uid,
@@ -650,48 +702,6 @@ impl Widget for GInput {
             }
             _ => {}
         }
-    }
-}
-
-impl SlotComponent<InputState> for GInput {
-    type Part = InputPart;
-
-    fn merge_prop_to_slot(&mut self) -> () {
-        self.prefix.style.basic = self.style.basic.prefix;
-        self.prefix.style.hover = self.style.hover.prefix;
-        self.prefix.style.pressed = self.style.focus.prefix;
-        self.prefix.style.disabled = self.style.disabled.prefix;
-        self.suffix.style.basic = self.style.basic.suffix;
-        self.suffix.style.hover = self.style.hover.suffix;
-        self.suffix.style.pressed = self.style.focus.suffix;
-        self.suffix.style.disabled = self.style.disabled.suffix;
-    }
-}
-
-impl Component for GInput {
-    type Error = Error;
-
-    type State = InputState;
-
-    fn merge_conf_prop(&mut self, cx: &mut Cx) -> () {
-        let style = &cx.global::<Conf>().components.input;
-        self.style = style.clone();
-        self.merge_prop_to_slot();
-    }
-
-    fn render(&mut self, cx: &mut Cx) -> Result<(), Self::Error> {
-        if self.disabled {
-            self.switch_state(InputState::Disabled);
-        }
-        let style = self.style.get(self.state).container;
-        self.draw_input.merge(&style.into());
-        let _ = self.prefix.render(cx)?;
-        let _ = self.suffix.render(cx)?;
-        Ok(())
-    }
-
-    fn handle_widget_event(&mut self, cx: &mut Cx, event: &Event, hit: Hit, area: Area) {
-        todo!()
     }
 
     fn switch_state(&mut self, state: Self::State) -> () {
