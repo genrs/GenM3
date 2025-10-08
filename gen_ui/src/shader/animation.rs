@@ -23,6 +23,14 @@ live_design!{
         shadow_offset: vec2(0.0, 0.0),
     }
 
+    pub AN_DRAW_TEXT = {
+        color: #ffffff,
+        text_style: {
+            font_size: 12.0,
+            line_spacing: 1.0,
+        }
+    }
+
     pub AN_DRAW_DOT = {
         background_color: #777777,
         border_color: #777777,
@@ -133,5 +141,16 @@ live_design!{
         spacing: 4.0,
         count: 5.0,
         value: 0.0,
+    }
+
+    pub AN_DRAW_CURSOR = {
+        color: #ffffff,
+        blink: 0.0,
+        border_radius: 0.5,
+    }
+
+    pub AN_DRAW_SELECTION = {
+        color: #ffffff,
+        border_radius: 0.5,
     }
 }

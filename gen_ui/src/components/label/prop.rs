@@ -8,12 +8,12 @@ use crate::{
     },
     get_get_mut, getter_setter_prop,
     prop::{
+        ApplyStateMapImpl,
         manuel::{
-            BASIC, COLOR, DISABLED, FLOW, FONT_SIZE, HEIGHT, LINE_SPACING, MARGIN, PADDING, THEME,
-            WIDTH,
+            ALIGN, BASIC, COLOR, DISABLED, FLOW, FONT_SIZE, HEIGHT, LINE_SPACING, MARGIN, PADDING,
+            THEME, WIDTH,
         },
         traits::{FromLiveColor, FromLiveValue, NewFrom, ToColor, ToTomlValue},
-        ApplyStateMapImpl,
     },
     prop_interconvert,
     themes::{ColorFontConf, Theme, TomlValueTo},
@@ -63,7 +63,8 @@ basic_prop_interconvert! {
             padding: Padding => PADDING, Padding::from_f64(0.0), |v| v.to_padding(Padding::from_f64(0.0)),
             flow: Flow => FLOW, Flow::RightWrap, |v| v.to_flow(),
             height: Size => HEIGHT, Size::Fit, |v| v.to_size(),
-            width: Size => WIDTH, Size::Fit, |v| v.to_size()
+            width: Size => WIDTH, Size::Fit, |v| v.to_size(),
+            align: Align => ALIGN, Align::default(), |v| v.to_align(align)
         }
     }, "LabelBasicStyle should be a inline table"
 }
@@ -121,6 +122,9 @@ impl BasicStyle for LabelBasicStyle {
             WIDTH => {
                 self.width = Size::from_live_value(value).unwrap_or(Size::Fit);
             }
+            ALIGN => {
+                self.align = Align::from_live_value(value).unwrap_or(Align::default());
+            }
             _ => {}
         }
     }
@@ -146,6 +150,7 @@ impl BasicStyle for LabelBasicStyle {
             flow: Flow::RightWrap,
             height: Size::Fit,
             width: Size::Fit,
+            align: Align::default(),
         }
     }
 
@@ -185,6 +190,7 @@ impl BasicStyle for LabelBasicStyle {
             (live_id!(flow), None.into()),
             (live_id!(height), None.into()),
             (live_id!(width), None.into()),
+            (live_id!(align), Some(vec![live_id!(x), live_id!(y)]).into()),
         ]
     }
 
@@ -202,6 +208,7 @@ impl BasicStyle for LabelBasicStyle {
         Layout {
             padding: self.padding,
             flow: self.flow,
+            align: self.align,
             ..Default::default()
         }
     }

@@ -19,25 +19,52 @@ use makepad_widgets::{
 use unicode_segmentation::UnicodeSegmentation;
 
 use crate::{
-    components::{BasicStyle, Component, GView, LifeCycle, SlotComponent, SlotStyle, Style}, error::Error, lifecycle, play_animation, prop::{traits::ToFloat, ApplyMapImpl, ApplySlotMap, ApplySlotMapImpl, ToStateMap}, pure_after_apply, set_animation, set_index, set_scope_path, shader::{
+    ComponentAnInit,
+    components::{BasicStyle, Component, GView, LifeCycle, SlotComponent, SlotStyle, Style},
+    error::Error,
+    lifecycle, play_animation,
+    prop::{ApplyMapImpl, ApplySlotMap, ApplySlotMapImpl, ToStateMap, traits::ToFloat},
+    pure_after_apply, set_animation, set_index, set_scope_path,
+    shader::{
         draw_input::{DrawCursor, DrawSelection},
         draw_view::DrawView,
-    }, sync, themes::conf::Conf, visible, ComponentAnInit
+    },
+    sync,
+    themes::conf::Conf,
+    visible,
 };
 
 live_design! {
     link genui_basic;
+    use link::theme::*;
     use link::genui_animation_prop::*;
 
     pub GInputBase = {{GInput}} {
-        width: Fill, height: Fit,
-        flow: RightWrap,
         is_password: false,
         is_read_only: false,
         is_numeric_only: false
         placeholder: "Your text here",
 
+        draw_text: {
+            text_style: <THEME_FONT_REGULAR>{}
+        }
+
         animator: {
+            blink = {
+                default: off
+                off = {
+                    from: {all: Forward {duration: (AN_DURATION_FASTEST)}}
+                    apply: {
+                        draw_cursor: {blink:0.0}
+                    }
+                }
+                on = {
+                    from: {all: Forward {duration: (AN_DURATION_FASTEST)}}
+                    apply: {
+                        draw_cursor: {blink:1.0}
+                    }
+                }
+            }
             input = {
                 default: off,
 
@@ -45,7 +72,10 @@ live_design! {
                     from: {all: Forward {duration: (AN_DURATION)}},
                     ease: InOutQuad,
                     apply: {
-                        draw_input: <AN_DRAW_VIEW> {}
+                        draw_input: <AN_DRAW_VIEW> {},
+                        draw_text: <AN_DRAW_TEXT> {},
+                        draw_selection: <AN_DRAW_SELECTION> {},
+                        draw_cursor: <AN_DRAW_CURSOR> {}
                     }
                 }
 
@@ -56,7 +86,10 @@ live_design! {
                     },
                     ease: InOutQuad,
                     apply: {
-                       draw_input: <AN_DRAW_VIEW> {}
+                       draw_input: <AN_DRAW_VIEW> {},
+                       draw_text: <AN_DRAW_TEXT> {},
+                       draw_selection: <AN_DRAW_SELECTION> {},
+                       draw_cursor: <AN_DRAW_CURSOR> {}
                     }
                 }
 
@@ -67,7 +100,10 @@ live_design! {
                     },
                     ease: InOutQuad,
                     apply: {
-                       draw_input: <AN_DRAW_VIEW> {}
+                       draw_input: <AN_DRAW_VIEW> {},
+                       draw_text: <AN_DRAW_TEXT> {},
+                       draw_selection: <AN_DRAW_SELECTION> {},
+                       draw_cursor: <AN_DRAW_CURSOR> {}
                     }
                 }
 
@@ -75,7 +111,10 @@ live_design! {
                     from: {all: Forward {duration: (AN_DURATION)}},
                     ease: InOutQuad,
                     apply: {
-                        draw_input: <AN_DRAW_VIEW> {}
+                        draw_input: <AN_DRAW_VIEW> {},
+                       draw_text: <AN_DRAW_TEXT> {},
+                       draw_selection: <AN_DRAW_SELECTION> {},
+                       draw_cursor: <AN_DRAW_CURSOR> {}
                     }
                 }
 
@@ -83,7 +122,10 @@ live_design! {
                     from: {all: Forward {duration: (AN_DURATION)}},
                     ease: InOutQuad,
                     apply: {
-                        draw_input: <AN_DRAW_VIEW> {}
+                        draw_input: <AN_DRAW_VIEW> {},
+                       draw_text: <AN_DRAW_TEXT> {},
+                       draw_selection: <AN_DRAW_SELECTION> {},
+                       draw_cursor: <AN_DRAW_CURSOR> {}
                     }
                 }
             }
@@ -281,7 +323,6 @@ impl Widget for GInput {
         // self.animator_in_state(cx, id!(disabled.on))
         self.disabled
     }
-    
 
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
         if self.animator_handle_event(cx, event).must_redraw() {
@@ -704,14 +745,19 @@ impl Component for GInput {
             let focus_prop = self.style.get(InputState::Focus);
             let empty_prop = self.style.get(InputState::Empty);
             let disabled_prop = self.style.get(InputState::Disabled);
-            let (mut basic_index, mut hover_index,mut empty_index, mut focus_index, mut disabled_index) =
-                (None, None, None, None, None);
+            let (
+                mut basic_index,
+                mut hover_index,
+                mut empty_index,
+                mut focus_index,
+                mut disabled_index,
+            ) = (None, None, None, None, None);
             if let Some(index) = nodes.child_by_path(
                 self.index,
                 &[
                     live_id!(animator).as_field(),
-                    live_id!(hover).as_instance(),
-                    live_id!(off).as_instance(),
+                    live_id!(input).as_instance(),
+                    live_id!(basic).as_instance(),
                 ],
             ) {
                 basic_index = Some(index);
@@ -721,8 +767,8 @@ impl Component for GInput {
                 self.index,
                 &[
                     live_id!(animator).as_field(),
+                    live_id!(input).as_instance(),
                     live_id!(hover).as_instance(),
-                    live_id!(on).as_instance(),
                 ],
             ) {
                 hover_index = Some(index);
@@ -732,8 +778,19 @@ impl Component for GInput {
                 self.index,
                 &[
                     live_id!(animator).as_field(),
-                    live_id!(hover).as_instance(),
-                    live_id!(active).as_instance(),
+                    live_id!(input).as_instance(),
+                    live_id!(empty).as_instance(),
+                ],
+            ) {
+                empty_index = Some(index);
+            }
+
+            if let Some(index) = nodes.child_by_path(
+                self.index,
+                &[
+                    live_id!(animator).as_field(),
+                    live_id!(input).as_instance(),
+                    live_id!(focus).as_instance(),
                 ],
             ) {
                 focus_index = Some(index);
@@ -743,7 +800,7 @@ impl Component for GInput {
                 self.index,
                 &[
                     live_id!(animator).as_field(),
-                    live_id!(hover).as_instance(),
+                    live_id!(input).as_instance(),
                     live_id!(disabled).as_instance(),
                 ],
             ) {
@@ -774,6 +831,17 @@ impl Component for GInput {
                         shadow_offset => hover_prop.container.shadow_offset,
                         background_visible => hover_prop.container.background_visible.to_f64()
                     },
+                    empty_index => {
+                        background_color => empty_prop.container.background_color,
+                        border_color => empty_prop.container.border_color,
+                        border_radius => empty_prop.container.border_radius,
+                        border_width => (empty_prop.container.border_width as f64),
+                        shadow_color => empty_prop.container.shadow_color,
+                        spread_radius => (empty_prop.container.spread_radius as f64),
+                        blur_radius => (empty_prop.container.blur_radius as f64),
+                        shadow_offset => empty_prop.container.shadow_offset,
+                        background_visible => empty_prop.container.background_visible.to_f64()
+                    },
                     focus_index => {
                         background_color => focus_prop.container.background_color,
                         border_color => focus_prop.container.border_color,
@@ -802,40 +870,69 @@ impl Component for GInput {
             set_animation! {
                 nodes: draw_selection = {
                     basic_index => {
-                        background_color => basic_prop.checkbox.background_color,
-                        background_visible => basic_prop.checkbox.background_visible.to_f64(),
-                        border_color => basic_prop.checkbox.border_color,
-                        border_width => (basic_prop.checkbox.border_width as f64),
-                        size => (basic_prop.checkbox.size as f64),
-                        mode => basic_prop.checkbox.mode,
-                        stroke_color => basic_prop.checkbox.stroke_color
+                        color => basic_prop.selection.color
                     },
                     hover_index => {
-                        background_color => hover_prop.checkbox.background_color,
-                        background_visible => hover_prop.checkbox.background_visible.to_f64(),
-                        border_color => hover_prop.checkbox.border_color,
-                        border_width => (hover_prop.checkbox.border_width as f64),
-                        size => (hover_prop.checkbox.size as f64),
-                        mode => hover_prop.checkbox.mode,
-                        stroke_color => hover_prop.checkbox.stroke_color
+                        color => hover_prop.selection.color
+                    },
+                    empty_index => {
+                        color => empty_prop.selection.color
                     },
                     focus_index => {
-                        background_color => focus_prop.checkbox.background_color,
-                        background_visible => focus_prop.checkbox.background_visible.to_f64(),
-                        border_color => focus_prop.checkbox.border_color,
-                        border_width => (focus_prop.checkbox.border_width as f64),
-                        size => (focus_prop.checkbox.size as f64),
-                        mode => focus_prop.checkbox.mode,
-                        stroke_color => focus_prop.checkbox.stroke_color
+                        color => focus_prop.selection.color
                     },
                     disabled_index => {
-                        background_color => disabled_prop.checkbox.background_color,
-                        background_visible => disabled_prop.checkbox.background_visible.to_f64(),
-                        border_color => disabled_prop.checkbox.border_color,
-                        border_width => (disabled_prop.checkbox.border_width as f64),
-                        size => (disabled_prop.checkbox.size as f64),
-                        mode => disabled_prop.checkbox.mode,
-                        stroke_color => disabled_prop.checkbox.stroke_color
+                        color => disabled_prop.selection.color
+                    }
+                }
+            }
+
+            set_animation! {
+                nodes: draw_cursor = {
+                    basic_index => {
+                        color => basic_prop.cursor.color
+                    },
+                    hover_index => {
+                        color => hover_prop.cursor.color
+                    },
+                    empty_index => {
+                        color => empty_prop.cursor.color
+                    },
+                    focus_index => {
+                        color => focus_prop.cursor.color
+                    },
+                    disabled_index => {
+                        color => disabled_prop.cursor.color
+                    }
+                }
+            }
+
+            set_animation! {
+                nodes: draw_text = {
+                    basic_index => {
+                        color => basic_prop.text.color,
+                        text_style.font_size => (basic_prop.text.font_size as f64),
+                        text_style.line_spacing => (basic_prop.text.line_spacing as f64)
+                    },
+                    hover_index => {
+                        color => hover_prop.text.color,
+                        text_style.font_size => (hover_prop.text.font_size as f64),
+                        text_style.line_spacing => (hover_prop.text.line_spacing as f64)
+                    },
+                    empty_index => {
+                        color => empty_prop.text.color,
+                        text_style.font_size => (empty_prop.text.font_size as f64),
+                        text_style.line_spacing => (empty_prop.text.line_spacing as f64)
+                    },
+                    focus_index => {
+                        color => focus_prop.text.color,
+                        text_style.font_size => (focus_prop.text.font_size as f64),
+                        text_style.line_spacing => (focus_prop.text.line_spacing as f64)
+                    },
+                    disabled_index => {
+                        color => disabled_prop.text.color,
+                        text_style.font_size => (disabled_prop.text.font_size as f64),
+                        text_style.line_spacing => (disabled_prop.text.line_spacing as f64)
                     }
                 }
             }
@@ -843,46 +940,54 @@ impl Component for GInput {
             let state = self.state;
             let style = self.style.get(state);
             let index = match state {
-                CheckboxState::Basic => nodes.child_by_path(
+                InputState::Basic => nodes.child_by_path(
                     self.index,
                     &[
                         live_id!(animator).as_field(),
-                        live_id!(hover).as_instance(),
-                        live_id!(off).as_instance(),
+                        live_id!(input).as_instance(),
+                        live_id!(basic).as_instance(),
                     ],
                 ),
-                CheckboxState::Hover => nodes.child_by_path(
+                InputState::Hover => nodes.child_by_path(
                     self.index,
                     &[
                         live_id!(animator).as_field(),
+                        live_id!(input).as_instance(),
                         live_id!(hover).as_instance(),
-                        live_id!(on).as_instance(),
                     ],
                 ),
-                CheckboxState::Active => nodes.child_by_path(
+                InputState::Empty => nodes.child_by_path(
                     self.index,
                     &[
                         live_id!(animator).as_field(),
-                        live_id!(hover).as_instance(),
-                        live_id!(active).as_instance(),
+                        live_id!(input).as_instance(),
+                        live_id!(empty).as_instance(),
                     ],
                 ),
-                CheckboxState::Disabled => nodes.child_by_path(
+                InputState::Focus => nodes.child_by_path(
                     self.index,
                     &[
                         live_id!(animator).as_field(),
-                        live_id!(hover).as_instance(),
+                        live_id!(input).as_instance(),
+                        live_id!(focus).as_instance(),
+                    ],
+                ),
+                InputState::Disabled => nodes.child_by_path(
+                    self.index,
+                    &[
+                        live_id!(animator).as_field(),
+                        live_id!(input).as_instance(),
                         live_id!(disabled).as_instance(),
                     ],
                 ),
             };
             set_animation! {
-                nodes: draw_container = {
+                nodes: draw_input = {
                     index => {
                         background_color => style.container.background_color,
-                        border_color => style.container.border_color,
+                        border_color =>style.container.border_color,
                         border_radius => style.container.border_radius,
-                        border_width => (style.container.border_width as f64),
+                        border_width =>(style.container.border_width as f64),
                         shadow_color => style.container.shadow_color,
                         spread_radius => (style.container.spread_radius as f64),
                         blur_radius => (style.container.blur_radius as f64),
@@ -891,16 +996,29 @@ impl Component for GInput {
                     }
                 }
             }
+
             set_animation! {
-                nodes: draw_checkbox = {
+                nodes: draw_selection = {
                     index => {
-                        background_color => style.checkbox.background_color,
-                        background_visible => style.checkbox.background_visible.to_f64(),
-                        border_color => style.checkbox.border_color,
-                        border_width => (style.checkbox.border_width as f64),
-                        size => (style.checkbox.size as f64),
-                        mode => style.checkbox.mode,
-                        stroke_color => style.checkbox.stroke_color
+                        color => style.selection.color
+                    }
+                }
+            }
+
+            set_animation! {
+                nodes: draw_cursor = {
+                    index => {
+                        color => style.cursor.color
+                    }
+                }
+            }
+
+            set_animation! {
+                nodes: draw_text = {
+                    index => {
+                        color => style.text.color,
+                        text_style.font_size => (style.text.font_size as f64),
+                        text_style.line_spacing => (style.text.line_spacing as f64)
                     }
                 }
             }
@@ -1084,7 +1202,8 @@ impl GInput {
     }
 
     fn inner_walk(&self) -> Walk {
-        if self.walk.width.is_fit() {
+        let walk = self.style.get(self.state).container.walk();
+        if walk.width.is_fit() {
             Walk::fit()
         } else {
             Walk::fill_fit()
@@ -1116,22 +1235,24 @@ impl GInput {
         } else {
             None
         };
+        let align = self.style.get(self.state).text.align;
         self.laidout_text =
             Some(
                 self.draw_text
-                    .layout(cx, 0.0, 0.0, wrap_width_in_lpxs, self.label_align, text),
+                    .layout(cx, 0.0, 0.0, wrap_width_in_lpxs, align, text),
             );
     }
 
     fn draw_text(&mut self, cx: &mut Cx2d) -> Rect {
         let inner_walk = self.inner_walk();
+        let style = self.style.get(self.state);
         let text_rect = if self.text.is_empty() {
             self.draw_text
-                .draw_walk(cx, inner_walk, self.label_align, &self.placeholder)
+                .draw_walk(cx, inner_walk, style.text.align, &self.placeholder)
         } else {
             let laidout_text = self.laidout_text.as_ref().unwrap();
             self.draw_text
-                .draw_walk_laidout(cx, inner_walk, self.label_align, laidout_text)
+                .draw_walk_laidout(cx, inner_walk, style.text.align, laidout_text)
         };
         cx.add_aligned_rect_area(&mut self.text_area, text_rect);
         text_rect
@@ -1385,9 +1506,9 @@ impl GInput {
 
     fn check_text_is_empty(&mut self, cx: &mut Cx) {
         if self.text.is_empty() {
-            self.animator_play(cx, id!(empty.on));
+            self.animator_play(cx, id!(input.empty));
         } else {
-            self.animator_play(cx, id!(empty.off));
+            self.animator_play(cx, id!(input.basic));
         }
     }
 

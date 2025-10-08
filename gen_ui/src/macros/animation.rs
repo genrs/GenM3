@@ -57,7 +57,7 @@ macro_rules! set_animation {
         $(
             $basic_index: expr => {
                 $(
-                    $field: tt => $prop_field: expr
+                    $($field: tt).* => $prop_field: expr
                 ),*
             }
         ),*
@@ -70,7 +70,7 @@ macro_rules! set_animation {
                         &[
                             live_id!(apply).as_field(),
                             live_id!($draw).as_field(),
-                            live_id!($field).as_field(),
+                            $(live_id!($field).as_field()),*
                         ],
                     ) {
                         $nodes[v_index].value = $prop_field.to_live_value();

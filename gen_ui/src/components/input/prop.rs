@@ -4,7 +4,7 @@ use toml_edit::Item;
 use crate::{
     basic_prop_interconvert, component_color, component_part, component_state,
     components::{
-        LabelBasicStyle, LabelState, SelectBasicStyle, ViewColors,
+        LabelBasicStyle, LabelState, ViewColors,
         live_props::LiveProps,
         traits::{BasicStyle, ComponentState, SlotBasicStyle, SlotStyle, Style},
         view::{ViewBasicStyle, ViewState},
@@ -12,12 +12,12 @@ use crate::{
     error::Error,
     from_prop_to_toml, get_get_mut,
     prop::{
-        ApplySlotMapImpl, ApplyStateMapImpl, Applys, Radius,
+        ApplySlotMapImpl, ApplyStateMapImpl, Applys,
         manuel::{
-            BASIC, BORDER_RADIUS, COLOR, CONTAINER, CURSOR, DISABLED, EMPTY, FOCUS, HOVER, PREFIX,
-            SELECTION, SUFFIX, TEXT,
+            BASIC, COLOR, CONTAINER, CURSOR, DISABLED, EMPTY, FOCUS, HOVER, PREFIX, SELECTION,
+            SUFFIX, TEXT, THEME,
         },
-        traits::NewFrom,
+        traits::{FromLiveColor, FromLiveValue, NewFrom, ToColor, ToTomlValue},
     },
     prop_interconvert, state_color,
     themes::Theme,
@@ -82,7 +82,14 @@ impl SlotStyle for InputStyle {
                 (InputState::Focus, &mut self.focus),
                 (InputState::Disabled, &mut self.disabled),
             ],
-            [InputPart::Container, InputPart::Prefix, InputPart::Suffix],
+            [
+                InputPart::Container,
+                InputPart::Prefix,
+                InputPart::Suffix,
+                InputPart::Text,
+                InputPart::Cursor,
+                InputPart::Selection,
+            ],
         );
     }
 }
@@ -170,6 +177,9 @@ impl SlotBasicStyle for InputBasicStyle {
                 .set_from_str(key, &value.into(), state.into()),
             InputPart::Prefix => self.prefix.set_from_str(key, &value.into(), state.into()),
             InputPart::Suffix => self.suffix.set_from_str(key, &value.into(), state.into()),
+            InputPart::Text => self.text.set_from_str(key, &value.into(), state.into()),
+            InputPart::Cursor => self.cursor.set_from_str(key, &value.into(), state),
+            InputPart::Selection => self.selection.set_from_str(key, &value.into(), state),
         }
     }
 
@@ -178,6 +188,9 @@ impl SlotBasicStyle for InputBasicStyle {
             InputPart::Container => self.container.sync(state.into()),
             InputPart::Prefix => self.prefix.sync(state.into()),
             InputPart::Suffix => self.suffix.sync(state.into()),
+            InputPart::Text => self.text.sync(state.into()),
+            InputPart::Cursor => self.cursor.sync(state),
+            InputPart::Selection => self.selection.sync(state),
         }
     }
 }
@@ -306,7 +319,7 @@ basic_prop_interconvert! {
 }
 
 component_color! {
-    CursorBasicColors {
+    CursorColors {
         colors = (Color);
         color
     }
@@ -315,7 +328,7 @@ component_color! {
 impl BasicStyle for CursorBasicStyle {
     type State = InputState;
 
-    type Colors = CursorBasicColors;
+    type Colors = CursorColors;
 
     fn from_state(theme: Theme, state: Self::State) -> Self {
         Self {
@@ -338,11 +351,22 @@ impl BasicStyle for CursorBasicStyle {
     }
 
     fn set_from_str(&mut self, key: &str, value: &LiveValue, state: Self::State) -> () {
-        todo!()
+        match key {
+            THEME => {
+                self.theme = Theme::from_live_value(value).unwrap_or(Theme::default());
+                self.sync(state);
+            }
+            COLOR => {
+                let color = Self::state_colors(self.theme, state);
+                self.color = Vec4::from_live_color(value).unwrap_or(color.color.into());
+            }
+            _ => {}
+        }
     }
 
     fn sync(&mut self, state: Self::State) -> () {
-        todo!()
+        let CursorColors { color } = Self::state_colors(self.theme, state);
+        self.color = color.into();
     }
 
     fn live_props() -> LiveProps {
@@ -367,9 +391,7 @@ basic_prop_interconvert! {
         {
             color => COLOR, |v| v.try_into()
         };
-        {
-            border_radius: Radius => BORDER_RADIUS, Radius::new(2.0), |v| v.try_into()
-        }
+        {}
     }, "SelectionBasicStyle should be a inline table"
 }
 
@@ -386,35 +408,57 @@ impl BasicStyle for SelectionBasicStyle {
     type Colors = SelectionColors;
 
     fn from_state(theme: Theme, state: Self::State) -> Self {
-        todo!()
+        Self {
+            theme,
+            color: Self::state_colors(theme, state).color.into(),
+        }
     }
 
-    fn state_colors(theme: Theme, state: Self::State) -> Self::Colors {
-        todo!()
+    state_color! {
+        (color),
+        InputState::Basic => (200),
+        InputState::Hover => (200),
+        InputState::Focus => (200),
+        InputState::Empty => (200),
+        InputState::Disabled => (100)
     }
 
     fn len() -> usize {
-        todo!()
+        2
     }
 
     fn set_from_str(&mut self, key: &str, value: &LiveValue, state: Self::State) -> () {
-        todo!()
+        match key {
+            THEME => {
+                self.theme = Theme::from_live_value(value).unwrap_or(Theme::default());
+                self.sync(state);
+            }
+            COLOR => {
+                let color = Self::state_colors(self.theme, state);
+                self.color = Vec4::from_live_color(value).unwrap_or(color.color.into());
+            }
+            _ => {}
+        }
     }
 
     fn sync(&mut self, state: Self::State) -> () {
-        todo!()
+        let SelectionColors { color } = Self::state_colors(self.theme, state);
+        self.color = color.into();
     }
 
     fn live_props() -> LiveProps {
-        todo!()
+        vec![
+            (live_id!(theme), None.into()),
+            (live_id!(color), None.into()),
+        ]
     }
 
     fn walk(&self) -> Walk {
-        todo!()
+        Walk::default()
     }
 
     fn layout(&self) -> Layout {
-        todo!()
+        Layout::default()
     }
 }
 
@@ -458,6 +502,9 @@ component_part! {
     InputPart {
         Container => container => CONTAINER,
         Prefix => prefix => PREFIX,
-        Suffix => suffix => SUFFIX
+        Suffix => suffix => SUFFIX,
+        Text => text => TEXT,
+        Cursor => cursor => CURSOR,
+        Selection => selection => SELECTION
     }, InputState
 }
