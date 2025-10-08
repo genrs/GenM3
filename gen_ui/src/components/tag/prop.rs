@@ -25,7 +25,7 @@ use crate::{
 };
 
 prop_interconvert! {
-    TagProp {
+    TagStyle {
         basic_prop = TagBasicStyle;
         basic => BASIC, TagBasicStyle::default(), |v| (v, TagState::Basic).try_into(),
         hover => HOVER, TagBasicStyle::from_state(Theme::default(), TagState::Hover), |v| (v, TagState::Hover).try_into(),
@@ -34,7 +34,7 @@ prop_interconvert! {
     }, "[component.tag] should be a table"
 }
 
-impl SlotStyle for TagProp {
+impl SlotStyle for TagStyle {
     type Part = TagPart;
 
     fn sync_slot(&mut self, map: &crate::prop::ApplySlotMap<Self::State, Self::Part>) -> () {
@@ -56,7 +56,7 @@ impl SlotStyle for TagProp {
     }
 }
 
-impl Style for TagProp {
+impl Style for TagStyle {
     type State = TagState;
 
     type Basic = TagBasicStyle;

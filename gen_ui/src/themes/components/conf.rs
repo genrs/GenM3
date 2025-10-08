@@ -4,16 +4,11 @@ use crate::components::dot::BadgeDotStyle;
 use crate::components::item::SelectItemStyle;
 use crate::components::panel::ColorPanelStyle;
 use crate::components::{
-    BadgeStyle, ButtonStyle, CardStyle, CheckboxStyle, CollapseStyle, DividerStyle, ImageStyle,
-    LabelStyle, LinkProp, LoadingStyle, MenuItemProp, MenuProp, PopupContainerProp, PopupProp,
-    ProgressStyle, RadioStyle, RateStyle, SelectStyle, SliderStyle, SubMenuProp, SvgStyle,
-    SwitchStyle, TabbarItemProp, TabbarProp, TagProp, ViewStyle,
+    BadgeStyle, ButtonStyle, CardStyle, CheckboxStyle, CollapseStyle, DividerStyle, ImageStyle, InputStyle, LabelStyle, LinkStyle, LoadingStyle, MenuItemProp, MenuProp, PopupContainerProp, PopupProp, ProgressStyle, RadioStyle, RateStyle, SelectStyle, SliderStyle, SubMenuProp, SvgStyle, SwitchStyle, TabbarItemProp, TabbarProp, TagStyle, ViewStyle
 };
 use crate::error::Error;
 use crate::prop::manuel::{
-    BADGE, BADGE_DOT, BUTTON, CARD, CHECKBOX, COLLAPSE, COLOR_PANEL, DIVIDER, IMAGE, LABEL, LINK,
-    LOADING, MENU, MENU_ITEM, POPUP, POPUP_CONTAINER, PROGRESS, RADIO, RATE, SELECT, SELECT_ITEM,
-    SLIDER, SUB_MENU, SVG, SWITCH, TABBAR, TABBAR_ITEM, TAG, VIEW,
+    BADGE, BADGE_DOT, BUTTON, CARD, CHECKBOX, COLLAPSE, COLOR_PANEL, DIVIDER, IMAGE, INPUT, LABEL, LINK, LOADING, MENU, MENU_ITEM, POPUP, POPUP_CONTAINER, PROGRESS, RADIO, RATE, SELECT, SELECT_ITEM, SLIDER, SUB_MENU, SVG, SWITCH, TABBAR, TABBAR_ITEM, TAG, VIEW
 };
 use crate::try_from_toml_item;
 
@@ -33,8 +28,8 @@ pub struct ComponentsConf {
     pub popup_container: PopupContainerProp,
     pub tabbar: TabbarProp,
     pub tabbar_item: TabbarItemProp,
-    pub tag: TagProp,
-    pub link: LinkProp,
+    pub tag: TagStyle,
+    pub link: LinkStyle,
     pub menu_item: MenuItemProp,
     pub sub_menu: SubMenuProp,
     pub menu: MenuProp,
@@ -48,6 +43,7 @@ pub struct ComponentsConf {
     pub select: SelectStyle,
     pub badge_dot: BadgeDotStyle,
     pub badge: BadgeStyle,
+    pub input: InputStyle
 }
 
 try_from_toml_item! {
@@ -66,8 +62,8 @@ try_from_toml_item! {
         popup_container => POPUP_CONTAINER, PopupContainerProp::default(), |item| item.try_into(),
         tabbar => TABBAR, TabbarProp::default(), |item| item.try_into(),
         tabbar_item => TABBAR_ITEM, TabbarItemProp::default(), |item| item.try_into(),
-        tag => TAG, TagProp::default(), |item| item.try_into(),
-        link => LINK, LinkProp::default(), |item| item.try_into(),
+        tag => TAG, TagStyle::default(), |item| item.try_into(),
+        link => LINK, LinkStyle::default(), |item| item.try_into(),
         menu_item => MENU_ITEM, MenuItemProp::default(), |item| item.try_into(),
         sub_menu => SUB_MENU, SubMenuProp::default(), |item| item.try_into(),
         menu => MENU, MenuProp::default(), |item| item.try_into(),
@@ -80,7 +76,8 @@ try_from_toml_item! {
         select_item => SELECT_ITEM, SelectItemStyle::default(), |item| item.try_into(),
         select => SELECT, SelectStyle::default(), |item| item.try_into(),
         badge_dot => BADGE_DOT, BadgeDotStyle::default(), |item| item.try_into(),
-        badge => BADGE, BadgeStyle::default(), |item| item.try_into()
+        badge => BADGE, BadgeStyle::default(), |item| item.try_into(),
+        input => INPUT, InputStyle::default(), |item| item.try_into()
     }, "[components] should be a table"
 }
 

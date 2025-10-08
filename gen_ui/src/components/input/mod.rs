@@ -18,178 +18,72 @@ use makepad_widgets::{
 };
 use unicode_segmentation::UnicodeSegmentation;
 
-use crate::shader::{draw_input::{DrawCursor, DrawSelection}, draw_view::DrawView};
+use crate::{
+    components::{BasicStyle, Component, GView, LifeCycle, SlotComponent, SlotStyle, Style}, error::Error, lifecycle, play_animation, prop::{traits::ToFloat, ApplyMapImpl, ApplySlotMap, ApplySlotMapImpl, ToStateMap}, pure_after_apply, set_animation, set_index, set_scope_path, shader::{
+        draw_input::{DrawCursor, DrawSelection},
+        draw_view::DrawView,
+    }, sync, themes::conf::Conf, visible, ComponentAnInit
+};
 
 live_design! {
-    link widgets;
-
-    use link::theme::*;
-    use makepad_draw::shader::std::*;
+    link genui_basic;
+    use link::genui_animation_prop::*;
 
     pub GInputBase = {{GInput}} {
         width: Fill, height: Fit,
-        padding: <THEME_MSPACE_1> { left: (THEME_SPACE_2), right: (THEME_SPACE_2) }
-        margin: <THEME_MSPACE_V_1> {}
         flow: RightWrap,
         is_password: false,
         is_read_only: false,
         is_numeric_only: false
-        empty_text: "Your text here",
-
-        draw_text: {
-            instance hover: 0.0
-            instance focus: 0.0
-            instance down: 0.0
-            instance empty: 0.0
-            instance disabled: 0.0
-
-            color: (THEME_COLOR_TEXT)
-            uniform color_hover: (THEME_COLOR_TEXT_HOVER)
-            uniform color_focus: (THEME_COLOR_TEXT_FOCUS)
-            uniform color_down: (THEME_COLOR_TEXT_DOWN)
-            uniform color_disabled: (THEME_COLOR_TEXT_DISABLED)
-            uniform color_empty: (THEME_COLOR_TEXT_PLACEHOLDER)
-            uniform color_empty_hover: (THEME_COLOR_TEXT_PLACEHOLDER_HOVER)
-            uniform color_empty_focus: (THEME_COLOR_TEXT_FOCUS)
-
-            text_style: <THEME_FONT_REGULAR> {
-                line_spacing: (THEME_FONT_WDGT_LINE_SPACING),
-                font_size: (THEME_FONT_SIZE_P)
-            }
-
-            fn get_color(self) -> vec4 {
-                return
-                    mix(
-                        mix(
-                            mix(
-                                mix(
-                                    self.color,
-                                    mix(
-                                        self.color_hover,
-                                        self.color_down,
-                                        self.down
-                                    ),
-                                    self.hover
-                                ),
-                                self.color_empty,
-                                self.empty
-                            ),
-                            self.color_focus,
-                            self.focus
-                        ),
-                        self.color_disabled,
-                        self.disabled
-                    )
-            }
-        }
+        placeholder: "Your text here",
 
         animator: {
-            empty = {
+            input = {
                 default: off,
-                off = {
-                    from: {all: Forward {duration: 0.}}
+
+                basic = {
+                    from: {all: Forward {duration: (AN_DURATION)}},
+                    ease: InOutQuad,
                     apply: {
-                        draw_input: {empty: 0.0}
-                        draw_text: {empty: 0.0}
-                        draw_selection: {empty: 0.0}
-                        draw_cursor: {empty: 0.0}
-                    }
-                }
-                on = {
-                    from: {all: Forward {duration: 0.2}}
-                    apply: {
-                        draw_input: {empty: 1.0}
-                        draw_text: {empty: 1.0}
-                        draw_selection: {empty: 1.0}
-                        draw_cursor: {empty: 1.0}
-                    }
-                }
-            }
-            blink = {
-                default: off
-                off = {
-                    from: {all: Forward {duration:0.05}}
-                    apply: {
-                        draw_cursor: {blink:0.0}
-                    }
-                }
-                on = {
-                    from: {all: Forward {duration: 0.05}}
-                    apply: {
-                        draw_cursor: {blink:1.0}
-                    }
-                }
-            }
-            disabled = {
-                default: off,
-                off = {
-                    from: {all: Forward {duration: 0.}}
-                    apply: {
-                        draw_input: {disabled: 0.0}
-                        draw_text: {disabled: 0.0}
-                        draw_selection: {disabled: 0.0}
-                        draw_cursor: {disabled: 0.0}
-                    }
-                }
-                on = {
-                    from: {all: Forward {duration: 0.2}}
-                    apply: {
-                        draw_input: {disabled: 1.0}
-                        draw_text: {disabled: 1.0}
-                        draw_selection: {disabled: 1.0}
-                        draw_cursor: {disabled: 1.0}
-                    }
-                }
-            }
-            hover = {
-                default: off,
-                off = {
-                    from: {all: Forward {duration: 0.1}}
-                    apply: {
-                        draw_input: {down: 0.0, hover: 0.0}
-                        draw_text: {down: 0.0, hover: 0.0}
+                        draw_input: <AN_DRAW_VIEW> {}
                     }
                 }
 
-                on = {
+                hover = {
                     from: {
-                        all: Forward {duration: 0.1}
-                        down: Forward {duration: 0.01}
-                    }
+                        all: Forward {duration: (AN_DURATION),},
+                        pressed: Forward {duration: (AN_DURATION)},
+                    },
+                    ease: InOutQuad,
                     apply: {
-                        draw_input: {down: 0.0, hover: [{time: 0.0, value: 1.0}],}
-                        draw_text: {down: 0.0, hover: [{time: 0.0, value: 1.0}],}
+                       draw_input: <AN_DRAW_VIEW> {}
                     }
                 }
 
-                down = {
-                    from: {all: Forward {duration: 0.2}}
-                    apply: {
-                        draw_input: {down: [{time: 0.0, value: 1.0}], hover: 1.0,}
-                        draw_text: {down: [{time: 0.0, value: 1.0}], hover: 1.0,}
-                    }
-                }
-            }
-            focus = {
-                default: off
-                off = {
+                empty = {
                     from: {
-                        all: Forward { duration: 0.25 }
-                    }
+                        all: Forward {duration: (AN_DURATION),},
+                        pressed: Forward {duration: (AN_DURATION)},
+                    },
+                    ease: InOutQuad,
                     apply: {
-                        draw_input: { focus: 0.0 }
-                        draw_text: { focus: 0.0 },
-                        draw_cursor: { focus: 0.0 },
-                        draw_selection: { focus: 0.0 }
+                       draw_input: <AN_DRAW_VIEW> {}
                     }
                 }
-                on = {
-                    from: { all: Snap }
+
+                focus = {
+                    from: {all: Forward {duration: (AN_DURATION)}},
+                    ease: InOutQuad,
                     apply: {
-                        draw_input: { focus: 1.0 }
-                        draw_text: { focus: 1.0 }
-                        draw_cursor: { focus: 1.0 },
-                        draw_selection: { focus: 1.0 }
+                        draw_input: <AN_DRAW_VIEW> {}
+                    }
+                }
+
+                disabled = {
+                    from: {all: Forward {duration: (AN_DURATION)}},
+                    ease: InOutQuad,
+                    apply: {
+                        draw_input: <AN_DRAW_VIEW> {}
                     }
                 }
             }
@@ -197,27 +91,53 @@ live_design! {
     }
 }
 
-#[derive(Live, Widget)]
+#[derive(Live, WidgetRef, WidgetSet, LiveRegisterWidget)]
 pub struct GInput {
+    #[live]
+    pub style: InputStyle,
+    #[live]
+    pub draw_input: DrawView,
+    #[live]
+    pub draw_text: DrawText,
+    #[live]
+    pub draw_selection: DrawSelection,
+    #[live]
+    pub draw_cursor: DrawCursor,
+    #[live]
+    pub prefix: GView,
+    #[live]
+    pub suffix: GView,
+    // --- animator ----------------
+    #[live(true)]
+    pub animation_open: bool,
     #[animator]
-    animator: Animator,
-    #[redraw]
+    pub animator: Animator,
+    #[live(true)]
+    pub animation_spread: bool,
+    // --- init ----------------------
+    #[rust]
+    pub lifecycle: LifeCycle,
+    #[rust]
+    index: usize,
+    #[live(true)]
+    pub sync: bool,
+    #[rust]
+    pub state: InputState,
+    // --- visible -------------------
+    #[live(true)]
+    pub visible: bool,
+    // --- others -------------------
     #[live]
-    draw_input: DrawView,
+    pub disabled: bool,
     #[live]
-    draw_text: DrawText,
-    #[live]
-    draw_selection: DrawSelection,
-    #[live]
-    draw_cursor: DrawCursor,
-
-    #[layout]
-    layout: Layout,
-    #[walk]
-    walk: Walk,
-    #[live]
-    label_align: Align,
-
+    pub grab_key_focus: bool,
+    #[live(true)]
+    pub event_open: bool,
+    #[rust]
+    pub scope_path: Option<HeapLiveIdPath>,
+    #[rust]
+    pub apply_slot_map: ApplySlotMap<InputState, InputPart>,
+    // -------------------------------
     #[live]
     is_password: bool,
     #[live]
@@ -225,12 +145,11 @@ pub struct GInput {
     #[live]
     is_numeric_only: bool,
     #[live]
-    empty_text: String,
+    placeholder: String,
     #[live]
     text: String,
     #[live(0.5)]
     blink_speed: f64,
-
     #[rust]
     password_text: String,
     #[rust]
@@ -245,9 +164,56 @@ pub struct GInput {
     blink_timer: Timer,
 }
 
+impl WidgetNode for GInput {
+    fn uid_to_widget(&self, uid: WidgetUid) -> WidgetRef {
+        WidgetRef::empty()
+    }
+
+    fn find_widgets(&self, path: &[LiveId], cached: WidgetCache, results: &mut WidgetSet) {
+        ()
+    }
+
+    fn walk(&mut self, _cx: &mut Cx) -> Walk {
+        let style = self.style.get(self.state);
+        style.walk()
+    }
+
+    fn area(&self) -> Area {
+        self.draw_input.area
+    }
+
+    fn redraw(&mut self, cx: &mut Cx) {
+        let _ = self.render(cx);
+        self.draw_input.redraw(cx);
+    }
+
+    fn state(&self) -> String {
+        self.state.to_string()
+    }
+
+    fn animation_spread(&self) -> bool {
+        self.animation_spread
+    }
+
+    visible!();
+}
+
 impl LiveHook for GInput {
+    fn after_apply_from_doc(&mut self, cx: &mut Cx) {
+        self.sync();
+        self.render_after_apply(cx);
+    }
+
     fn after_new_from_doc(&mut self, cx: &mut Cx) {
+        self.sync();
+        self.render_after_apply(cx);
         self.check_text_is_empty(cx);
+    }
+    fn after_update_from_doc(&mut self, cx: &mut Cx) {
+        self.merge_conf_prop(cx);
+    }
+    fn after_new_before_apply(&mut self, cx: &mut Cx) {
+        self.merge_conf_prop(cx);
     }
 }
 
@@ -278,7 +244,12 @@ impl Widget for GInput {
     }
 
     fn draw_walk(&mut self, cx: &mut Cx2d, _scope: &mut Scope, walk: Walk) -> DrawStep {
-        self.draw_input.begin(cx, walk, self.layout);
+        if !self.visible {
+            return DrawStep::done();
+        }
+        let style = self.style.get(self.state).container;
+
+        self.draw_input.begin(cx, walk, style.layout());
         self.draw_selection.append_to_draw_call(cx);
         self.layout_text(cx);
         let text_rect = self.draw_text(cx);
@@ -288,7 +259,11 @@ impl Widget for GInput {
         if cx.has_key_focus(self.draw_input.area()) {
             cx.show_text_ime(self.draw_input.area(), cursor_pos);
         }
-        cx.add_nav_stop(self.draw_input.area(), NavRole::TextInput, Margin::default());
+        cx.add_nav_stop(
+            self.draw_input.area(),
+            NavRole::TextInput,
+            Margin::default(),
+        );
         DrawStep::done()
     }
 
@@ -297,14 +272,16 @@ impl Widget for GInput {
             cx,
             disabled,
             Animate::Yes,
-            id!(disabled.on),
-            id!(disabled.off),
+            id!(input.basic),
+            id!(input.disabled),
         );
     }
 
     fn disabled(&self, cx: &Cx) -> bool {
-        self.animator_in_state(cx, id!(disabled.on))
+        // self.animator_in_state(cx, id!(disabled.on))
+        self.disabled
     }
+    
 
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
         if self.animator_handle_event(cx, event).must_redraw() {
@@ -635,6 +612,308 @@ impl Widget for GInput {
     }
 }
 
+impl SlotComponent<InputState> for GInput {
+    type Part = InputPart;
+
+    fn merge_prop_to_slot(&mut self) -> () {
+        self.prefix.style.basic = self.style.basic.prefix;
+        self.prefix.style.hover = self.style.hover.prefix;
+        self.prefix.style.pressed = self.style.focus.prefix;
+        self.prefix.style.disabled = self.style.disabled.prefix;
+        self.suffix.style.basic = self.style.basic.suffix;
+        self.suffix.style.hover = self.style.hover.suffix;
+        self.suffix.style.pressed = self.style.focus.suffix;
+        self.suffix.style.disabled = self.style.disabled.suffix;
+    }
+}
+
+impl Component for GInput {
+    type Error = Error;
+
+    type State = InputState;
+
+    fn merge_conf_prop(&mut self, cx: &mut Cx) -> () {
+        let style = &cx.global::<Conf>().components.input;
+        self.style = style.clone();
+        self.merge_prop_to_slot();
+    }
+
+    fn render(&mut self, cx: &mut Cx) -> Result<(), Self::Error> {
+        if self.disabled {
+            self.switch_state(InputState::Disabled);
+        }
+        let style = self.style.get(self.state).container;
+        self.draw_input.merge(&style.into());
+        let _ = self.prefix.render(cx)?;
+        let _ = self.suffix.render(cx)?;
+        Ok(())
+    }
+
+    fn handle_widget_event(&mut self, cx: &mut Cx, event: &Event, hit: Hit, area: Area) {
+        todo!()
+    }
+
+    fn switch_state(&mut self, state: Self::State) -> () {
+        self.state = state;
+        self.prefix.switch_state(state.into());
+        self.suffix.switch_state(state.into());
+    }
+
+    fn switch_state_with_animation(&mut self, cx: &mut Cx, state: Self::State) -> () {
+        if !self.animation_open {
+            return;
+        }
+        self.switch_state(state);
+        self.set_animation(cx);
+    }
+
+    fn focus_sync(&mut self) -> () {
+        let mut crossed_map = self.apply_slot_map.cross();
+        for (part, slot) in [
+            (InputPart::Prefix, &mut self.prefix),
+            (InputPart::Suffix, &mut self.suffix),
+        ] {
+            crossed_map.remove(&part).map(|map| {
+                slot.apply_state_map.merge(map.to_state());
+                slot.focus_sync();
+            });
+        }
+
+        // sync state if is not Basic
+        self.style.sync_slot(&self.apply_slot_map);
+    }
+
+    fn set_animation(&mut self, cx: &mut Cx) -> () {
+        let init_global = cx.global::<ComponentAnInit>().input;
+        let live_ptr = match self.animator.live_ptr {
+            Some(ptr) => ptr.file_id.0,
+            None => return,
+        };
+
+        let mut registry = cx.live_registry.borrow_mut();
+        let live_file = match registry.live_files.get_mut(live_ptr as usize) {
+            Some(lf) => lf,
+            None => return,
+        };
+        let nodes = &mut live_file.expanded.nodes;
+
+        if self.lifecycle.is_created() || !init_global || self.scope_path.is_none() {
+            self.lifecycle.next();
+            let basic_prop = self.style.get(InputState::Basic);
+            let hover_prop = self.style.get(InputState::Hover);
+            let focus_prop = self.style.get(InputState::Focus);
+            let empty_prop = self.style.get(InputState::Empty);
+            let disabled_prop = self.style.get(InputState::Disabled);
+            let (mut basic_index, mut hover_index,mut empty_index, mut focus_index, mut disabled_index) =
+                (None, None, None, None, None);
+            if let Some(index) = nodes.child_by_path(
+                self.index,
+                &[
+                    live_id!(animator).as_field(),
+                    live_id!(hover).as_instance(),
+                    live_id!(off).as_instance(),
+                ],
+            ) {
+                basic_index = Some(index);
+            }
+
+            if let Some(index) = nodes.child_by_path(
+                self.index,
+                &[
+                    live_id!(animator).as_field(),
+                    live_id!(hover).as_instance(),
+                    live_id!(on).as_instance(),
+                ],
+            ) {
+                hover_index = Some(index);
+            }
+
+            if let Some(index) = nodes.child_by_path(
+                self.index,
+                &[
+                    live_id!(animator).as_field(),
+                    live_id!(hover).as_instance(),
+                    live_id!(active).as_instance(),
+                ],
+            ) {
+                focus_index = Some(index);
+            }
+
+            if let Some(index) = nodes.child_by_path(
+                self.index,
+                &[
+                    live_id!(animator).as_field(),
+                    live_id!(hover).as_instance(),
+                    live_id!(disabled).as_instance(),
+                ],
+            ) {
+                disabled_index = Some(index);
+            }
+
+            set_animation! {
+                nodes: draw_input = {
+                    basic_index => {
+                        background_color => basic_prop.container.background_color,
+                        border_color =>basic_prop.container.border_color,
+                        border_radius => basic_prop.container.border_radius,
+                        border_width =>(basic_prop.container.border_width as f64),
+                        shadow_color => basic_prop.container.shadow_color,
+                        spread_radius => (basic_prop.container.spread_radius as f64),
+                        blur_radius => (basic_prop.container.blur_radius as f64),
+                        shadow_offset => basic_prop.container.shadow_offset,
+                        background_visible => basic_prop.container.background_visible.to_f64()
+                    },
+                    hover_index => {
+                        background_color => hover_prop.container.background_color,
+                        border_color => hover_prop.container.border_color,
+                        border_radius => hover_prop.container.border_radius,
+                        border_width => (hover_prop.container.border_width as f64),
+                        shadow_color => hover_prop.container.shadow_color,
+                        spread_radius => (hover_prop.container.spread_radius as f64),
+                        blur_radius => (hover_prop.container.blur_radius as f64),
+                        shadow_offset => hover_prop.container.shadow_offset,
+                        background_visible => hover_prop.container.background_visible.to_f64()
+                    },
+                    focus_index => {
+                        background_color => focus_prop.container.background_color,
+                        border_color => focus_prop.container.border_color,
+                        border_radius => focus_prop.container.border_radius,
+                        border_width => (focus_prop.container.border_width as f64),
+                        shadow_color => focus_prop.container.shadow_color,
+                        spread_radius => (focus_prop.container.spread_radius as f64),
+                        blur_radius => (focus_prop.container.blur_radius as f64),
+                        shadow_offset => focus_prop.container.shadow_offset,
+                        background_visible => focus_prop.container.background_visible.to_f64()
+                    },
+                    disabled_index => {
+                        background_color => disabled_prop.container.background_color,
+                        border_color => disabled_prop.container.border_color,
+                        border_radius => disabled_prop.container.border_radius,
+                        border_width => (disabled_prop.container.border_width as f64),
+                        shadow_color => disabled_prop.container.shadow_color,
+                        spread_radius => (disabled_prop.container.spread_radius as f64),
+                        blur_radius => (disabled_prop.container.blur_radius as f64),
+                        shadow_offset => disabled_prop.container.shadow_offset,
+                        background_visible => disabled_prop.container.background_visible.to_f64()
+                    }
+                }
+            }
+
+            set_animation! {
+                nodes: draw_selection = {
+                    basic_index => {
+                        background_color => basic_prop.checkbox.background_color,
+                        background_visible => basic_prop.checkbox.background_visible.to_f64(),
+                        border_color => basic_prop.checkbox.border_color,
+                        border_width => (basic_prop.checkbox.border_width as f64),
+                        size => (basic_prop.checkbox.size as f64),
+                        mode => basic_prop.checkbox.mode,
+                        stroke_color => basic_prop.checkbox.stroke_color
+                    },
+                    hover_index => {
+                        background_color => hover_prop.checkbox.background_color,
+                        background_visible => hover_prop.checkbox.background_visible.to_f64(),
+                        border_color => hover_prop.checkbox.border_color,
+                        border_width => (hover_prop.checkbox.border_width as f64),
+                        size => (hover_prop.checkbox.size as f64),
+                        mode => hover_prop.checkbox.mode,
+                        stroke_color => hover_prop.checkbox.stroke_color
+                    },
+                    focus_index => {
+                        background_color => focus_prop.checkbox.background_color,
+                        background_visible => focus_prop.checkbox.background_visible.to_f64(),
+                        border_color => focus_prop.checkbox.border_color,
+                        border_width => (focus_prop.checkbox.border_width as f64),
+                        size => (focus_prop.checkbox.size as f64),
+                        mode => focus_prop.checkbox.mode,
+                        stroke_color => focus_prop.checkbox.stroke_color
+                    },
+                    disabled_index => {
+                        background_color => disabled_prop.checkbox.background_color,
+                        background_visible => disabled_prop.checkbox.background_visible.to_f64(),
+                        border_color => disabled_prop.checkbox.border_color,
+                        border_width => (disabled_prop.checkbox.border_width as f64),
+                        size => (disabled_prop.checkbox.size as f64),
+                        mode => disabled_prop.checkbox.mode,
+                        stroke_color => disabled_prop.checkbox.stroke_color
+                    }
+                }
+            }
+        } else {
+            let state = self.state;
+            let style = self.style.get(state);
+            let index = match state {
+                CheckboxState::Basic => nodes.child_by_path(
+                    self.index,
+                    &[
+                        live_id!(animator).as_field(),
+                        live_id!(hover).as_instance(),
+                        live_id!(off).as_instance(),
+                    ],
+                ),
+                CheckboxState::Hover => nodes.child_by_path(
+                    self.index,
+                    &[
+                        live_id!(animator).as_field(),
+                        live_id!(hover).as_instance(),
+                        live_id!(on).as_instance(),
+                    ],
+                ),
+                CheckboxState::Active => nodes.child_by_path(
+                    self.index,
+                    &[
+                        live_id!(animator).as_field(),
+                        live_id!(hover).as_instance(),
+                        live_id!(active).as_instance(),
+                    ],
+                ),
+                CheckboxState::Disabled => nodes.child_by_path(
+                    self.index,
+                    &[
+                        live_id!(animator).as_field(),
+                        live_id!(hover).as_instance(),
+                        live_id!(disabled).as_instance(),
+                    ],
+                ),
+            };
+            set_animation! {
+                nodes: draw_container = {
+                    index => {
+                        background_color => style.container.background_color,
+                        border_color => style.container.border_color,
+                        border_radius => style.container.border_radius,
+                        border_width => (style.container.border_width as f64),
+                        shadow_color => style.container.shadow_color,
+                        spread_radius => (style.container.spread_radius as f64),
+                        blur_radius => (style.container.blur_radius as f64),
+                        shadow_offset => style.container.shadow_offset,
+                        background_visible => style.container.background_visible.to_f64()
+                    }
+                }
+            }
+            set_animation! {
+                nodes: draw_checkbox = {
+                    index => {
+                        background_color => style.checkbox.background_color,
+                        background_visible => style.checkbox.background_visible.to_f64(),
+                        border_color => style.checkbox.border_color,
+                        border_width => (style.checkbox.border_width as f64),
+                        size => (style.checkbox.size as f64),
+                        mode => style.checkbox.mode,
+                        stroke_color => style.checkbox.stroke_color
+                    }
+                }
+            }
+        }
+    }
+
+    sync!();
+    play_animation!();
+    set_scope_path!();
+    set_index!();
+    lifecycle!();
+}
+
 impl GInput {
     pub fn is_password(&self) -> bool {
         self.is_password
@@ -678,12 +957,12 @@ impl GInput {
         self.set_is_numeric_only(cx, !self.is_numeric_only);
     }
 
-    pub fn empty_text(&self) -> &str {
-        &self.empty_text
+    pub fn placeholder(&self) -> &str {
+        &self.placeholder
     }
 
-    pub fn set_empty_text(&mut self, cx: &mut Cx, empty_text: String) {
-        self.empty_text = empty_text;
+    pub fn set_empty_text(&mut self, cx: &mut Cx, placeholder: String) {
+        self.placeholder = placeholder;
         if self.text.is_empty() {
             self.draw_input.redraw(cx);
         }
@@ -848,7 +1127,7 @@ impl GInput {
         let inner_walk = self.inner_walk();
         let text_rect = if self.text.is_empty() {
             self.draw_text
-                .draw_walk(cx, inner_walk, self.label_align, &self.empty_text)
+                .draw_walk(cx, inner_walk, self.label_align, &self.placeholder)
         } else {
             let laidout_text = self.laidout_text.as_ref().unwrap();
             self.draw_text
@@ -1187,18 +1466,18 @@ impl GInput {
 //         }
 //     }
 
-//     pub fn empty_text(&self) -> String {
+//     pub fn placeholder(&self) -> String {
 //         if let Some(inner) = self.borrow(){
-//             inner.empty_text().to_string()
+//             inner.placeholder().to_string()
 //         }
 //         else{
 //             String::new()
 //         }
 //     }
 
-//     pub fn set_empty_text(&self, cx: &mut Cx, empty_text: String) {
+//     pub fn set_empty_text(&self, cx: &mut Cx, placeholder: String) {
 //         if let Some(mut inner) = self.borrow_mut(){
-//             inner.set_empty_text(cx, empty_text);
+//             inner.set_empty_text(cx, placeholder);
 //         }
 //     }
 

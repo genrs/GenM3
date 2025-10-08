@@ -378,7 +378,7 @@ fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) -> Eve
 
 ### prop.rs
 接下来让我来指导你更改tag的prop.rs, 让我们以tabbar_item的prop作为蓝本，说明和分析一下你写的代码的不足和错误的地方
-1. tag和tabbar_item一样都是带有插槽的，tag有左侧的icon插槽，中间的text文字插槽和右侧的关闭图标的插槽，这里的插槽都是具名插槽(具体插槽)，对于有插槽的组件都会使用SlotStyle trait处理顶层Prop，也就是impl SlotStyle for TagProp，然后会使用component_part!宏来创建组件结构，这里就会含有Container，Icon, Text, Close四个。
+1. tag和tabbar_item一样都是带有插槽的，tag有左侧的icon插槽，中间的text文字插槽和右侧的关闭图标的插槽，这里的插槽都是具名插槽(具体插槽)，对于有插槽的组件都会使用SlotStyle trait处理顶层Prop，也就是impl SlotStyle for TagStyle，然后会使用component_part!宏来创建组件结构，这里就会含有Container，Icon, Text, Close四个。
 2. 插槽组件使用TagBasicStyle来声明具体插槽属性，由于这些插槽已经是基本组件了，并且可以直接获取插槽的BasicStyle，所以需要让TagBasicStyle来实现BasicStyle和SlotBasicStyle trait
 3. set_from_str方法中都可以使用属性类型的from_live_value().unwrap_or来设置，这里我已经改了
 4. 你的 TagBasicStyle声明是完全错误的，应该像TabbarItemBasicStyle那样进行声明

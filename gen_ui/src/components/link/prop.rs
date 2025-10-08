@@ -24,7 +24,7 @@ use crate::{
 };
 
 prop_interconvert! {
-    LinkProp {
+    LinkStyle {
         basic_prop = LinkBasicStyle;
         basic => BASIC, LinkBasicStyle::default(), |v| (v, LinkState::Basic).try_into(),
         hover => HOVER, LinkBasicStyle::from_state(Theme::default(), LinkState::Hover), |v| (v, LinkState::Hover).try_into(),
@@ -33,7 +33,7 @@ prop_interconvert! {
     }, "[component.link] should be a table"
 }
 
-impl Style for LinkProp {
+impl Style for LinkStyle {
     type State = LinkState;
     type Basic = LinkBasicStyle;
 

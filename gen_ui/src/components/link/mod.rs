@@ -87,7 +87,7 @@ live_design! {
 #[derive(Live, LiveRegisterWidget, WidgetRef, WidgetSet)]
 pub struct GLink {
     #[live]
-    pub style: LinkProp,
+    pub style: LinkStyle,
     #[live(true)]
     pub visible: bool,
     #[live(false)]

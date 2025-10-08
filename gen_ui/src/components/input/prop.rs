@@ -2,9 +2,9 @@ use makepad_widgets::*;
 use toml_edit::Item;
 
 use crate::{
-    component_part, component_state,
+    basic_prop_interconvert, component_color, component_part, component_state,
     components::{
-        ViewColors,
+        LabelBasicStyle, LabelState, SelectBasicStyle, ViewColors,
         live_props::LiveProps,
         traits::{BasicStyle, ComponentState, SlotBasicStyle, SlotStyle, Style},
         view::{ViewBasicStyle, ViewState},
@@ -12,11 +12,14 @@ use crate::{
     error::Error,
     from_prop_to_toml, get_get_mut,
     prop::{
-        ApplySlotMapImpl, ApplyStateMapImpl, Applys,
-        manuel::{BASIC, CONTAINER, DISABLED, EMPTY, FOCUS, HOVER, PREFIX, SUFFIX},
+        ApplySlotMapImpl, ApplyStateMapImpl, Applys, Radius,
+        manuel::{
+            BASIC, BORDER_RADIUS, COLOR, CONTAINER, CURSOR, DISABLED, EMPTY, FOCUS, HOVER, PREFIX,
+            SELECTION, SUFFIX, TEXT,
+        },
         traits::NewFrom,
     },
-    prop_interconvert,
+    prop_interconvert, state_color,
     themes::Theme,
     utils::get_from_itable,
 };
@@ -93,6 +96,12 @@ pub struct InputBasicStyle {
     pub prefix: ViewBasicStyle,
     #[live(InputBasicStyle::default_suffix(Theme::default(), InputState::Basic))]
     pub suffix: ViewBasicStyle,
+    #[live(InputBasicStyle::default_text(Theme::default(), InputState::Basic))]
+    pub text: LabelBasicStyle,
+    #[live(InputBasicStyle::default_cursor(Theme::default(), InputState::Basic))]
+    pub cursor: CursorBasicStyle,
+    #[live(InputBasicStyle::default_selection(Theme::default(), InputState::Basic))]
+    pub selection: SelectionBasicStyle,
 }
 
 impl BasicStyle for InputBasicStyle {
@@ -105,6 +114,9 @@ impl BasicStyle for InputBasicStyle {
             container: Self::default_container(theme, state),
             prefix: Self::default_prefix(theme, state),
             suffix: Self::default_suffix(theme, state),
+            text: Self::default_text(theme, state),
+            cursor: Self::default_cursor(theme, state),
+            selection: Self::default_selection(theme, state),
         }
     }
 
@@ -213,10 +225,34 @@ impl TryFrom<(&Item, InputState)> for InputBasicStyle {
             |v| (v, ViewState::from(state)).try_into(),
         )?;
 
+        let text = get_from_itable(
+            inline_table,
+            TEXT,
+            || Ok(InputBasicStyle::default_text(Theme::default(), state)),
+            |v| (v, state.into()).try_into(),
+        )?;
+
+        let cursor = get_from_itable(
+            inline_table,
+            CURSOR,
+            || Ok(InputBasicStyle::default_cursor(Theme::default(), state)),
+            |v| (v, state).try_into(),
+        )?;
+
+        let selection = get_from_itable(
+            inline_table,
+            SELECTION,
+            || Ok(InputBasicStyle::default_selection(Theme::default(), state)),
+            |v| (v, state).try_into(),
+        )?;
+
         Ok(Self {
             container,
             prefix,
             suffix,
+            text,
+            cursor,
+            selection,
         })
     }
 }
@@ -243,6 +279,143 @@ impl InputBasicStyle {
     pub fn default_suffix(theme: Theme, state: InputState) -> ViewBasicStyle {
         Self::default_prefix(theme, state)
     }
+
+    pub fn default_text(theme: Theme, state: InputState) -> LabelBasicStyle {
+        let mut text = LabelBasicStyle::from_state(theme, state.into());
+        text.set_font_size(14.0);
+        text
+    }
+
+    pub fn default_cursor(theme: Theme, state: InputState) -> CursorBasicStyle {
+        CursorBasicStyle::from_state(theme, state)
+    }
+
+    pub fn default_selection(theme: Theme, state: InputState) -> SelectionBasicStyle {
+        SelectionBasicStyle::from_state(theme, state)
+    }
+}
+
+basic_prop_interconvert! {
+    CursorBasicStyle {
+        state = InputState;
+        {
+            color => COLOR, |v| v.try_into()
+        };
+        {}
+    }, "CursorBasicStyle should be a inline table"
+}
+
+component_color! {
+    CursorBasicColors {
+        colors = (Color);
+        color
+    }
+}
+
+impl BasicStyle for CursorBasicStyle {
+    type State = InputState;
+
+    type Colors = CursorBasicColors;
+
+    fn from_state(theme: Theme, state: Self::State) -> Self {
+        Self {
+            theme,
+            color: Self::state_colors(theme, state).color.into(),
+        }
+    }
+
+    state_color! {
+        (color),
+        InputState::Basic => (500),
+        InputState::Hover => (500),
+        InputState::Focus => (500),
+        InputState::Empty => (500),
+        InputState::Disabled => (300)
+    }
+
+    fn len() -> usize {
+        2
+    }
+
+    fn set_from_str(&mut self, key: &str, value: &LiveValue, state: Self::State) -> () {
+        todo!()
+    }
+
+    fn sync(&mut self, state: Self::State) -> () {
+        todo!()
+    }
+
+    fn live_props() -> LiveProps {
+        vec![
+            (live_id!(theme), None.into()),
+            (live_id!(color), None.into()),
+        ]
+    }
+
+    fn walk(&self) -> Walk {
+        Walk::default()
+    }
+
+    fn layout(&self) -> Layout {
+        Layout::default()
+    }
+}
+
+basic_prop_interconvert! {
+    SelectionBasicStyle {
+        state = InputState;
+        {
+            color => COLOR, |v| v.try_into()
+        };
+        {
+            border_radius: Radius => BORDER_RADIUS, Radius::new(2.0), |v| v.try_into()
+        }
+    }, "SelectionBasicStyle should be a inline table"
+}
+
+component_color! {
+    SelectionColors {
+        colors = (Color);
+        color
+    }
+}
+
+impl BasicStyle for SelectionBasicStyle {
+    type State = InputState;
+
+    type Colors = SelectionColors;
+
+    fn from_state(theme: Theme, state: Self::State) -> Self {
+        todo!()
+    }
+
+    fn state_colors(theme: Theme, state: Self::State) -> Self::Colors {
+        todo!()
+    }
+
+    fn len() -> usize {
+        todo!()
+    }
+
+    fn set_from_str(&mut self, key: &str, value: &LiveValue, state: Self::State) -> () {
+        todo!()
+    }
+
+    fn sync(&mut self, state: Self::State) -> () {
+        todo!()
+    }
+
+    fn live_props() -> LiveProps {
+        todo!()
+    }
+
+    fn walk(&self) -> Walk {
+        todo!()
+    }
+
+    fn layout(&self) -> Layout {
+        todo!()
+    }
 }
 
 component_state! {
@@ -268,6 +441,15 @@ impl From<InputState> for ViewState {
             InputState::Disabled => ViewState::Disabled,
             InputState::Hover => ViewState::Hover,
             InputState::Focus => ViewState::Pressed,
+        }
+    }
+}
+
+impl From<InputState> for LabelState {
+    fn from(value: InputState) -> Self {
+        match value {
+            InputState::Disabled => LabelState::Disabled,
+            _ => LabelState::Basic,
         }
     }
 }

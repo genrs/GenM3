@@ -79,7 +79,7 @@ live_design! {
 #[derive(Live, WidgetRef, WidgetSet, LiveRegisterWidget)]
 pub struct GTag {
     #[live]
-    pub style: TagProp,
+    pub style: TagStyle,
     // --- draw ----------------------
     #[live]
     pub draw_tag: DrawView,

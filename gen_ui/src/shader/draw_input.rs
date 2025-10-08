@@ -4,11 +4,6 @@ live_design! {
     use link::shaders::*;
 
     DrawCursor = {{DrawCursor}} {
-        instance focus: 0.0
-        instance down: 0.0
-        instance empty: 0.0
-        instance disabled: 0.0
-
         fn pixel(self) -> vec4 {
             let sdf = Sdf2d::viewport(self.pos * self.rect_size);
             sdf.box(

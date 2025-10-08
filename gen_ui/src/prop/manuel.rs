@@ -88,6 +88,7 @@ pub const TEXT: &str = "text";
 pub const CLOSE: &str = "close";
 pub const SUFFIX: &str = "suffix";
 pub const PREFIX: &str = "prefix";
+pub const SELECTION: &str = "selection";
 // --- component -------------------------------------------------
 pub const LABEL: &str = "label";
 pub const VIEW: &str = "view";
@@ -120,6 +121,7 @@ pub const SELECT_ITEM: &str = "select_item";
 pub const SELECT: &str = "select";
 pub const BADGE_DOT: &str = "badge_dot";
 pub const BADGE: &str = "badge";
+pub const INPUT: &str = "input";
 // --- mode ------------------------------------------------------
 pub const MODE: &str = "mode";
 pub const ROUND: &str = "Round";
