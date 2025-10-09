@@ -19,10 +19,19 @@ use makepad_widgets::{
 use unicode_segmentation::UnicodeSegmentation;
 
 use crate::{
-    animation_open_then_redraw, components::{BasicStyle, Component, GView, LifeCycle, SlotComponent, SlotStyle, Style}, error::Error, lifecycle, play_animation, prop::{traits::ToFloat, ApplyMapImpl, ApplySlotMap, ApplySlotMapImpl, ToStateMap}, pure_after_apply, set_animation, set_index, set_scope_path, shader::{
+    ComponentAnInit, active_event, animation_open_then_redraw,
+    components::{BasicStyle, Component, GView, LifeCycle, SlotComponent, SlotStyle, Style},
+    error::Error,
+    lifecycle, play_animation,
+    prop::{ApplyMapImpl, ApplySlotMap, ApplySlotMapImpl, ToStateMap, traits::ToFloat},
+    pure_after_apply, set_animation, set_index, set_scope_path,
+    shader::{
         draw_input::{DrawCursor, DrawSelection},
         draw_view::DrawView,
-    }, sync, themes::conf::Conf, visible, ComponentAnInit
+    },
+    sync,
+    themes::conf::Conf,
+    visible,
 };
 
 live_design! {
@@ -172,15 +181,15 @@ pub struct GInput {
     pub apply_slot_map: ApplySlotMap<InputState, InputPart>,
     // -------------------------------
     #[live]
-    is_password: bool,
+    pub is_password: bool,
     #[live]
-    is_read_only: bool,
+    pub is_read_only: bool,
     #[live]
-    is_numeric_only: bool,
+    pub is_numeric_only: bool,
     #[live]
-    placeholder: String,
+    pub placeholder: String,
     #[live]
-    text: String,
+    pub value: String,
     #[live(0.5)]
     blink_speed: f64,
     #[rust]
@@ -252,20 +261,20 @@ impl LiveHook for GInput {
 
 impl Widget for GInput {
     fn text(&self) -> String {
-        self.text.to_string()
+        self.value.to_string()
     }
 
     fn set_text(&mut self, cx: &mut Cx, text: &str) {
-        self.text = self.filter_input(text, true);
+        self.value = self.filter_input(text, true);
         self.set_selection(
             cx,
             Selection {
                 anchor: Cursor {
-                    index: self.selection.anchor.index.min(self.text.len()),
+                    index: self.selection.anchor.index.min(self.value.len()),
                     prefer_next_row: self.selection.anchor.prefer_next_row,
                 },
                 cursor: Cursor {
-                    index: self.selection.cursor.index.min(self.text.len()),
+                    index: self.selection.cursor.index.min(self.value.len()),
                     prefer_next_row: self.selection.cursor.prefer_next_row,
                 },
             },
@@ -398,17 +407,20 @@ impl Component for GInput {
             Hit::FingerHoverOut(_) => {
                 self.animator_play(cx, id!(hover.off));
             }
-            Hit::KeyFocus(_) => {
+            Hit::KeyFocus(e) => {
                 self.animator_play(cx, id!(focus.on));
                 self.reset_cursor_blinker(cx);
-                cx.widget_action(uid, &scope.path, TextInputAction::KeyFocus);
+                // cx.widget_action(uid, &scope.path, TextInputAction::KeyFocus);
+                self.active_focus(cx, e.into());
             }
-            Hit::KeyFocusLost(_) => {
-                self.animator_play(cx, id!(focus.off));
-                self.animator_play(cx, id!(blink.on));
+            Hit::KeyFocusLost(e) => {
+                // self.animator_play(cx, id!(focus.off));
+                // self.animator_play(cx, id!(blink.on));
+                self.switch_state_with_animation(cx, InputState::Basic);
                 cx.stop_timer(self.blink_timer);
                 cx.hide_text_ime();
-                cx.widget_action(uid, &scope.path, TextInputAction::KeyFocusLost);
+                // cx.widget_action(uid, &scope.path, TextInputAction::KeyFocusLost);
+                self.active_focus_lost(cx, Some(e));
             }
             Hit::KeyDown(KeyEvent {
                 key_code: KeyCode::ArrowLeft,
@@ -522,156 +534,135 @@ impl Component for GInput {
                     _ => {}
                 }
             }
-            Hit::KeyDown(KeyEvent {
-                key_code: KeyCode::ReturnKey,
-                modifiers: KeyModifiers { shift: false, .. },
-                ..
-            }) => {
-                cx.hide_text_ime();
-                cx.widget_action(
-                    uid,
-                    &scope.path,
-                    TextInputAction::Returned(self.text.clone()),
-                );
-            }
+            Hit::KeyDown(key_down) => {
+                let KeyEvent {
+                    key_code,
+                    modifiers,
+                    ..
+                } = &key_down;
 
-            Hit::KeyDown(KeyEvent {
-                key_code: KeyCode::Escape,
-                ..
-            }) => {
-                cx.widget_action(uid, &scope.path, TextInputAction::Escaped);
-            }
-            Hit::KeyDown(KeyEvent {
-                key_code: KeyCode::ReturnKey,
-                modifiers: KeyModifiers { shift: true, .. },
-                ..
-            }) if !self.is_read_only => {
-                self.create_or_extend_edit_group(EditKind::Other);
-                self.apply_edit(
-                    cx,
-                    Edit {
-                        start: self.selection.start().index,
-                        end: self.selection.end().index,
-                        replace_with: "\n".to_string(),
-                    },
-                );
-                self.draw_input.redraw(cx);
-                cx.widget_action(
-                    uid,
-                    &scope.path,
-                    TextInputAction::Changed(self.text.clone()),
-                );
-            }
-            Hit::KeyDown(KeyEvent {
-                key_code: KeyCode::Backspace,
-                ..
-            }) if !self.is_read_only => {
-                let mut start = self.selection.start().index;
-                let end = self.selection.end().index;
-                if start == end {
-                    start = prev_grapheme_boundary(&self.text, start);
+                match key_code {
+                    KeyCode::Escape => {
+                        self.active_esc(cx, Some(key_down));
+                    }
+                    KeyCode::ReturnKey => {
+                        if !modifiers.shift {
+                            cx.hide_text_ime();
+                            self.active_returned(cx, Some(key_down));
+                        } else {
+                            if !self.is_read_only {
+                                self.create_or_extend_edit_group(EditKind::Other);
+                                self.apply_edit(
+                                    cx,
+                                    Edit {
+                                        start: self.selection.start().index,
+                                        end: self.selection.end().index,
+                                        replace_with: "\n".to_string(),
+                                    },
+                                );
+                                self.draw_input.redraw(cx);
+                                self.active_changed(cx, InputChangedMetaEvent::Returned(key_down));
+                            }
+                        }
+                    }
+                    KeyCode::Backspace => {
+                        if !self.is_read_only {
+                            let mut start = self.selection.start().index;
+                            let end = self.selection.end().index;
+                            if start == end {
+                                start = prev_grapheme_boundary(&self.value, start);
+                            }
+                            self.create_or_extend_edit_group(EditKind::Backspace);
+                            self.apply_edit(
+                                cx,
+                                Edit {
+                                    start,
+                                    end,
+                                    replace_with: String::new(),
+                                },
+                            );
+                            self.draw_input.redraw(cx);
+                            self.active_changed(
+                                cx,
+                                InputChangedMetaEvent::TextInput(TextInputEvent {
+                                    input: String::new(),
+                                    replace_last: false,
+                                    was_paste: false,
+                                }),
+                            );
+                        }
+                    }
+                    KeyCode::Delete => {
+                        if !self.is_read_only {
+                            let start = self.selection.start().index;
+                            let mut end = self.selection.end().index;
+                            if start == end {
+                                end = next_grapheme_boundary(&self.value, end);
+                            }
+                            self.create_or_extend_edit_group(EditKind::Delete);
+                            self.apply_edit(
+                                cx,
+                                Edit {
+                                    start,
+                                    end,
+                                    replace_with: String::new(),
+                                },
+                            );
+                            self.draw_input.redraw(cx);
+                            self.active_changed(cx, InputChangedMetaEvent::Delete(key_down));
+                        }
+                    }
+                    KeyCode::KeyZ => {
+                        if modifiers.is_primary() && !self.is_read_only {
+                            if modifiers.shift {
+                                if !self.redo(cx) {
+                                    return;
+                                }
+                                self.draw_input.redraw(cx);
+                                self.active_changed(cx, InputChangedMetaEvent::Redo(key_down));
+                            } else {
+                                if !self.undo(cx) {
+                                    return;
+                                }
+                                self.draw_input.redraw(cx);
+                                self.active_changed(cx, InputChangedMetaEvent::Undo(key_down));
+                            }
+                        }
+                    }
+                    _ => {
+                        self.active_key_down_unhandled(cx, Some(key_down));
+                    }
                 }
-                self.create_or_extend_edit_group(EditKind::Backspace);
-                self.apply_edit(
-                    cx,
-                    Edit {
-                        start,
-                        end,
-                        replace_with: String::new(),
-                    },
-                );
-                self.draw_input.redraw(cx);
-                cx.widget_action(
-                    uid,
-                    &scope.path,
-                    TextInputAction::Changed(self.text.clone()),
-                );
             }
-            Hit::KeyDown(KeyEvent {
-                key_code: KeyCode::Delete,
-                ..
-            }) if !self.is_read_only => {
-                let start = self.selection.start().index;
-                let mut end = self.selection.end().index;
-                if start == end {
-                    end = next_grapheme_boundary(&self.text, end);
+            Hit::TextInput(e) => {
+                let TextInputEvent {
+                    input,
+                    replace_last,
+                    was_paste,
+                    ..
+                } = &e;
+                if !self.is_read_only {
+                    let input = self.filter_input(&input, false);
+                    if input.is_empty() {
+                        return;
+                    }
+                    self.create_or_extend_edit_group(if *replace_last || *was_paste {
+                        EditKind::Other
+                    } else {
+                        EditKind::Insert
+                    });
+                    self.apply_edit(
+                        cx,
+                        Edit {
+                            start: self.selection.start().index,
+                            end: self.selection.end().index,
+                            replace_with: input,
+                        },
+                    );
+                    self.animator_play(cx, id!(input.empty));
+                    self.draw_input.redraw(cx);
+                    self.active_changed(cx, InputChangedMetaEvent::TextInput(e));
                 }
-                self.create_or_extend_edit_group(EditKind::Delete);
-                self.apply_edit(
-                    cx,
-                    Edit {
-                        start,
-                        end,
-                        replace_with: String::new(),
-                    },
-                );
-                self.draw_input.redraw(cx);
-                cx.widget_action(
-                    uid,
-                    &scope.path,
-                    TextInputAction::Changed(self.text.clone()),
-                );
-            }
-            Hit::KeyDown(KeyEvent {
-                key_code: KeyCode::KeyZ,
-                modifiers: modifiers @ KeyModifiers { shift: false, .. },
-                ..
-            }) if modifiers.is_primary() && !self.is_read_only => {
-                if !self.undo(cx) {
-                    return;
-                }
-                self.draw_input.redraw(cx);
-                cx.widget_action(
-                    uid,
-                    &scope.path,
-                    TextInputAction::Changed(self.text.clone()),
-                );
-            }
-            Hit::KeyDown(KeyEvent {
-                key_code: KeyCode::KeyZ,
-                modifiers: modifiers @ KeyModifiers { shift: true, .. },
-                ..
-            }) if modifiers.is_primary() && !self.is_read_only => {
-                if !self.redo(cx) {
-                    return;
-                }
-                self.draw_input.redraw(cx);
-                cx.widget_action(
-                    uid,
-                    &scope.path,
-                    TextInputAction::Changed(self.text.clone()),
-                );
-            }
-            Hit::TextInput(TextInputEvent {
-                input,
-                replace_last,
-                was_paste,
-                ..
-            }) if !self.is_read_only => {
-                let input = self.filter_input(&input, false);
-                if input.is_empty() {
-                    return;
-                }
-                self.create_or_extend_edit_group(if replace_last || was_paste {
-                    EditKind::Other
-                } else {
-                    EditKind::Insert
-                });
-                self.apply_edit(
-                    cx,
-                    Edit {
-                        start: self.selection.start().index,
-                        end: self.selection.end().index,
-                        replace_with: input,
-                    },
-                );
-                self.animator_play(cx, id!(input.empty));
-                self.draw_input.redraw(cx);
-                cx.widget_action(
-                    uid,
-                    &scope.path,
-                    TextInputAction::Changed(self.text.clone()),
-                );
             }
             Hit::TextCopy(event) => {
                 *event.response.borrow_mut() = Some(self.selected_text().to_string());
@@ -690,16 +681,15 @@ impl Component for GInput {
                         },
                     );
                     self.draw_input.redraw(cx);
-                    cx.widget_action(
-                        uid,
-                        &scope.path,
-                        TextInputAction::Changed(self.text.clone()),
+                    self.active_changed(
+                        cx,
+                        InputChangedMetaEvent::Cut(
+                            event.response.borrow().as_ref().unwrap().to_string(),
+                        ),
                     );
                 }
             }
-            Hit::KeyDown(event) => {
-                cx.widget_action(uid, &scope.path, TextInputAction::KeyDownUnhandled(event));
-            }
+
             _ => {}
         }
     }
@@ -1043,6 +1033,71 @@ impl Component for GInput {
 }
 
 impl GInput {
+    active_event! {
+        active_hover_in: InputEvent::HoverIn |meta: FingerHoverEvent| => InputHoverIn { meta },
+        active_hover_out: InputEvent::HoverOut |meta: FingerHoverEvent| => InputHoverOut { meta },
+        active_focus_lost: InputEvent::FocusLost |meta: Option<KeyFocusEvent>| => InputFocusLost { meta },
+        active_clicked: InputEvent::Clicked |meta: FingerUpEvent| => InputClicked { meta }
+    }
+
+    pub fn active_focus(&mut self, cx: &mut Cx, meta: InputFocusMetaEvent) {
+        if self.event_open {
+            if let Some(path) = self.scope_path.as_ref() {
+                cx.widget_action(
+                    self.widget_uid(),
+                    path,
+                    InputEvent::Focus(InputFocus {
+                        meta,
+                        value: self.value.to_string(),
+                    }),
+                );
+            }
+        }
+    }
+
+    pub fn active_changed(&mut self, cx: &mut Cx, meta: InputChangedMetaEvent) {
+        if self.event_open {
+            if let Some(path) = self.scope_path.as_ref() {
+                cx.widget_action(
+                    self.widget_uid(),
+                    path,
+                    InputEvent::Changed(InputChanged {
+                        meta,
+                        value: self.value.to_string(),
+                    }),
+                );
+            }
+        }
+    }
+
+    pub fn active_backspace(&mut self, cx: &mut Cx, meta: Option<KeyEvent>) {
+        self.active_key_down(cx, meta, KeyType::Backspace);
+    }
+
+    pub fn active_returned(&mut self, cx: &mut Cx, meta: Option<KeyEvent>) {
+        self.active_key_down(cx, meta, KeyType::Return);
+    }
+
+    pub fn active_esc(&mut self, cx: &mut Cx, meta: Option<KeyEvent>) {
+        self.active_key_down(cx, meta, KeyType::Esc);
+    }
+
+    pub fn active_key_down_unhandled(&mut self, cx: &mut Cx, meta: Option<KeyEvent>) {
+        self.active_key_down(cx, meta, KeyType::Other);
+    }
+
+    pub fn active_key_down(&mut self, cx: &mut Cx, meta: Option<KeyEvent>, key_type: KeyType) {
+        if self.event_open {
+            if let Some(path) = self.scope_path.as_ref() {
+                cx.widget_action(
+                    self.widget_uid(),
+                    path,
+                    key_type.event(meta, self.value.to_string()),
+                );
+            }
+        }
+    }
+
     pub fn is_password(&self) -> bool {
         self.is_password
     }
@@ -1091,7 +1146,7 @@ impl GInput {
 
     pub fn set_empty_text(&mut self, cx: &mut Cx, placeholder: String) {
         self.placeholder = placeholder;
-        if self.text.is_empty() {
+        if self.value.is_empty() {
             self.draw_input.redraw(cx);
         }
     }
@@ -1126,7 +1181,7 @@ impl GInput {
     }
 
     pub fn selected_text(&self) -> &str {
-        &self.text[self.selection.start().index..self.selection.end().index]
+        &self.value[self.selection.start().index..self.selection.end().index]
     }
 
     pub fn reset_blink_timer(&mut self, cx: &mut Cx) {
@@ -1193,7 +1248,7 @@ impl GInput {
         if !self.is_password {
             return index;
         }
-        let grapheme_index = self.text[..index].graphemes(true).count();
+        let grapheme_index = self.value[..index].graphemes(true).count();
         self.password_text
             .grapheme_indices(true)
             .nth(grapheme_index)
@@ -1205,10 +1260,10 @@ impl GInput {
             return password_index;
         }
         let grapheme_index = self.password_text[..password_index].graphemes(true).count();
-        self.text
+        self.value
             .grapheme_indices(true)
             .nth(grapheme_index)
-            .map_or(self.text.len(), |(index, _)| index)
+            .map_or(self.value.len(), |(index, _)| index)
     }
 
     fn inner_walk(&self) -> Walk {
@@ -1226,13 +1281,13 @@ impl GInput {
         }
         let text = if self.is_password {
             self.password_text.clear();
-            for grapheme in self.text.graphemes(true) {
+            for grapheme in self.value.graphemes(true) {
                 self.password_text
                     .push(if grapheme == "\n" { '\n' } else { '•' });
             }
             &self.password_text
         } else {
-            &self.text
+            &self.value
         };
         let turtle_rect = cx.turtle().padded_rect();
         let max_width_in_lpxs = if !turtle_rect.size.x.is_nan() {
@@ -1256,7 +1311,7 @@ impl GInput {
     fn draw_text(&mut self, cx: &mut Cx2d) -> Rect {
         let inner_walk = self.inner_walk();
         let style = self.style.get(self.state);
-        let text_rect = if self.text.is_empty() {
+        let text_rect = if self.value.is_empty() {
             self.draw_text
                 .draw_walk(cx, inner_walk, style.text.align, &self.placeholder)
         } else {
@@ -1324,7 +1379,7 @@ impl GInput {
         self.set_cursor(
             cx,
             Cursor {
-                index: prev_grapheme_boundary(&self.text, self.selection.cursor.index),
+                index: prev_grapheme_boundary(&self.value, self.selection.cursor.index),
                 prefer_next_row: true,
             },
             keep_selection,
@@ -1335,7 +1390,7 @@ impl GInput {
         self.set_cursor(
             cx,
             Cursor {
-                index: next_grapheme_boundary(&self.text, self.selection.cursor.index),
+                index: next_grapheme_boundary(&self.value, self.selection.cursor.index),
                 prefer_next_row: false,
             },
             keep_selection,
@@ -1386,7 +1441,7 @@ impl GInput {
                     prefer_next_row: false,
                 },
                 cursor: Cursor {
-                    index: self.text.len(),
+                    index: self.value.len(),
                     prefer_next_row: false,
                 },
             },
@@ -1435,7 +1490,7 @@ impl GInput {
 
     fn ceil_word_boundary(&self, index: usize) -> usize {
         let mut prev_word_boundary_index = 0;
-        for (word_boundary_index, _) in self.text.split_word_bound_indices() {
+        for (word_boundary_index, _) in self.value.split_word_bound_indices() {
             if word_boundary_index > index {
                 return prev_word_boundary_index;
             }
@@ -1445,8 +1500,8 @@ impl GInput {
     }
 
     fn floor_word_boundary(&self, index: usize) -> usize {
-        let mut prev_word_boundary_index = self.text.len();
-        for (word_boundary_index, _) in self.text.split_word_bound_indices().rev() {
+        let mut prev_word_boundary_index = self.value.len();
+        for (word_boundary_index, _) in self.value.split_word_bound_indices().rev() {
             if word_boundary_index < index {
                 return prev_word_boundary_index;
             }
@@ -1460,8 +1515,8 @@ impl GInput {
             let mut contains_dot = if is_set_text {
                 false
             } else {
-                let before_selection = self.text[..self.selection.start().index].to_string();
-                let after_selection = self.text[self.selection.end().index..].to_string();
+                let before_selection = self.value[..self.selection.start().index].to_string();
+                let after_selection = self.value[self.selection.end().index..].to_string();
                 before_selection.contains('.') || after_selection.contains('.')
             };
             input
@@ -1487,13 +1542,13 @@ impl GInput {
     fn apply_edit(&mut self, cx: &mut Cx, edit: Edit) {
         self.selection.cursor.index = edit.start + edit.replace_with.len();
         self.selection.anchor.index = self.selection.cursor.index;
-        self.history.apply_edit(edit, &mut self.text);
+        self.history.apply_edit(edit, &mut self.value);
         self.laidout_text = None;
         self.check_text_is_empty(cx);
     }
 
     fn undo(&mut self, cx: &mut Cx) -> bool {
-        if let Some(new_selection) = self.history.undo(self.selection, &mut self.text) {
+        if let Some(new_selection) = self.history.undo(self.selection, &mut self.value) {
             self.laidout_text = None;
             self.selection = new_selection;
             self.check_text_is_empty(cx);
@@ -1504,7 +1559,7 @@ impl GInput {
     }
 
     fn redo(&mut self, cx: &mut Cx) -> bool {
-        if let Some(new_selection) = self.history.redo(self.selection, &mut self.text) {
+        if let Some(new_selection) = self.history.redo(self.selection, &mut self.value) {
             self.laidout_text = None;
             self.selection = new_selection;
             self.check_text_is_empty(cx);
@@ -1515,7 +1570,7 @@ impl GInput {
     }
 
     fn check_text_is_empty(&mut self, cx: &mut Cx) {
-        if self.text.is_empty() {
+        if self.value.is_empty() {
             self.animator_play(cx, id!(input.empty));
         } else {
             self.animator_play(cx, id!(input.basic));
