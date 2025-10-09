@@ -1,5 +1,7 @@
 use makepad_widgets::*;
 
+use crate::components::{CursorBasicStyle, SelectionBasicStyle};
+
 live_design! {
     use link::shaders::*;
 
@@ -47,6 +49,12 @@ pub struct DrawCursor {
     pub blink: f32,
 }
 
+impl DrawCursor {
+    pub fn merge(&mut self, style: &CursorBasicStyle) {
+        self.color = style.color;
+    }
+}
+
 #[derive(Live, LiveRegister, LiveHook)]
 #[repr(C)]
 pub struct DrawSelection {
@@ -56,4 +64,11 @@ pub struct DrawSelection {
     pub color: Vec4,
     #[live(0.5)]
     pub border_radius: f32,
+}
+
+
+impl DrawSelection {
+    pub fn merge(&mut self, style: &SelectionBasicStyle) {
+        self.color = style.color;
+    }
 }

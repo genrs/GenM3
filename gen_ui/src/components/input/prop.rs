@@ -12,15 +12,15 @@ use crate::{
     error::Error,
     from_prop_to_toml, get_get_mut,
     prop::{
-        ApplySlotMapImpl, ApplyStateMapImpl, Applys,
+        ApplySlotMapImpl, ApplyStateMapImpl, Applys, Radius,
         manuel::{
-            BASIC, COLOR, CONTAINER, CURSOR, DISABLED, EMPTY, FOCUS, HOVER, PREFIX, SELECTION,
-            SUFFIX, TEXT, THEME,
+            BASIC, COLOR, CONTAINER, CURSOR, DISABLED, EMPTY, FOCUS, HOVER, PLACEHOLDER, PREFIX,
+            SELECTION, SUFFIX, TEXT, THEME,
         },
         traits::{FromLiveColor, FromLiveValue, NewFrom, ToColor, ToTomlValue},
     },
     prop_interconvert, state_color,
-    themes::Theme,
+    themes::{ColorFontConf, Theme},
     utils::get_from_itable,
 };
 
@@ -133,6 +133,9 @@ impl BasicStyle for InputBasicStyle {
 
     fn len() -> usize {
         3 * ViewBasicStyle::len()
+            + LabelBasicStyle::len()
+            + CursorBasicStyle::len()
+            + SelectionBasicStyle::len()
     }
 
     fn set_from_str(&mut self, _key: &str, _value: &LiveValue, _state: Self::State) -> () {
@@ -150,6 +153,12 @@ impl BasicStyle for InputBasicStyle {
             (live_id!(container), ViewBasicStyle::live_props().into()),
             (live_id!(prefix), ViewBasicStyle::live_props().into()),
             (live_id!(suffix), ViewBasicStyle::live_props().into()),
+            (live_id!(text), LabelBasicStyle::live_props().into()),
+            (live_id!(cursor), CursorBasicStyle::live_props().into()),
+            (
+                live_id!(selection),
+                SelectionBasicStyle::live_props().into(),
+            ),
         ]
     }
 
@@ -205,7 +214,10 @@ from_prop_to_toml! {
     InputBasicStyle {
         container => CONTAINER,
         prefix => PREFIX,
-        suffix => SUFFIX
+        suffix => SUFFIX,
+        text => TEXT,
+        cursor => CURSOR,
+        selection => SELECTION
     }
 }
 
@@ -214,7 +226,7 @@ impl TryFrom<(&Item, InputState)> for InputBasicStyle {
 
     fn try_from((value, state): (&Item, InputState)) -> Result<Self, Self::Error> {
         let inline_table = value.as_inline_table().ok_or(Error::ThemeStyleParse(
-            "[component.badge.$slot] should be an inline table".to_string(),
+            "[component.input.$slot] should be an inline table".to_string(),
         ))?;
 
         let container = get_from_itable(
@@ -273,10 +285,11 @@ impl TryFrom<(&Item, InputState)> for InputBasicStyle {
 impl InputBasicStyle {
     pub fn default_container(theme: Theme, state: InputState) -> ViewBasicStyle {
         let mut container = ViewBasicStyle::from_state(theme, state.into());
-        container.set_cursor(Default::default());
+        container.set_cursor(MouseCursor::Text);
         container.set_background_visible(true);
-        container.set_height(Size::Fixed(36.0));
+        container.set_height(Size::Fit);
         container.set_width(Size::Fill);
+        container.set_border_radius(Radius::new(2.0));
         container
     }
 
@@ -295,7 +308,9 @@ impl InputBasicStyle {
 
     pub fn default_text(theme: Theme, state: InputState) -> LabelBasicStyle {
         let mut text = LabelBasicStyle::from_state(theme, state.into());
-        text.set_font_size(14.0);
+        if state == InputState::Empty {
+            text.set_color(ColorFontConf::from_key(PLACEHOLDER).into());
+        }
         text
     }
 
@@ -339,11 +354,11 @@ impl BasicStyle for CursorBasicStyle {
 
     state_color! {
         (color),
-        InputState::Basic => (500),
-        InputState::Hover => (500),
-        InputState::Focus => (500),
-        InputState::Empty => (500),
-        InputState::Disabled => (300)
+        InputState::Basic => (300),
+        InputState::Hover => (300),
+        InputState::Focus => (300),
+        InputState::Empty => (300),
+        InputState::Disabled => (200)
     }
 
     fn len() -> usize {

@@ -8,12 +8,12 @@ use crate::{
     error::Error,
     getter, getter_setter_ref, lifecycle,
     prop::{
+        ApplyStateMap,
         manuel::{BASIC, DISABLED},
         traits::ToColor,
-        ApplyStateMap,
     },
     pure_after_apply, set_index, set_scope_path, setter, sync,
-    themes::{conf::Conf, Theme},
+    themes::{Theme, conf::Conf},
     visible,
 };
 
@@ -155,8 +155,9 @@ impl LiveHook for GLabel {
         self.merge_conf_prop(cx);
     }
 
-    fn after_apply(&mut self, _cx: &mut Cx, _apply: &mut Apply, index: usize, nodes: &[LiveNode]) {
+    fn after_apply(&mut self, _cx: &mut Cx, apply: &mut Apply, index: usize, nodes: &[LiveNode]) {
         self.set_apply_state_map(
+            apply.from,
             nodes,
             index,
             &LabelBasicStyle::live_props(),

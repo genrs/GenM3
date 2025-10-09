@@ -139,8 +139,9 @@ impl ImageCacheImpl for GImage {
 
 impl LiveHook for GImage {
     pure_after_apply!();
-    fn after_apply(&mut self, _cx: &mut Cx, _apply: &mut Apply, index: usize, nodes: &[LiveNode]) {
+    fn after_apply(&mut self, _cx: &mut Cx, apply: &mut Apply, index: usize, nodes: &[LiveNode]) {
         self.set_apply_state_map(
+            apply.from,
             nodes,
             index,
             &ImageBasicStyle::live_props(),

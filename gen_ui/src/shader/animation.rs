@@ -145,7 +145,6 @@ live_design!{
 
     pub AN_DRAW_CURSOR = {
         color: #ffffff,
-        blink: 0.0,
         border_radius: 0.5,
     }
 

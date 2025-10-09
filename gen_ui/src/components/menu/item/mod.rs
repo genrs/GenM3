@@ -236,9 +236,10 @@ impl LiveHook for GMenuItem {
         self.merge_conf_prop(cx);
     }
 
-    fn after_apply(&mut self, _cx: &mut Cx, _apply: &mut Apply, index: usize, nodes: &[LiveNode]) {
+    fn after_apply(&mut self, _cx: &mut Cx, apply: &mut Apply, index: usize, nodes: &[LiveNode]) {
         let live_props = ViewBasicStyle::live_props();
         self.set_apply_slot_map(
+            apply.from,
             nodes,
             index,
             [

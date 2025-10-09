@@ -5,8 +5,8 @@ use std::{
 };
 
 use makepad_widgets::{
-    Area, Cx, Cx2d, DVec2, Event, HeapLiveIdPath, Hit, Layout, LiveId, LiveIdAsProp, LiveNode,
-    LiveValue, Scope, Walk, Widget, WidgetNode, error, live_id,
+    ApplyFrom, Area, Cx, Cx2d, DVec2, Event, HeapLiveIdPath, Hit, Layout, LiveId, LiveIdAsProp,
+    LiveNode, LiveValue, Scope, Walk, Widget, WidgetNode, error, live_id,
 };
 
 use crate::{
@@ -182,6 +182,7 @@ where
     /// ## set apply state map
     fn set_apply_state_map<'m, LP, P, NF, IF>(
         &mut self,
+        apply: ApplyFrom,
         nodes: &[LiveNode],
         index: usize,
         live_props: LP,
@@ -201,7 +202,7 @@ where
         //     self, nodes, index, live_props, prefixs, next_or, insert,
         // );
         <ApplyStateMap<Self::State> as ApplyStateMapImpl<Self::State>>::set_map(
-            self, nodes, index, live_props, prefixs, next_or, insert,
+            self, apply, nodes, index, live_props, prefixs, next_or, insert,
         );
     }
 }
@@ -224,6 +225,7 @@ where
 
     fn set_apply_slot_map<'m, P, LP, PP, NF, IF>(
         &mut self,
+        apply: ApplyFrom,
         nodes: &[LiveNode],
         index: usize,
         prefixs: P,
@@ -245,7 +247,7 @@ where
             IS,
             Self::Part,
         >>::set_map(
-            self, nodes, index,  prefixs, part_props, next_or, insert,
+            self, apply, nodes, index,  prefixs, part_props, next_or, insert,
         );
     }
     /// ## merge prop to slot component

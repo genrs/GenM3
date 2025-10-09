@@ -538,6 +538,7 @@ impl LiveHook for GBadge {
         }
 
         self.set_apply_slot_map(
+            apply.from,
             nodes,
             index,
             [live_id!(basic), live_id!(disabled)],

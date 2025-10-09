@@ -203,6 +203,7 @@ impl LiveHook for GView {
         // }
 
         self.set_apply_state_map(
+            apply.from,
             nodes,
             index,
             &ViewBasicStyle::live_props(),

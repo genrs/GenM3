@@ -247,6 +247,7 @@ impl LiveHook for GTabbar {
             self.children.truncate(self.live_update_order.len());
         }
         self.set_apply_state_map(
+            apply.from,
             nodes,
             index,
             &TabbarBasicStyle::live_props(),

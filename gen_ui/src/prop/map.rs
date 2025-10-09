@@ -7,7 +7,7 @@ use crate::{
     themes::Theme,
 };
 use makepad_widgets::{
-    live_id, LiveId, LiveIdAsProp, LiveNode, LiveNodeSliceApi, LiveProp, LiveValue,
+    ApplyFrom, LiveId, LiveIdAsProp, LiveNode, LiveNodeSliceApi, LiveProp, LiveValue, live_id,
 };
 use std::{
     borrow::Cow,
@@ -257,6 +257,7 @@ pub trait ApplyStateMapImpl<S>: ApplyMapImpl {
     /// use to set map when in `after_apply()`
     fn set_map<'m, C, LP, P, NF, IF>(
         component: &mut C,
+        apply: ApplyFrom,
         nodes: &[LiveNode],
         index: usize,
         live_props: LP,
@@ -286,6 +287,7 @@ where
 {
     fn set_map<'m, C, SS, LP, PP, NF, IF>(
         component: &mut C,
+        apply: ApplyFrom,
         nodes: &[LiveNode],
         index: usize,
         states: SS,
@@ -357,6 +359,7 @@ where
 
     fn set_map<'m, C, SS, LP, PP, NF, IF>(
         component: &mut C,
+        apply: ApplyFrom,
         nodes: &[LiveNode],
         index: usize,
         states: SS,
@@ -372,7 +375,9 @@ where
         IF: FnOnce(LiveId, &mut C, SlotMap<PT>) -> () + Copy,
     {
         if component.lifecycle().is_created() {
-            component.set_index(index);
+            if let ApplyFrom::NewFromDoc { .. } = apply {
+                component.set_index(index);
+            }
             next_or(component);
         }
 
@@ -641,6 +646,7 @@ where
 
     fn set_map<'m, C, LP, P, NF, IF>(
         component: &mut C,
+        apply: ApplyFrom,
         nodes: &[LiveNode],
         index: usize,
         live_props: LP,
@@ -655,7 +661,9 @@ where
         IF: FnOnce(LiveId, &mut C, PropMap) -> () + Copy,
     {
         if component.lifecycle().is_created() {
-            component.set_index(index);
+            if let ApplyFrom::NewFromDoc { .. } = apply {
+                component.set_index(index);
+            }
             next_or(component);
         }
 

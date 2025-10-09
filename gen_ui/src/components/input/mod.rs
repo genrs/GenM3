@@ -20,10 +20,17 @@ use unicode_segmentation::UnicodeSegmentation;
 
 use crate::{
     ComponentAnInit, active_event, animation_open_then_redraw,
-    components::{BasicStyle, Component, GView, LifeCycle, SlotComponent, SlotStyle, Style},
+    components::{
+        BasicStyle, Component, GView, LabelBasicStyle, LifeCycle, SlotComponent, SlotStyle, Style,
+        ViewBasicStyle,
+    },
     error::Error,
     lifecycle, play_animation,
-    prop::{ApplyMapImpl, ApplySlotMap, ApplySlotMapImpl, ToStateMap, traits::ToFloat},
+    prop::{
+        ApplyMapImpl, ApplySlotMap, ApplySlotMapImpl, ToStateMap,
+        manuel::{BASIC, DISABLED, EMPTY, FOCUS, HOVER},
+        traits::{ToColor, ToFloat},
+    },
     pure_after_apply, set_animation, set_index, set_scope_path,
     shader::{
         draw_input::{DrawCursor, DrawSelection},
@@ -66,7 +73,7 @@ live_design! {
                 }
             }
             input = {
-                default: off,
+                default: basic,
 
                 basic = {
                     from: {all: Forward {duration: (AN_DURATION)}},
@@ -82,7 +89,6 @@ live_design! {
                 hover = {
                     from: {
                         all: Forward {duration: (AN_DURATION),},
-                        pressed: Forward {duration: (AN_DURATION)},
                     },
                     ease: InOutQuad,
                     apply: {
@@ -96,7 +102,6 @@ live_design! {
                 empty = {
                     from: {
                         all: Forward {duration: (AN_DURATION),},
-                        pressed: Forward {duration: (AN_DURATION)},
                     },
                     ease: InOutQuad,
                     apply: {
@@ -112,9 +117,9 @@ live_design! {
                     ease: InOutQuad,
                     apply: {
                         draw_input: <AN_DRAW_VIEW> {},
-                       draw_text: <AN_DRAW_TEXT> {},
-                       draw_selection: <AN_DRAW_SELECTION> {},
-                       draw_cursor: <AN_DRAW_CURSOR> {}
+                        draw_text: <AN_DRAW_TEXT> {},
+                        draw_selection: <AN_DRAW_SELECTION> {},
+                        draw_cursor: <AN_DRAW_CURSOR> {}
                     }
                 }
 
@@ -123,9 +128,9 @@ live_design! {
                     ease: InOutQuad,
                     apply: {
                         draw_input: <AN_DRAW_VIEW> {},
-                       draw_text: <AN_DRAW_TEXT> {},
-                       draw_selection: <AN_DRAW_SELECTION> {},
-                       draw_cursor: <AN_DRAW_CURSOR> {}
+                        draw_text: <AN_DRAW_TEXT> {},
+                        draw_selection: <AN_DRAW_SELECTION> {},
+                        draw_cursor: <AN_DRAW_CURSOR> {}
                     }
                 }
             }
@@ -190,7 +195,7 @@ pub struct GInput {
     pub placeholder: String,
     #[live]
     pub value: String,
-    #[live(0.5)]
+    #[live(0.6)]
     blink_speed: f64,
     #[rust]
     password_text: String,
@@ -227,6 +232,9 @@ impl WidgetNode for GInput {
     fn redraw(&mut self, cx: &mut Cx) {
         let _ = self.render(cx);
         self.draw_input.redraw(cx);
+        self.draw_cursor.redraw(cx);
+        self.draw_selection.redraw(cx);
+        self.draw_text.redraw(cx);
     }
 
     fn state(&self) -> String {
@@ -241,21 +249,55 @@ impl WidgetNode for GInput {
 }
 
 impl LiveHook for GInput {
-    fn after_apply_from_doc(&mut self, cx: &mut Cx) {
-        self.sync();
-        self.render_after_apply(cx);
-    }
+    pure_after_apply!();
 
-    fn after_new_from_doc(&mut self, cx: &mut Cx) {
-        self.sync();
-        self.render_after_apply(cx);
-        self.check_text_is_empty(cx);
-    }
-    fn after_update_from_doc(&mut self, cx: &mut Cx) {
-        self.merge_conf_prop(cx);
-    }
     fn after_new_before_apply(&mut self, cx: &mut Cx) {
         self.merge_conf_prop(cx);
+    }
+
+    fn after_apply(&mut self, _cx: &mut Cx, apply: &mut Apply, index: usize, nodes: &[LiveNode]) {
+        let live_props = ViewBasicStyle::live_props();
+        self.set_apply_slot_map(
+            apply.from,
+            nodes,
+            index,
+            [
+                live_id!(empty),
+                live_id!(basic),
+                live_id!(hover),
+                live_id!(focus),
+                live_id!(disabled),
+            ],
+            [
+                (InputPart::Container, &live_props),
+                (InputPart::Prefix, &live_props),
+                (InputPart::Suffix, &live_props),
+                (InputPart::Text, &LabelBasicStyle::live_props()),
+                (InputPart::Selection, &SelectionBasicStyle::live_props()),
+                (InputPart::Cursor, &CursorBasicStyle::live_props()),
+            ],
+            |_| {},
+            |prefix, component, applys| match prefix.to_string().as_str() {
+                BASIC => {
+                    component.apply_slot_map.insert(InputState::Basic, applys);
+                }
+                HOVER => {
+                    component.apply_slot_map.insert(InputState::Hover, applys);
+                }
+                FOCUS => {
+                    component.apply_slot_map.insert(InputState::Focus, applys);
+                }
+                EMPTY => {
+                    component.apply_slot_map.insert(InputState::Empty, applys);
+                }
+                DISABLED => {
+                    component
+                        .apply_slot_map
+                        .insert(InputState::Disabled, applys);
+                }
+                _ => {}
+            },
+        );
     }
 }
 
@@ -285,7 +327,7 @@ impl Widget for GInput {
         self.check_text_is_empty(cx);
     }
 
-    fn draw_walk(&mut self, cx: &mut Cx2d, _scope: &mut Scope, walk: Walk) -> DrawStep {
+    fn draw_walk(&mut self, cx: &mut Cx2d, scope: &mut Scope, walk: Walk) -> DrawStep {
         if !self.visible {
             return DrawStep::done();
         }
@@ -305,6 +347,7 @@ impl Widget for GInput {
             NavRole::TextInput,
             Margin::default(),
         );
+        self.set_scope_path(&scope.path);
         DrawStep::done()
     }
 
@@ -329,7 +372,7 @@ impl Widget for GInput {
         }
 
         self.set_animation(cx);
-        cx.global::<ComponentAnInit>().button = true;
+        cx.global::<ComponentAnInit>().input = true;
         let area = self.area();
         let hit = event.hits(cx, area);
         if self.disabled {
@@ -369,9 +412,19 @@ impl Component for GInput {
     fn render(&mut self, cx: &mut Cx) -> Result<(), Self::Error> {
         if self.disabled {
             self.switch_state(InputState::Disabled);
+        } else if self.value.is_empty() {
+            self.switch_state(InputState::Empty);
+        } else {
+            self.switch_state(InputState::Basic);
         }
-        let style = self.style.get(self.state).container;
-        self.draw_input.merge(&style.into());
+
+        let style = self.style.get(self.state);
+        self.draw_input.merge(&style.container.into());
+        self.draw_text.color = style.text.color;
+        self.draw_text.text_style.font_size = style.text.font_size;
+        self.draw_text.text_style.line_spacing = style.text.line_spacing;
+        self.draw_selection.merge(&style.selection);
+        self.draw_cursor.merge(&style.cursor);
         let _ = self.prefix.render(cx)?;
         let _ = self.suffix.render(cx)?;
         Ok(())
@@ -390,6 +443,12 @@ impl Component for GInput {
     fn handle_widget_event(&mut self, cx: &mut Cx, event: &Event, hit: Hit, area: Area) {
         animation_open_then_redraw!(self, cx, event);
 
+        if self.value.is_empty() && !self.animator_in_state(cx, id!(input.empty)) {
+            self.switch_state_with_animation(cx, InputState::Empty);
+            self.animator_play(cx, id!(input.empty));
+            self.redraw(cx);
+        }
+
         if self.blink_timer.is_event(event).is_some() {
             if self.animator_in_state(cx, id!(blink.off)) {
                 self.animator_play(cx, id!(blink.on));
@@ -399,18 +458,20 @@ impl Component for GInput {
             self.blink_timer = cx.start_timeout(self.blink_speed)
         }
 
-        let uid = self.widget_uid();
         match hit {
-            Hit::FingerHoverIn(_) => {
-                self.animator_play(cx, id!(hover.on));
+            Hit::FingerHoverIn(e) => {
+                self.switch_state_with_animation(cx, InputState::Hover);
+                self.animator_play(cx, id!(input.hover));
+                self.active_hover_in(cx, e);
             }
-            Hit::FingerHoverOut(_) => {
-                self.animator_play(cx, id!(hover.off));
+            Hit::FingerHoverOut(e) => {
+                self.switch_state_with_animation(cx, InputState::Basic);
+                self.animator_play(cx, id!(input.basic));
+                self.active_hover_out(cx, e);
             }
             Hit::KeyFocus(e) => {
-                self.animator_play(cx, id!(focus.on));
+                self.animator_play(cx, id!(input.focus));
                 self.reset_cursor_blinker(cx);
-                // cx.widget_action(uid, &scope.path, TextInputAction::KeyFocus);
                 self.active_focus(cx, e.into());
             }
             Hit::KeyFocusLost(e) => {
@@ -419,7 +480,6 @@ impl Component for GInput {
                 self.switch_state_with_animation(cx, InputState::Basic);
                 cx.stop_timer(self.blink_timer);
                 cx.hide_text_ime();
-                // cx.widget_action(uid, &scope.path, TextInputAction::KeyFocusLost);
                 self.active_focus_lost(cx, Some(e));
             }
             Hit::KeyDown(KeyEvent {
@@ -500,17 +560,20 @@ impl Component for GInput {
                     _ => {}
                 }
 
-                self.animator_play(cx, id!(hover.down));
+                self.animator_play(cx, id!(input.focus));
             }
             Hit::FingerUp(fe) => {
                 if fe.is_over && fe.was_tap() {
                     if fe.has_hovers() {
-                        self.animator_play(cx, id!(hover.on));
+                        self.switch_state_with_animation(cx, InputState::Hover);
+                        self.animator_play(cx, id!(input.hover));
                     } else {
-                        self.animator_play(cx, id!(hover.off));
+                        self.switch_state_with_animation(cx, InputState::Basic);
+                        self.animator_play(cx, id!(input.basic));
                     }
                 } else {
-                    self.animator_play(cx, id!(hover.off));
+                    self.switch_state_with_animation(cx, InputState::Basic);
+                    self.animator_play(cx, id!(input.basic));
                 }
             }
             Hit::FingerMove(FingerMoveEvent {
@@ -752,6 +815,7 @@ impl Component for GInput {
                 mut focus_index,
                 mut disabled_index,
             ) = (None, None, None, None, None);
+
             if let Some(index) = nodes.child_by_path(
                 self.index,
                 &[
