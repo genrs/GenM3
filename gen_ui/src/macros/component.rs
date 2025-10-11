@@ -64,6 +64,12 @@ macro_rules! component {
                     $(GComponent::$field(c) => c.redraw(cx)),*
                 }
             }
+
+            pub fn area(&self) -> Area {
+                match self {
+                    $(GComponent::$field(c) => c.area()),*
+                }
+            }
         }
 
         $(

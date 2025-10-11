@@ -16,6 +16,7 @@ use makepad_widgets::{
 use unicode_segmentation::UnicodeSegmentation;
 
 use crate::components::InputState;
+use crate::switch_state;
 use crate::{
     ComponentAnInit, active_event, animation_open_then_redraw,
     components::{
@@ -364,7 +365,7 @@ impl Widget for GInputArea {
         }
 
         self.set_animation(cx);
-        cx.global::<ComponentAnInit>().input = true;
+        cx.global::<ComponentAnInit>().input_area = true;
         let area = self.area();
         let hit = event.hits(cx, area);
         if self.disabled {
@@ -741,13 +742,7 @@ impl Component for GInputArea {
         }
     }
 
-    fn switch_state(&mut self, state: Self::State) -> () {
-        if self.state == state {
-            return;
-        }
-        self.state = state;
-    }
-
+    
     fn switch_state_with_animation(&mut self, cx: &mut Cx, state: Self::State) -> () {
         if !self.animation_open {
             return;
@@ -762,7 +757,7 @@ impl Component for GInputArea {
     }
 
     fn set_animation(&mut self, cx: &mut Cx) -> () {
-        let init_global = cx.global::<ComponentAnInit>().input;
+        let init_global = cx.global::<ComponentAnInit>().input_area;
         let live_ptr = match self.animator.live_ptr {
             Some(ptr) => ptr.file_id.0,
             None => return,
@@ -1064,6 +1059,7 @@ impl Component for GInputArea {
     }
 
     sync!();
+    switch_state!();
     play_animation!();
     set_scope_path!();
     set_index!();

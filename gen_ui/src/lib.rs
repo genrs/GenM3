@@ -59,4 +59,5 @@ pub struct ComponentAnInit {
     select: bool,
     badge: bool,
     input: bool,
+    input_area: bool,
 }

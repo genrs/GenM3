@@ -60,7 +60,7 @@ pub use tag::*;
 pub use traits::*;
 pub use view::*;
 
-use crate::component;
+use crate::{component, components::area::GInputArea};
 
 live_design! {
     link genui;
@@ -601,7 +601,6 @@ live_design! {
         text: <GLabel>{
             visible: false
         },
-        dot: true
     }
 
     pub GBadge = <GBadgeBase> {
@@ -609,6 +608,20 @@ live_design! {
     }
 
     pub GInputArea = <GInputAreaBase> {}
+
+    pub GInput = <GInputBase> {
+        prefix: <GView> {
+            <GLabel> {
+                text: "Prefix"
+            }
+        }
+        input: <GInputArea> {}
+        suffix: <GView> {
+            <GLabel> {
+                text: "Suffix"
+            }
+        }
+    }
 }
 
 pub fn components_register(cx: &mut Cx) {
@@ -664,5 +677,6 @@ component! {
     Progress => GProgress,
     Loading => GLoading,
     Slider => GSlider,
-    Rate => GRate
+    Rate => GRate,
+    InputArea => GInputArea
 }

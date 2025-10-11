@@ -1,5 +1,5 @@
 use makepad_widgets::*;
-use toml_edit::Item;
+use toml_edit::{InlineTable, Item, Value};
 
 use crate::{
     basic_prop_interconvert, component_color, component_part,
@@ -32,7 +32,7 @@ prop_interconvert! {
         focus => FOCUS, InputAreaBasicStyle::from_state(Theme::default(), InputState::Focus), |v| (v, InputState::Focus).try_into(),
         empty => EMPTY, InputAreaBasicStyle::from_state(Theme::default(), InputState::Empty), |v| (v, InputState::Empty).try_into(),
         disabled => DISABLED, InputAreaBasicStyle::from_state(Theme::default(), InputState::Disabled), |v| (v, InputState::Disabled).try_into()
-    }, "[component.input] should be a table"
+    }, "[component.input.input] should be a table"
 }
 
 impl Style for InputAreaStyle {
@@ -204,14 +204,10 @@ from_prop_to_toml! {
     }
 }
 
-impl TryFrom<(&Item, InputState)> for InputAreaBasicStyle {
+impl TryFrom<(&InlineTable, InputState)> for InputAreaBasicStyle {
     type Error = Error;
-
-    fn try_from((value, state): (&Item, InputState)) -> Result<Self, Self::Error> {
-        let inline_table = value.as_inline_table().ok_or(Error::ThemeStyleParse(
-            "[component.input.$slot] should be an inline table".to_string(),
-        ))?;
-
+    
+    fn try_from((inline_table, state): (&InlineTable, InputState)) -> Result<Self, Self::Error> {
         let container = get_from_itable(
             inline_table,
             CONTAINER,
@@ -257,6 +253,31 @@ impl TryFrom<(&Item, InputState)> for InputAreaBasicStyle {
             selection,
         })
     }
+    
+}
+
+impl TryFrom<(&Value, InputState)> for InputAreaBasicStyle {
+    type Error = Error;
+
+    fn try_from((value, state): (&Value, InputState)) -> Result<Self, Self::Error> {
+        let inline_table = value.as_inline_table().ok_or(Error::ThemeStyleParse(
+            "[component.input.input.$slot] should be an inline table".to_string(),
+        ))?;
+
+        Self::try_from((inline_table, state))
+    }
+}
+
+impl TryFrom<(&Item, InputState)> for InputAreaBasicStyle {
+    type Error = Error;
+
+    fn try_from((value, state): (&Item, InputState)) -> Result<Self, Self::Error> {
+        let inline_table = value.as_inline_table().ok_or(Error::ThemeStyleParse(
+            "[component.input.input.$slot] should be an inline table".to_string(),
+        ))?;
+
+        Self::try_from((inline_table, state))
+    }
 }
 
 impl InputAreaBasicStyle {
@@ -268,20 +289,8 @@ impl InputAreaBasicStyle {
         container.set_width(Size::Fill);
         container.set_border_radius(Radius::new(2.0));
         container.set_flow(Flow::Right);
+        container.set_margin(Margin::from_f64(0.0));
         container
-    }
-
-    pub fn default_prefix(theme: Theme, state: InputState) -> ViewBasicStyle {
-        let mut prefix = ViewBasicStyle::from_state(theme, state.into());
-        prefix.set_background_visible(false);
-        prefix.set_padding(Padding::from_f64(0.0));
-        prefix.set_height(Size::Fill);
-        prefix.set_width(Size::Fit);
-        prefix
-    }
-
-    pub fn default_suffix(theme: Theme, state: InputState) -> ViewBasicStyle {
-        Self::default_prefix(theme, state)
     }
 
     pub fn default_text(theme: Theme, state: InputState) -> LabelBasicStyle {
