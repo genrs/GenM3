@@ -12,6 +12,7 @@ pub struct ColorFontConf {
     pub secondary: Color,
     pub placeholder: Color,
     pub disabled: Color,
+    pub metrics: f32,
 }
 
 impl Default for ColorFontConf {
@@ -25,6 +26,7 @@ impl Default for ColorFontConf {
             secondary: color("#ffffff99"),
             placeholder: color("#ffffff66"),
             disabled: color("#ffffff42"),
+            metrics: 1.6,
         }
     }
 }
@@ -65,12 +67,18 @@ impl TryFrom<&Item> for ColorFontConf {
         let secondary = color(SECONDARY)?;
         let placeholder = color(PLACEHOLDER)?;
         let disabled = color(DISABLED)?;
+        let metrics = inline_table
+            .get("metrics")
+            .map_or(Ok(1.6), |v| v.as_float().ok_or(crate::error::Error::ThemeStyleParse(
+                "[theme.font.metrics] should be a float".to_string(),
+            )))? as f32;
 
         Ok(ColorFontConf {
             primary,
             secondary,
             placeholder,
             disabled,
+            metrics,
         })
     }
 }

@@ -268,6 +268,7 @@ impl InputBasicStyle {
         container.set_border_radius(Radius::new(2.0));
         container.set_flow(Flow::Right);
         container.set_padding(Padding::from_f64(0.0));
+        container.set_spacing(0.0);
         container
     }
 
@@ -279,15 +280,20 @@ impl InputBasicStyle {
         prefix.set_height(Size::Fill);
         prefix.set_width(Size::Fit);
         prefix.set_align(Align::from_f64(0.5));
+        prefix.set_border_radius(Radius::from_all(2.0, 0.0, 0.0, 2.0));
         prefix
     }
 
     pub fn default_suffix(theme: Theme, state: InputState) -> ViewBasicStyle {
-        Self::default_prefix(theme, state)
+        let mut suffix = Self::default_prefix(theme, state);
+        suffix.set_border_radius(Radius::from_all(0.0, 2.0, 2.0, 0.0));
+        suffix
     }
 
     pub fn default_input(theme: Theme, state: InputState) -> InputAreaBasicStyle {
-        InputAreaBasicStyle::from_state(theme, state)
+        let mut input = InputAreaBasicStyle::from_state(theme, state);
+        input.container.set_border_radius(Radius::new(0.0));
+        input
     }
 }
 

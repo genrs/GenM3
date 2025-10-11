@@ -135,8 +135,6 @@ pub struct GInput {
     pub apply_slot_map: ApplySlotMap<InputState, InputPart>,
     #[rust]
     defer_walks: DeferWalks,
-    #[rust]
-    real_height: f64,
 }
 
 impl WidgetNode for GInput {
@@ -189,53 +187,38 @@ impl Widget for GInput {
         }
         let style = self.style.get(self.state);
         self.draw_input.begin(cx, walk, style.layout());
-        // let _ = SlotDrawer::new(
-        //     [
-        //         (live_id!(prefix), (&mut self.prefix).into()),
-        //         (live_id!(input), (&mut self.input).into()),
-        //         (live_id!(suffix), (&mut self.suffix).into()),
-        //     ],
-        //     &mut self.defer_walks,
-        // )
-        // .draw_walk(cx, scope);
 
-        if self.real_height == 0.0 {
-            let input_walk = self.input.walk(cx);
-            let _ = self.input.draw_walk(cx, scope, input_walk);
-            self.real_height = self.input.area().rect(cx).size.y;
-            
-        } else {
-            let mut slots: [(LiveId, GComponent); 3] = [
-                (live_id!(prefix), (&mut self.prefix).into()),
-                (live_id!(input), (&mut self.input).into()),
-                (live_id!(suffix), (&mut self.suffix).into()),
-            ];
+        let real_height = self.count_real_height(cx);
+        let mut slots: [(LiveId, GComponent); 3] = [
+            (live_id!(prefix), (&mut self.prefix).into()),
+            (live_id!(input), (&mut self.input).into()),
+            (live_id!(suffix), (&mut self.suffix).into()),
+        ];
 
-            for (id, component) in &mut slots {
-                if component.visible() {
-                    let mut walk = component.walk(cx);
-                    if let Some(fw) = cx.defer_walk(walk) {
-                        // if is fill, defer the walk
-                        self.defer_walks.push((*id, fw));
-                    } else {
-                        if *id == live_id!(prefix) || *id == live_id!(suffix) {
-                            walk.height = Size::Fixed(self.real_height);
-                            let _ = component.draw_walk(cx, scope, walk);
-                        }
+        for (id, component) in &mut slots {
+            if component.visible() {
+                let mut walk = component.walk(cx);
+                if let Some(fw) = cx.defer_walk(walk) {
+                    // if is fill, defer the walk
+                    self.defer_walks.push((*id, fw));
+                } else {
+                    if *id == live_id!(prefix) || *id == live_id!(suffix) {
+                        walk.height = Size::Fixed(real_height);
+                        let _ = component.draw_walk(cx, scope, walk);
                     }
                 }
             }
+        }
 
-            for (id, df_walk) in self.defer_walks.iter_mut() {
-                for (slot_id, slot) in &mut slots {
-                    if *id == *slot_id {
-                        let mut res_walk = df_walk.resolve(cx);
-                        if *id == live_id!(prefix) || *id == live_id!(suffix) {
-                            res_walk.height = Size::Fixed(self.real_height);
-                        }
-                        let _ = slot.draw_walk(cx, scope, res_walk);
-                        break;
+        for (id, df_walk) in self.defer_walks.iter_mut() {
+            for (slot_id, slot) in &mut slots {
+                if *id == *slot_id {
+                    let mut res_walk = df_walk.resolve(cx);
+                    if *id == live_id!(prefix) || *id == live_id!(suffix) {
+                        res_walk.height = Size::Fixed(real_height);
                     }
+                    let _ = slot.draw_walk(cx, scope, res_walk);
+                    break;
                 }
             }
         }
@@ -608,4 +591,24 @@ impl Component for GInput {
     set_scope_path!();
     set_index!();
     lifecycle!();
+}
+
+impl GInput {
+    pub fn count_real_height(&self, cx: &mut Cx) -> f64 {
+        let font_metrics = cx.global::<Conf>().theme.font.metrics;
+        let style = self.style.get(self.state);
+        let text_style = style.input.text;
+        let padding = text_style.padding.top
+            + text_style.padding.bottom
+            + style.input.container.padding.top
+            + style.input.container.padding.bottom
+            + style.container.padding.top
+            + style.container.padding.bottom;
+        let margin = text_style.margin.top
+            + text_style.margin.bottom
+            + style.input.container.margin.top
+            + style.input.container.margin.bottom;
+
+        ((text_style.font_size * font_metrics) as f64) + padding + margin
+    }
 }

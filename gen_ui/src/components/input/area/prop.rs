@@ -290,6 +290,7 @@ impl InputAreaBasicStyle {
         container.set_border_radius(Radius::new(2.0));
         container.set_flow(Flow::Right);
         container.set_margin(Margin::from_f64(0.0));
+        container.set_padding(Padding::from_xy(9.0, 16.0));
         container
     }
 

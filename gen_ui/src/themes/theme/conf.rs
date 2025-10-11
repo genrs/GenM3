@@ -11,13 +11,13 @@ use super::{
 
 #[derive(Debug, Clone)]
 pub struct ThemeConf {
-    dark: ThemeColorItemConf,
-    primary: ThemeColorItemConf,
-    error: ThemeColorItemConf,
-    warning: ThemeColorItemConf,
-    success: ThemeColorItemConf,
-    info: ThemeColorItemConf,
-    font: ColorFontConf,
+    pub dark: ThemeColorItemConf,
+    pub primary: ThemeColorItemConf,
+    pub error: ThemeColorItemConf,
+    pub warning: ThemeColorItemConf,
+    pub success: ThemeColorItemConf,
+    pub info: ThemeColorItemConf,
+    pub font: ColorFontConf,
 }
 
 impl Default for ThemeConf {
