@@ -608,7 +608,7 @@ live_design! {
         dot: <GBadgeDot> {}
     }
 
-    pub GInput = <GInputBase> {}
+    pub GInputArea = <GInputAreaBase> {}
 }
 
 pub fn components_register(cx: &mut Cx) {
@@ -638,7 +638,7 @@ pub fn components_register(cx: &mut Cx) {
     rate::live_design(cx);
     select::select_register(cx);
     badge::badge_register(cx);
-    input::live_design(cx);
+    input::input_register(cx);
 }
 
 component! {

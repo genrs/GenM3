@@ -2,11 +2,11 @@ use makepad_widgets::*;
 use toml_edit::Item;
 
 use crate::{
-    basic_prop_interconvert, component_color, component_part, component_state,
+    basic_prop_interconvert, component_color, component_part,
     components::{
-        LabelBasicStyle, LabelState, ViewColors,
+        InputState, LabelBasicStyle, ViewColors,
         live_props::LiveProps,
-        traits::{BasicStyle, ComponentState, SlotBasicStyle, SlotStyle, Style},
+        traits::{BasicStyle, SlotBasicStyle, SlotStyle, Style},
         view::{ViewBasicStyle, ViewState},
     },
     error::Error,
@@ -14,8 +14,8 @@ use crate::{
     prop::{
         ApplySlotMapImpl, ApplyStateMapImpl, Applys, Radius,
         manuel::{
-            BASIC, COLOR, CONTAINER, DISABLED, EMPTY, FOCUS, HOVER, PLACEHOLDER, PREFIX, SUFFIX,
-            THEME,
+            BASIC, COLOR, CONTAINER, CURSOR, DISABLED, EMPTY, FOCUS, HOVER, PLACEHOLDER, SELECTION,
+            TEXT, THEME,
         },
         traits::{FromLiveColor, FromLiveValue, NewFrom, ToColor, ToTomlValue},
     },
@@ -25,20 +25,20 @@ use crate::{
 };
 
 prop_interconvert! {
-    InputStyle {
-        basic_prop = InputBasicStyle;
-        basic => BASIC, InputBasicStyle::default(), |v| (v, InputState::Basic).try_into(),
-        hover => HOVER, InputBasicStyle::from_state(Theme::default(), InputState::Hover), |v| (v, InputState::Hover).try_into(),
-        focus => FOCUS, InputBasicStyle::from_state(Theme::default(), InputState::Focus), |v| (v, InputState::Focus).try_into(),
-        empty => EMPTY, InputBasicStyle::from_state(Theme::default(), InputState::Empty), |v| (v, InputState::Empty).try_into(),
-        disabled => DISABLED, InputBasicStyle::from_state(Theme::default(), InputState::Disabled), |v| (v, InputState::Disabled).try_into()
+    InputAreaStyle {
+        basic_prop = InputAreaBasicStyle;
+        basic => BASIC, InputAreaBasicStyle::default(), |v| (v, InputState::Basic).try_into(),
+        hover => HOVER, InputAreaBasicStyle::from_state(Theme::default(), InputState::Hover), |v| (v, InputState::Hover).try_into(),
+        focus => FOCUS, InputAreaBasicStyle::from_state(Theme::default(), InputState::Focus), |v| (v, InputState::Focus).try_into(),
+        empty => EMPTY, InputAreaBasicStyle::from_state(Theme::default(), InputState::Empty), |v| (v, InputState::Empty).try_into(),
+        disabled => DISABLED, InputAreaBasicStyle::from_state(Theme::default(), InputState::Disabled), |v| (v, InputState::Disabled).try_into()
     }, "[component.input] should be a table"
 }
 
-impl Style for InputStyle {
+impl Style for InputAreaStyle {
     type State = InputState;
 
-    type Basic = InputBasicStyle;
+    type Basic = InputAreaBasicStyle;
 
     get_get_mut! {
         InputState::Basic => basic,
@@ -49,7 +49,7 @@ impl Style for InputStyle {
     }
 
     fn len() -> usize {
-        5 * InputBasicStyle::len()
+        5 * InputAreaBasicStyle::len()
     }
 
     fn sync(&mut self, map: &crate::prop::ApplyStateMap<Self::State>) -> ()
@@ -69,8 +69,8 @@ impl Style for InputStyle {
     }
 }
 
-impl SlotStyle for InputStyle {
-    type Part = InputPart;
+impl SlotStyle for InputAreaStyle {
+    type Part = InputAreaPart;
 
     fn sync_slot(&mut self, map: &crate::prop::ApplySlotMap<Self::State, Self::Part>) -> () {
         map.sync(
@@ -82,23 +82,30 @@ impl SlotStyle for InputStyle {
                 (InputState::Focus, &mut self.focus),
                 (InputState::Disabled, &mut self.disabled),
             ],
-            [InputPart::Container, InputPart::Prefix, InputPart::Suffix],
+            [
+                InputAreaPart::Container,
+                InputAreaPart::Text,
+                InputAreaPart::Cursor,
+                InputAreaPart::Selection,
+            ],
         );
     }
 }
 
 #[derive(Debug, Clone, Live, LiveHook, LiveRegister, Copy)]
 #[live_ignore]
-pub struct InputBasicStyle {
-    #[live(InputBasicStyle::default_container(Theme::default(), InputState::Basic))]
+pub struct InputAreaBasicStyle {
+    #[live(InputAreaBasicStyle::default_container(Theme::default(), InputState::Basic))]
     pub container: ViewBasicStyle,
-    #[live(InputBasicStyle::default_prefix(Theme::default(), InputState::Basic))]
-    pub prefix: ViewBasicStyle,
-    #[live(InputBasicStyle::default_suffix(Theme::default(), InputState::Basic))]
-    pub suffix: ViewBasicStyle,
+    #[live(InputAreaBasicStyle::default_text(Theme::default(), InputState::Basic))]
+    pub text: LabelBasicStyle,
+    #[live(InputAreaBasicStyle::default_cursor(Theme::default(), InputState::Basic))]
+    pub cursor: CursorBasicStyle,
+    #[live(InputAreaBasicStyle::default_selection(Theme::default(), InputState::Basic))]
+    pub selection: SelectionBasicStyle,
 }
 
-impl BasicStyle for InputBasicStyle {
+impl BasicStyle for InputAreaBasicStyle {
     type State = InputState;
 
     type Colors = ViewColors;
@@ -106,8 +113,9 @@ impl BasicStyle for InputBasicStyle {
     fn from_state(theme: crate::themes::Theme, state: Self::State) -> Self {
         Self {
             container: Self::default_container(theme, state),
-            prefix: Self::default_prefix(theme, state),
-            suffix: Self::default_suffix(theme, state),
+            text: Self::default_text(theme, state),
+            cursor: Self::default_cursor(theme, state),
+            selection: Self::default_selection(theme, state),
         }
     }
 
@@ -128,15 +136,17 @@ impl BasicStyle for InputBasicStyle {
 
     fn sync(&mut self, state: Self::State) -> () {
         self.container.sync(state.into());
-        self.prefix.sync(state.into());
-        self.suffix.sync(state.into());
     }
 
     fn live_props() -> LiveProps {
         vec![
             (live_id!(container), ViewBasicStyle::live_props().into()),
-            (live_id!(prefix), ViewBasicStyle::live_props().into()),
-            (live_id!(suffix), ViewBasicStyle::live_props().into()),
+            (live_id!(text), LabelBasicStyle::live_props().into()),
+            (live_id!(cursor), CursorBasicStyle::live_props().into()),
+            (
+                live_id!(selection),
+                SelectionBasicStyle::live_props().into(),
+            ),
         ]
     }
 
@@ -148,8 +158,8 @@ impl BasicStyle for InputBasicStyle {
     }
 }
 
-impl SlotBasicStyle for InputBasicStyle {
-    type Part = InputPart;
+impl SlotBasicStyle for InputAreaBasicStyle {
+    type Part = InputAreaPart;
 
     fn set_from_str_slot(
         &mut self,
@@ -159,38 +169,42 @@ impl SlotBasicStyle for InputBasicStyle {
         part: Self::Part,
     ) -> () {
         match part {
-            InputPart::Container => self
-                .container
-                .set_from_str(key, &value.into(), state.into()),
-            InputPart::Prefix => self.prefix.set_from_str(key, &value.into(), state.into()),
-            InputPart::Suffix => self.suffix.set_from_str(key, &value.into(), state.into()),
+            InputAreaPart::Container => {
+                self.container
+                    .set_from_str(key, &value.into(), state.into())
+            }
+            InputAreaPart::Text => self.text.set_from_str(key, &value.into(), state.into()),
+            InputAreaPart::Cursor => self.cursor.set_from_str(key, &value.into(), state),
+            InputAreaPart::Selection => self.selection.set_from_str(key, &value.into(), state),
         }
     }
 
     fn sync_slot(&mut self, state: Self::State, part: Self::Part) -> () {
         match part {
-            InputPart::Container => self.container.sync(state.into()),
-            InputPart::Prefix => self.prefix.sync(state.into()),
-            InputPart::Suffix => self.suffix.sync(state.into()),
+            InputAreaPart::Container => self.container.sync(state.into()),
+            InputAreaPart::Text => self.text.sync(state.into()),
+            InputAreaPart::Cursor => self.cursor.sync(state),
+            InputAreaPart::Selection => self.selection.sync(state),
         }
     }
 }
 
-impl Default for InputBasicStyle {
+impl Default for InputAreaBasicStyle {
     fn default() -> Self {
         Self::from_state(Theme::default(), InputState::Basic)
     }
 }
 
 from_prop_to_toml! {
-    InputBasicStyle {
+    InputAreaBasicStyle {
         container => CONTAINER,
-        prefix => PREFIX,
-        suffix => SUFFIX
+        text => TEXT,
+        cursor => CURSOR,
+        selection => SELECTION
     }
 }
 
-impl TryFrom<(&Item, InputState)> for InputBasicStyle {
+impl TryFrom<(&Item, InputState)> for InputAreaBasicStyle {
     type Error = Error;
 
     fn try_from((value, state): (&Item, InputState)) -> Result<Self, Self::Error> {
@@ -201,33 +215,51 @@ impl TryFrom<(&Item, InputState)> for InputBasicStyle {
         let container = get_from_itable(
             inline_table,
             CONTAINER,
-            || Ok(InputBasicStyle::default_container(Theme::default(), state)),
+            || {
+                Ok(InputAreaBasicStyle::default_container(
+                    Theme::default(),
+                    state,
+                ))
+            },
             |v| (v, ViewState::from(state)).try_into(),
         )?;
 
-        let prefix = get_from_itable(
+        let text = get_from_itable(
             inline_table,
-            PREFIX,
-            || Ok(InputBasicStyle::default_prefix(Theme::default(), state)),
-            |v| (v, ViewState::from(state)).try_into(),
+            TEXT,
+            || Ok(InputAreaBasicStyle::default_text(Theme::default(), state)),
+            |v| (v, state.into()).try_into(),
         )?;
 
-        let suffix = get_from_itable(
+        let cursor = get_from_itable(
             inline_table,
-            SUFFIX,
-            || Ok(InputBasicStyle::default_suffix(Theme::default(), state)),
-            |v| (v, ViewState::from(state)).try_into(),
+            CURSOR,
+            || Ok(InputAreaBasicStyle::default_cursor(Theme::default(), state)),
+            |v| (v, state).try_into(),
+        )?;
+
+        let selection = get_from_itable(
+            inline_table,
+            SELECTION,
+            || {
+                Ok(InputAreaBasicStyle::default_selection(
+                    Theme::default(),
+                    state,
+                ))
+            },
+            |v| (v, state).try_into(),
         )?;
 
         Ok(Self {
             container,
-            prefix,
-            suffix,
+            text,
+            cursor,
+            selection,
         })
     }
 }
 
-impl InputBasicStyle {
+impl InputAreaBasicStyle {
     pub fn default_container(theme: Theme, state: InputState) -> ViewBasicStyle {
         let mut container = ViewBasicStyle::from_state(theme, state.into());
         container.set_cursor(MouseCursor::Text);
@@ -423,46 +455,11 @@ impl BasicStyle for SelectionBasicStyle {
     }
 }
 
-component_state! {
-    InputState {
-        Basic => BASIC,
-        Empty => EMPTY,
-        Hover => HOVER,
-        Focus => FOCUS,
-        Disabled => DISABLED
-    }, _ => InputState::Basic
-}
-
-impl ComponentState for InputState {
-    fn is_disabled(&self) -> bool {
-        matches!(self, InputState::Disabled)
-    }
-}
-
-impl From<InputState> for ViewState {
-    fn from(value: InputState) -> Self {
-        match value {
-            InputState::Basic | InputState::Empty => ViewState::Basic,
-            InputState::Disabled => ViewState::Disabled,
-            InputState::Hover => ViewState::Hover,
-            InputState::Focus => ViewState::Pressed,
-        }
-    }
-}
-
-impl From<InputState> for LabelState {
-    fn from(value: InputState) -> Self {
-        match value {
-            InputState::Disabled => LabelState::Disabled,
-            _ => LabelState::Basic,
-        }
-    }
-}
-
 component_part! {
-    InputPart {
+    InputAreaPart {
         Container => container => CONTAINER,
-        Prefix => prefix => PREFIX,
-        Suffix => suffix => SUFFIX
+        Text => text => TEXT,
+        Cursor => cursor => CURSOR,
+        Selection => selection => SELECTION
     }, InputState
 }

@@ -1,31 +1,49 @@
   - [ ] input
+  - [ ] number_input
+  - [ ] verification
   - [x] loading
   - [ ] time_picker
   - [ ] date_picker
   - [ ] calender
   - [ ] tabs
-  - [ ] selector
+    - [ ] panel
+    - [ ] header
+    - [ ] item
+  - [ ] select
+    - [x] item
   - [ ] pagination
   - [ ] color_picker
+    - [x] color_panel
   - [ ] table
+    - [ ] row
+    - [ ] column
+    - [ ] header
+    - [ ] footer
+    - [ ] expand
+    - [ ] virtual
   - [ ] number_input
   - [x] slider
   - [x] progress
   - [ ] tree
+    - [ ] leaf
+    - [ ] branch
   - [x] rate
   - [ ] upload
-  - [ ] badge
+  - [x] badge
+    - [x] dot
   - [ ] audio api
   - [ ] video api
   - [ ] alert
   - [ ] notification
   - [ ] code
+--- AI
   - [ ] bubble
   - [ ] prompts
   - [ ] welcome
   - [ ] sender
   - [ ] timeline
   - [ ] steps
+---
   - [ ] i18n
   - [ ] contribution (github contribution)
 

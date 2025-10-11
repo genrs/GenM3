@@ -279,6 +279,9 @@ macro_rules! sync {
 macro_rules! switch_state {
     () => {
         fn switch_state(&mut self, state: Self::State) -> () {
+            if self.state == state {
+                return;
+            }
             self.state = state;
         }
     };

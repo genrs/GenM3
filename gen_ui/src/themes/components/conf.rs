@@ -1,14 +1,18 @@
 use toml_edit::Table;
 
+use crate::components::area::InputAreaStyle;
 use crate::components::dot::BadgeDotStyle;
 use crate::components::item::SelectItemStyle;
 use crate::components::panel::ColorPanelStyle;
 use crate::components::{
-    BadgeStyle, ButtonStyle, CardStyle, CheckboxStyle, CollapseStyle, DividerStyle, ImageStyle, InputStyle, LabelStyle, LinkStyle, LoadingStyle, MenuItemProp, MenuProp, PopupContainerProp, PopupProp, ProgressStyle, RadioStyle, RateStyle, SelectStyle, SliderStyle, SubMenuProp, SvgStyle, SwitchStyle, TabbarItemProp, TabbarProp, TagStyle, ViewStyle
+    BadgeStyle, ButtonStyle, CardStyle, CheckboxStyle, CollapseStyle, DividerStyle, ImageStyle,
+    InputStyle, LabelStyle, LinkStyle, LoadingStyle, MenuItemProp, MenuProp, PopupContainerProp,
+    PopupProp, ProgressStyle, RadioStyle, RateStyle, SelectStyle, SliderStyle, SubMenuProp,
+    SvgStyle, SwitchStyle, TabbarItemProp, TabbarProp, TagStyle, ViewStyle,
 };
 use crate::error::Error;
 use crate::prop::manuel::{
-    BADGE, BADGE_DOT, BUTTON, CARD, CHECKBOX, COLLAPSE, COLOR_PANEL, DIVIDER, IMAGE, INPUT, LABEL, LINK, LOADING, MENU, MENU_ITEM, POPUP, POPUP_CONTAINER, PROGRESS, RADIO, RATE, SELECT, SELECT_ITEM, SLIDER, SUB_MENU, SVG, SWITCH, TABBAR, TABBAR_ITEM, TAG, VIEW
+    BADGE, BADGE_DOT, BUTTON, CARD, CHECKBOX, COLLAPSE, COLOR_PANEL, DIVIDER, IMAGE, INPUT, INPUT_AREA, LABEL, LINK, LOADING, MENU, MENU_ITEM, POPUP, POPUP_CONTAINER, PROGRESS, RADIO, RATE, SELECT, SELECT_ITEM, SLIDER, SUB_MENU, SVG, SWITCH, TABBAR, TABBAR_ITEM, TAG, VIEW
 };
 use crate::try_from_toml_item;
 
@@ -43,7 +47,8 @@ pub struct ComponentsConf {
     pub select: SelectStyle,
     pub badge_dot: BadgeDotStyle,
     pub badge: BadgeStyle,
-    pub input: InputStyle
+    pub input_area: InputAreaStyle,
+    pub input: InputStyle,
 }
 
 try_from_toml_item! {
@@ -77,7 +82,8 @@ try_from_toml_item! {
         select => SELECT, SelectStyle::default(), |item| item.try_into(),
         badge_dot => BADGE_DOT, BadgeDotStyle::default(), |item| item.try_into(),
         badge => BADGE, BadgeStyle::default(), |item| item.try_into(),
-        input => INPUT, InputStyle::default(), |item| item.try_into()
+        input => INPUT, InputStyle::default(), |item| item.try_into(),
+        input_area => INPUT_AREA, InputAreaStyle::default(), |item| item.try_into()
     }, "[components] should be a table"
 }
 
