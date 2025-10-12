@@ -275,7 +275,6 @@ impl InputBasicStyle {
     pub fn default_prefix(theme: Theme, state: InputState) -> ViewBasicStyle {
         let mut prefix = ViewBasicStyle::from_state(theme, state.into());
         prefix.set_background_visible(true);
-        prefix.set_background_color(vec4(1.0, 0.0, 0.0, 1.0));
         prefix.set_padding(Padding::from_f64(0.0));
         prefix.set_height(Size::Fill);
         prefix.set_width(Size::Fit);

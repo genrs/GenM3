@@ -17,7 +17,7 @@ use crate::{
         ApplyMapImpl, ApplySlotMap, ApplySlotMapImpl, ApplySlotMergeImpl, DeferWalks, SlotDrawer,
         ToSlotMap, ToStateMap,
         manuel::{BASIC, DISABLED, EMPTY, FOCUS, HOVER},
-        traits::ToFloat,
+        traits::{ToColor, ToFloat},
     },
     pure_after_apply, set_animation, set_index, set_scope_path,
     shader::draw_view::DrawView,
@@ -318,7 +318,6 @@ impl Component for GInput {
         } else {
             self.switch_state(InputState::Basic);
         }
-
         let style = self.style.get(self.state);
         self.draw_input.merge(&style.container);
         let _ = self.input.render(cx);
@@ -360,6 +359,7 @@ impl Component for GInput {
 
     fn focus_sync(&mut self) -> () {
         let mut crossed_map = self.apply_slot_map.cross();
+
         for (part, slot) in [
             (InputPart::Prefix, &mut self.prefix),
             (InputPart::Suffix, &mut self.suffix),

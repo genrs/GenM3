@@ -273,6 +273,9 @@ pub trait ApplyStateMapImpl<S>: ApplyMapImpl {
 
     /// ## sync
     /// sync the properties of the component with the given basic state and states
+    /// ### means:
+    /// when basic state has props but other states don't have, use basic state props
+    /// ### params:
     /// - `prop`: the main properties to sync (basic properties)
     fn sync<'p, P, IS>(&'p self, prop: &mut P, basic_state: S, states: IS) -> ()
     where
@@ -301,11 +304,11 @@ where
         PP: IntoIterator<Item = (PT, LP)> + Copy,
         NF: FnOnce(&mut C) -> (),
         IF: FnOnce(LiveId, &mut C, SlotMap<PT>) -> () + Copy;
-    // fn sync<'p, P, SS, PS>(&'p self, basic_state: S, states: SS, parts: PS) -> ()
-    // where
-    //     P: BasicStyle<State = IS> + 'p,
-    //     SS: IntoIterator<Item = S> + Copy,
-    //     PS: IntoIterator<Item = (PT, &'p mut P)>;
+
+    /// ## sync
+    /// sync the properties of the component with the given basic state and states
+    /// ### means:
+    /// when basic state has props but other states don't have, use basic state props
     fn sync<'p, P, SS, PS>(
         &'p self,
         basic_prop: &mut P,
@@ -416,25 +419,28 @@ where
         SS: IntoIterator<Item = (S, &'p mut P)>,
         PS: IntoIterator<Item = PT>,
     {
+        // 先处理basic状态中的，因为它是所有状态的基础，并且其他状态中的属性需要被basic状态覆盖（保持一致性）
+        // 意思是当basic状态中设置了background_color，那么其他状态中如果没有设置background_color，那么就使用basic状态中的
         if let Some(basic_props) = self.get(&basic_state) {
             let mut states_vec: Vec<_> = states.into_iter().collect();
             for part in parts {
                 if let Some(part_props) = basic_props.get(&part) {
                     let mut parts = Cow::Borrowed(part_props);
+                    // 如果包含theme这个字段，说明需要进行主题色的同步处理，优先处理
                     if parts.contains_key(THEME) {
                         let parts = parts.to_mut();
                         if let Some(value) = parts.remove(THEME) {
                             basic_prop.set_from_str_slot(THEME, &value, basic_state, part);
                         }
                     } else {
-                        // 如果没有theme，则使用组件的theme
-                        basic_prop.sync_slot(basic_state, part);
+                        // 如果没有theme，则使用组件的theme ⚠️ 当前认为不需要进行额外同步一遍自己的theme，引发了apply map干扰conf的问题
+                        // basic_prop.sync_slot(basic_state, part);
                     }
                     // 处理其他
                     for (k, v) in parts.iter() {
                         basic_prop.set_from_str_slot(&k, &v, basic_state, part);
                     }
-
+                    // 处理其他的状态
                     for (state, props) in states_vec.iter_mut() {
                         self.get(&state).map(|state_map| {
                             if let Some(mut diff_props) = state_map.get(&part).map_or_else(
@@ -446,8 +452,8 @@ where
                                     if let Some(value) = diff_props.remove(THEME) {
                                         props.set_from_str_slot(THEME, &value, *state, part);
                                     } else {
-                                        // if no theme, use self.theme
-                                        props.sync_slot(*state, part);
+                                        // if no theme, use self.theme ⚠️ 当前认为不需要进行额外同步一遍自己的theme，引发了apply map干扰conf的问题
+                                        // props.sync_slot(*state, part);
                                     }
                                 }
                                 // set from str
@@ -613,8 +619,8 @@ where
                     prop.set_from_str(THEME, &value, basic_state);
                 }
             } else {
-                // 如果没有theme，则使用组件的theme
-                prop.sync(basic_state);
+                // 如果没有theme，则使用组件的theme ⚠️ 当前认为不需要进行额外同步一遍自己的theme，引发了apply map干扰conf的问题
+                // prop.sync(basic_state);
             }
             // 处理其他
             for (k, v) in props.iter() {
@@ -632,8 +638,8 @@ where
                     if let Some(value) = diff_props.remove(THEME) {
                         props.set_from_str(THEME, &value, state);
                     } else {
-                        // if no theme, use self.theme
-                        props.sync(state);
+                        // if no theme, use self.theme ⚠️ 当前认为不需要进行额外同步一遍自己的theme，引发了apply map干扰conf的问题
+                        // props.sync(state);
                     }
                 }
                 // set from str
