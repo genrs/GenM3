@@ -5,10 +5,10 @@ mod register;
 mod rely;
 
 use crate::{
-    ComponentAnInit,
+    animation_open_then_redraw,
     components::{
-        BadgePart, BasicStyle, Component, GComponent, GView, LifeCycle, SlotComponent, SlotStyle,
-        Style, ViewBasicStyle,
+        BasicStyle, Component, GComponent, GView, LifeCycle, SlotComponent, SlotStyle, Style,
+        ViewBasicStyle,
         area::{GInputArea, InputAreaBasicStyle},
     },
     error::Error,
@@ -17,9 +17,8 @@ use crate::{
         ApplyMapImpl, ApplySlotMap, ApplySlotMapImpl, ApplySlotMergeImpl, DeferWalks, SlotDrawer,
         ToSlotMap, ToStateMap,
         manuel::{BASIC, DISABLED, EMPTY, FOCUS, HOVER},
-        traits::{ToColor, ToFloat},
     },
-    pure_after_apply, set_animation, set_index, set_scope_path,
+    pure_after_apply, set_index, set_scope_path,
     shader::draw_view::DrawView,
     sync,
     themes::conf::Conf,
@@ -36,57 +35,7 @@ live_design! {
     use link::theme::*;
     use link::genui_animation_prop::*;
 
-    pub GInputBase = {{GInput}} {
-        animator: {
-            input = {
-                default: basic,
-
-                basic = {
-                    from: {all: Forward {duration: (AN_DURATION)}},
-                    ease: InOutQuad,
-                    apply: {
-                        draw_input: <AN_DRAW_VIEW> {}
-                    }
-                }
-
-                hover = {
-                    from: {
-                        all: Forward {duration: (AN_DURATION),},
-                    },
-                    ease: InOutQuad,
-                    apply: {
-                       draw_input: <AN_DRAW_VIEW> {}
-                    }
-                }
-
-                empty = {
-                    from: {
-                        all: Forward {duration: (AN_DURATION),},
-                    },
-                    ease: InOutQuad,
-                    apply: {
-                       draw_input: <AN_DRAW_VIEW> {}
-                    }
-                }
-
-                focus = {
-                    from: {all: Forward {duration: (AN_DURATION)}},
-                    ease: InOutQuad,
-                    apply: {
-                        draw_input: <AN_DRAW_VIEW> {}
-                    }
-                }
-
-                disabled = {
-                    from: {all: Forward {duration: (AN_DURATION)}},
-                    ease: InOutQuad,
-                    apply: {
-                        draw_input: <AN_DRAW_VIEW> {}
-                    }
-                }
-            }
-        }
-    }
+    pub GInputBase = {{GInput}} {}
 }
 
 #[derive(Live, WidgetRef, WidgetSet, LiveRegisterWidget)]
@@ -195,6 +144,7 @@ impl Widget for GInput {
             (live_id!(suffix), (&mut self.suffix).into()),
         ];
 
+        self.defer_walks.clear();
         for (id, component) in &mut slots {
             if component.visible() {
                 let mut walk = component.walk(cx);
@@ -204,8 +154,8 @@ impl Widget for GInput {
                 } else {
                     if *id == live_id!(prefix) || *id == live_id!(suffix) {
                         walk.height = Size::Fixed(real_height);
-                        let _ = component.draw_walk(cx, scope, walk);
                     }
+                    let _ = component.draw_walk(cx, scope, walk);
                 }
             }
         }
@@ -226,6 +176,23 @@ impl Widget for GInput {
         self.draw_input.end(cx);
         self.set_scope_path(&scope.path);
         DrawStep::done()
+    }
+
+    fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
+        if !self.visible {
+            return;
+        }
+
+        let area = self.area();
+
+        self.prefix.handle_event(cx, event, scope);
+        self.input.handle_event(cx, event, scope);
+        self.suffix.handle_event(cx, event, scope);
+
+        // let hit = event.hits(cx, area);
+        // if self.disabled {
+        //     self.handle_when_disabled(cx, event, hit);
+        // }
     }
 }
 
@@ -336,9 +303,7 @@ impl Component for GInput {
         }
     }
 
-    fn handle_widget_event(&mut self, cx: &mut Cx, event: &Event, hit: Hit, area: Area) {
-        todo!()
-    }
+    fn handle_widget_event(&mut self, _cx: &mut Cx, _event: &Event, _hit: Hit, _area: Area) {}
 
     fn switch_state(&mut self, state: Self::State) -> () {
         if self.state != state {
@@ -379,211 +344,8 @@ impl Component for GInput {
         self.style.sync_slot(&self.apply_slot_map);
     }
 
-    fn set_animation(&mut self, cx: &mut Cx) -> () {
-        let init_global = cx.global::<ComponentAnInit>().input;
-
-        let live_ptr = match self.animator.live_ptr {
-            Some(ptr) => ptr.file_id.0,
-            None => return,
-        };
-
-        let mut registry = cx.live_registry.borrow_mut();
-        let live_file = match registry.live_files.get_mut(live_ptr as usize) {
-            Some(lf) => lf,
-            None => return,
-        };
-
-        let nodes = &mut live_file.expanded.nodes;
-
-        if self.lifecycle.is_created() || !init_global || self.scope_path.is_none() {
-            self.lifecycle.next();
-            let basic_prop = self.style.get(InputState::Basic).container;
-            let hover_prop = self.style.get(InputState::Hover).container;
-            let focus_prop = self.style.get(InputState::Focus).container;
-            let empty_prop = self.style.get(InputState::Empty).container;
-            let disabled_prop = self.style.get(InputState::Disabled).container;
-            let (
-                mut basic_index,
-                mut disabled_index,
-                mut empty_index,
-                mut hover_index,
-                mut focus_index,
-            ) = (None, None, None, None, None);
-            if let Some(index) = nodes.child_by_path(
-                self.index,
-                &[
-                    live_id!(animator).as_field(),
-                    live_id!(input).as_instance(),
-                    live_id!(basic).as_instance(),
-                ],
-            ) {
-                basic_index = Some(index);
-            }
-
-            if let Some(index) = nodes.child_by_path(
-                self.index,
-                &[
-                    live_id!(animator).as_field(),
-                    live_id!(input).as_instance(),
-                    live_id!(hover).as_instance(),
-                ],
-            ) {
-                hover_index = Some(index);
-            }
-
-            if let Some(index) = nodes.child_by_path(
-                self.index,
-                &[
-                    live_id!(animator).as_field(),
-                    live_id!(input).as_instance(),
-                    live_id!(focus).as_instance(),
-                ],
-            ) {
-                focus_index = Some(index);
-            }
-
-            if let Some(index) = nodes.child_by_path(
-                self.index,
-                &[
-                    live_id!(animator).as_field(),
-                    live_id!(input).as_instance(),
-                    live_id!(empty).as_instance(),
-                ],
-            ) {
-                empty_index = Some(index);
-            }
-
-            if let Some(index) = nodes.child_by_path(
-                self.index,
-                &[
-                    live_id!(animator).as_field(),
-                    live_id!(input).as_instance(),
-                    live_id!(disabled).as_instance(),
-                ],
-            ) {
-                disabled_index = Some(index);
-            }
-
-            set_animation! {
-                nodes: draw_input = {
-                    basic_index => {
-                        background_color => basic_prop.background_color,
-                        border_color =>basic_prop.border_color,
-                        border_radius => basic_prop.border_radius,
-                        border_width =>(basic_prop.border_width as f64),
-                        shadow_color => basic_prop.shadow_color,
-                        spread_radius => (basic_prop.spread_radius as f64),
-                        blur_radius => (basic_prop.blur_radius as f64),
-                        shadow_offset => basic_prop.shadow_offset,
-                        background_visible => basic_prop.background_visible.to_f64()
-                    },
-                    hover_index => {
-                        background_color => hover_prop.background_color,
-                        border_color => hover_prop.border_color,
-                        border_radius => hover_prop.border_radius,
-                        border_width => (hover_prop.border_width as f64),
-                        shadow_color => hover_prop.shadow_color,
-                        spread_radius => (hover_prop.spread_radius as f64),
-                        blur_radius => (hover_prop.blur_radius as f64),
-                        shadow_offset => hover_prop.shadow_offset,
-                        background_visible => hover_prop.background_visible.to_f64()
-                    },
-                    focus_index => {
-                        background_color => focus_prop.background_color,
-                        border_color => focus_prop.border_color,
-                        border_radius => focus_prop.border_radius,
-                        border_width => (focus_prop.border_width as f64),
-                        shadow_color => focus_prop.shadow_color,
-                        spread_radius => (focus_prop.spread_radius as f64),
-                        blur_radius => (focus_prop.blur_radius as f64),
-                        shadow_offset => focus_prop.shadow_offset,
-                        background_visible => focus_prop.background_visible.to_f64()
-                    },
-                    empty_index => {
-                        background_color => empty_prop.background_color,
-                        border_color => empty_prop.border_color,
-                        border_radius => empty_prop.border_radius,
-                        border_width => (empty_prop.border_width as f64),
-                        shadow_color => empty_prop.shadow_color,
-                        spread_radius => (empty_prop.spread_radius as f64),
-                        blur_radius => (empty_prop.blur_radius as f64),
-                        shadow_offset => empty_prop.shadow_offset,
-                        background_visible => empty_prop.background_visible.to_f64()
-                    },
-                    disabled_index => {
-                        background_color => disabled_prop.background_color,
-                        border_color => disabled_prop.border_color,
-                        border_radius => disabled_prop.border_radius,
-                        border_width => (disabled_prop.border_width as f64),
-                        shadow_color => disabled_prop.shadow_color,
-                        spread_radius => (disabled_prop.spread_radius as f64),
-                        blur_radius => (disabled_prop.blur_radius as f64),
-                        shadow_offset => disabled_prop.shadow_offset,
-                        background_visible => disabled_prop.background_visible.to_f64()
-                    }
-                }
-            }
-        } else {
-            let state = self.state;
-            let style = self.style.get(state).container;
-            let index = match state {
-                InputState::Basic => nodes.child_by_path(
-                    self.index,
-                    &[
-                        live_id!(animator).as_field(),
-                        live_id!(input).as_instance(),
-                        live_id!(basic).as_instance(),
-                    ],
-                ),
-                InputState::Hover => nodes.child_by_path(
-                    self.index,
-                    &[
-                        live_id!(animator).as_field(),
-                        live_id!(input).as_instance(),
-                        live_id!(hover).as_instance(),
-                    ],
-                ),
-                InputState::Focus => nodes.child_by_path(
-                    self.index,
-                    &[
-                        live_id!(animator).as_field(),
-                        live_id!(input).as_instance(),
-                        live_id!(focus).as_instance(),
-                    ],
-                ),
-                InputState::Empty => nodes.child_by_path(
-                    self.index,
-                    &[
-                        live_id!(animator).as_field(),
-                        live_id!(input).as_instance(),
-                        live_id!(empty).as_instance(),
-                    ],
-                ),
-                InputState::Disabled => nodes.child_by_path(
-                    self.index,
-                    &[
-                        live_id!(animator).as_field(),
-                        live_id!(input).as_instance(),
-                        live_id!(disabled).as_instance(),
-                    ],
-                ),
-            };
-            set_animation! {
-                nodes: draw_input = {
-                    index => {
-                        background_color => style.background_color,
-                        border_color => style.border_color,
-                        border_radius => style.border_radius,
-                        border_width => (style.border_width as f64),
-                        shadow_color => style.shadow_color,
-                        spread_radius => (style.spread_radius as f64),
-                        blur_radius => (style.blur_radius as f64),
-                        shadow_offset => style.shadow_offset,
-                        background_visible => style.background_visible.to_f64()
-                    }
-                }
-            }
-        }
+    fn set_animation(&mut self, _cx: &mut Cx) -> () {
+        ()
     }
 
     sync!();
@@ -609,6 +371,6 @@ impl GInput {
             + style.input.container.margin.top
             + style.input.container.margin.bottom;
 
-        ((text_style.font_size * font_metrics) as f64) + padding + margin
+        ((text_style.font_size * font_metrics) as f64) + padding + margin + 0.8
     }
 }

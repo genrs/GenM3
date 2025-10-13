@@ -607,7 +607,9 @@ live_design! {
         dot: <GBadgeDot> {}
     }
 
-    pub GInputArea = <GInputAreaBase> {}
+    pub GInputArea = <GInputAreaBase> {
+        
+    }
 
     pub GInput = <GInputBase> {
         prefix: <GView> {
@@ -615,7 +617,12 @@ live_design! {
                 text: "Prefix"
             }
         }
-        input: <GInputArea> {}
+        input: <GInputArea> {
+            draw_text: {
+                text_style: <THEME_FONT_REGULAR>{}
+            }
+            placeholder: "please input..."
+        }
         suffix: <GView> {
             <GLabel> {
                 text: "Suffix"

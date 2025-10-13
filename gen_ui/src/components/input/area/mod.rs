@@ -46,11 +46,6 @@ live_design! {
     use link::genui_animation_prop::*;
 
     pub GInputAreaBase = {{GInputArea}} {
-        is_password: false,
-        is_read_only: false,
-        is_numeric_only: false
-        placeholder: "Your text here",
-
         draw_text: {
             text_style: <THEME_FONT_REGULAR>{}
         }

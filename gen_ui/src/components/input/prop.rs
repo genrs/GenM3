@@ -6,7 +6,7 @@ use toml_edit::Item;
 use crate::{
     basic_prop_interconvert, component_color, component_part, component_state,
     components::{
-        LabelBasicStyle, LabelState, ViewColors,
+        LabelState, ViewColors,
         area::{InputAreaBasicStyle, InputAreaPart},
         live_props::LiveProps,
         traits::{BasicStyle, ComponentState, SlotBasicStyle, SlotStyle, Style},
@@ -17,13 +17,12 @@ use crate::{
     prop::{
         ApplySlotMapImpl, ApplyStateMapImpl, Applys, Radius,
         manuel::{
-            BASIC, COLOR, CONTAINER, DISABLED, EMPTY, FOCUS, HOVER, INPUT, PLACEHOLDER, PREFIX,
-            SUFFIX, THEME,
+            BASIC, COLOR, CONTAINER, DISABLED, EMPTY, FOCUS, HOVER, INPUT, PREFIX, SUFFIX, THEME,
         },
         traits::{FromLiveColor, FromLiveValue, NewFrom, ToColor, ToTomlValue},
     },
     prop_interconvert, state_color,
-    themes::{ColorFontConf, Theme},
+    themes::Theme,
     utils::get_from_itable,
 };
 
