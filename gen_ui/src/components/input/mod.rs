@@ -5,7 +5,6 @@ mod register;
 mod rely;
 
 use crate::{
-    animation_open_then_redraw,
     components::{
         BasicStyle, Component, GComponent, GView, LifeCycle, SlotComponent, SlotStyle, Style,
         ViewBasicStyle,
@@ -14,7 +13,7 @@ use crate::{
     error::Error,
     lifecycle, play_animation,
     prop::{
-        ApplyMapImpl, ApplySlotMap, ApplySlotMapImpl, ApplySlotMergeImpl, DeferWalks, SlotDrawer,
+        ApplyMapImpl, ApplySlotMap, ApplySlotMapImpl, ApplySlotMergeImpl, DeferWalks,
         ToSlotMap, ToStateMap,
         manuel::{BASIC, DISABLED, EMPTY, FOCUS, HOVER},
     },
@@ -189,10 +188,10 @@ impl Widget for GInput {
         self.input.handle_event(cx, event, scope);
         self.suffix.handle_event(cx, event, scope);
 
-        // let hit = event.hits(cx, area);
-        // if self.disabled {
-        //     self.handle_when_disabled(cx, event, hit);
-        // }
+        let hit = event.hits(cx, area);
+        if self.disabled {
+            self.handle_when_disabled(cx, event, hit);
+        }
     }
 }
 

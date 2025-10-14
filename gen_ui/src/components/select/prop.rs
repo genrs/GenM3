@@ -1,22 +1,28 @@
+use std::str::FromStr;
+
 use makepad_widgets::*;
 use toml_edit::Item;
 
 use crate::{
-    component_part, component_state,
+    basic_prop_interconvert, component_color, component_part, component_state,
     components::{
-        LabelBasicStyle, LabelState, SlotBasicStyle, SlotStyle, SvgBasicStyle, SvgState,
-        ViewColors, ViewState,
+        LabelState, SvgState, ViewColors,
+        item::{SelectItemBasicStyle, SelectItemPart},
         live_props::LiveProps,
-        traits::{BasicStyle, ComponentState, Style},
-        view::ViewBasicStyle,
+        traits::{BasicStyle, ComponentState, SlotBasicStyle, SlotStyle, Style},
+        view::{ViewBasicStyle, ViewState},
     },
     error::Error,
     from_prop_to_toml, get_get_mut,
     prop::{
-        ApplySlotMapImpl, ApplyStateMapImpl, Radius,
-        manuel::{ACTIVE, BASIC, CONTAINER, DISABLED, HOVER, ICON, SUFFIX, TEXT},
+        ApplySlotMapImpl, ApplyStateMapImpl, Applys, Radius,
+        manuel::{
+            ACTIVE, BASIC, COLOR, CONTAINER, DISABLED, EMPTY, FOCUS, HOVER, INPUT, PREFIX, SUFFIX,
+            THEME,
+        },
+        traits::{FromLiveColor, FromLiveValue, NewFrom, ToColor, ToTomlValue},
     },
-    prop_interconvert,
+    prop_interconvert, state_color,
     themes::Theme,
     utils::get_from_itable,
 };
@@ -24,33 +30,11 @@ use crate::{
 prop_interconvert! {
     SelectStyle {
         basic_prop = SelectBasicStyle;
-        basic => BASIC, SelectBasicStyle::default(),|v| (v, SelectState::Basic).try_into(),
-        hover => HOVER, SelectBasicStyle::from_state(Theme::default(), SelectState::Hover),|v| (v, SelectState::Hover).try_into(),
-        active => ACTIVE, SelectBasicStyle::from_state(Theme::default(), SelectState::Active),|v| (v, SelectState::Active).try_into(),
-        disabled => DISABLED, SelectBasicStyle::from_state(Theme::default(), SelectState::Disabled),|v| (v, SelectState::Disabled).try_into()
-    }, "[component.select.item] should be a table"
-}
-
-impl SlotStyle for SelectStyle {
-    type Part = SelectPart;
-
-    fn sync_slot(&mut self, map: &crate::prop::ApplySlotMap<Self::State, Self::Part>) -> () {
-        map.sync(
-            &mut self.basic,
-            SelectState::Basic,
-            [
-                (SelectState::Hover, &mut self.hover),
-                (SelectState::Active, &mut self.active),
-                (SelectState::Disabled, &mut self.disabled),
-            ],
-            [
-                SelectPart::Container,
-                SelectPart::Icon,
-                SelectPart::Text,
-                SelectPart::Suffix,
-            ],
-        );
-    }
+        basic => BASIC, SelectBasicStyle::default(), |v| (v, SelectState::Basic).try_into(),
+        hover => HOVER, SelectBasicStyle::from_state(Theme::default(), SelectState::Hover), |v| (v, SelectState::Hover).try_into(),
+        active => ACTIVE, SelectBasicStyle::from_state(Theme::default(), SelectState::Active), |v| (v, SelectState::Active).try_into(),
+        disabled => DISABLED, SelectBasicStyle::from_state(Theme::default(), SelectState::Disabled), |v| (v, SelectState::Disabled).try_into()
+    }, "[component.item] should be a table"
 }
 
 impl Style for SelectStyle {
@@ -58,15 +42,16 @@ impl Style for SelectStyle {
 
     type Basic = SelectBasicStyle;
 
-    fn len() -> usize {
-        SelectBasicStyle::len() * 4 // basic, hover, active, disabled
-    }
-
     get_get_mut! {
         SelectState::Basic => basic,
+
         SelectState::Hover => hover,
         SelectState::Active => active,
         SelectState::Disabled => disabled
+    }
+
+    fn len() -> usize {
+        5 * SelectBasicStyle::len()
     }
 
     fn sync(&mut self, map: &crate::prop::ApplyStateMap<Self::State>) -> ()
@@ -85,17 +70,39 @@ impl Style for SelectStyle {
     }
 }
 
+impl SlotStyle for SelectStyle {
+    type Part = SelectPart;
+
+    fn sync_slot(&mut self, map: &crate::prop::ApplySlotMap<Self::State, Self::Part>) -> () {
+        map.sync(
+            &mut self.basic,
+            SelectState::Basic,
+            [
+                (SelectState::Hover, &mut self.hover),
+                (SelectState::Active, &mut self.active),
+                (SelectState::Disabled, &mut self.disabled),
+            ],
+            [
+                SelectPart::Container,
+                SelectPart::Select,
+                SelectPart::Prefix,
+                SelectPart::Suffix,
+            ],
+        );
+    }
+}
+
 #[derive(Debug, Clone, Live, LiveHook, LiveRegister, Copy)]
 #[live_ignore]
 pub struct SelectBasicStyle {
     #[live(SelectBasicStyle::default_container(Theme::default(), SelectState::Basic))]
     pub container: ViewBasicStyle,
-    #[live(SelectBasicStyle::default_icon(Theme::default(), SelectState::Basic))]
-    pub icon: SvgBasicStyle,
-    #[live(SelectBasicStyle::default_text(Theme::default(), SelectState::Basic))]
-    pub text: LabelBasicStyle,
+    #[live(SelectBasicStyle::default_select(Theme::default(), SelectState::Basic))]
+    pub item: SelectItemBasicStyle,
+    #[live(SelectBasicStyle::default_prefix(Theme::default(), SelectState::Basic))]
+    pub prefix: ViewBasicStyle,
     #[live(SelectBasicStyle::default_suffix(Theme::default(), SelectState::Basic))]
-    pub suffix: SvgBasicStyle,
+    pub suffix: ViewBasicStyle,
 }
 
 impl BasicStyle for SelectBasicStyle {
@@ -103,21 +110,21 @@ impl BasicStyle for SelectBasicStyle {
 
     type Colors = ViewColors;
 
-    fn from_state(theme: Theme, state: Self::State) -> Self {
+    fn from_state(theme: crate::themes::Theme, state: Self::State) -> Self {
         Self {
             container: Self::default_container(theme, state),
-            icon: Self::default_icon(theme, state),
-            text: Self::default_text(theme, state),
+            prefix: Self::default_prefix(theme, state),
             suffix: Self::default_suffix(theme, state),
+            item: Self::default_select(theme, state),
         }
     }
 
-    fn state_colors(theme: Theme, state: Self::State) -> Self::Colors {
+    fn state_colors(theme: crate::themes::Theme, state: Self::State) -> Self::Colors {
         ViewBasicStyle::state_colors(theme, state.into())
     }
 
     fn len() -> usize {
-        4 * (2 * SvgBasicStyle::len() + LabelBasicStyle::len() + ViewBasicStyle::len())
+        3 * ViewBasicStyle::len() + SelectItemBasicStyle::len()
     }
 
     fn set_from_str(&mut self, _key: &str, _value: &LiveValue, _state: Self::State) -> () {
@@ -125,17 +132,18 @@ impl BasicStyle for SelectBasicStyle {
     }
 
     fn sync(&mut self, state: Self::State) -> () {
-        self.icon.sync(state.into());
-        self.text.sync(state.into());
+        self.container.sync(state.into());
+        self.item.sync(state);
+        self.prefix.sync(state.into());
         self.suffix.sync(state.into());
     }
 
     fn live_props() -> LiveProps {
         vec![
             (live_id!(container), ViewBasicStyle::live_props().into()),
-            (live_id!(icon), SvgBasicStyle::live_props().into()),
-            (live_id!(text), LabelBasicStyle::live_props().into()),
-            (live_id!(suffix), SvgBasicStyle::live_props().into()),
+            (live_id!(item), SelectItemBasicStyle::live_props().into()),
+            (live_id!(prefix), ViewBasicStyle::live_props().into()),
+            (live_id!(suffix), ViewBasicStyle::live_props().into()),
         ]
     }
 
@@ -153,7 +161,7 @@ impl SlotBasicStyle for SelectBasicStyle {
     fn set_from_str_slot(
         &mut self,
         key: &str,
-        value: &crate::prop::Applys,
+        value: &Applys,
         state: Self::State,
         part: Self::Part,
     ) -> () {
@@ -161,18 +169,29 @@ impl SlotBasicStyle for SelectBasicStyle {
             SelectPart::Container => self
                 .container
                 .set_from_str(key, &value.into(), state.into()),
-            SelectPart::Icon => self.icon.set_from_str(key, &value.into(), state.into()),
-            SelectPart::Text => self.text.set_from_str(key, &value.into(), state.into()),
+            SelectPart::Prefix => self.prefix.set_from_str(key, &value.into(), state.into()),
             SelectPart::Suffix => self.suffix.set_from_str(key, &value.into(), state.into()),
+            SelectPart::Select => {
+                let item_part = SelectItemPart::from_str(key).unwrap();
+                for (key, value) in value.as_kvs() {
+                    self.item
+                        .set_from_str_slot(key, value, state.into(), item_part);
+                }
+            }
         }
     }
 
     fn sync_slot(&mut self, state: Self::State, part: Self::Part) -> () {
         match part {
             SelectPart::Container => self.container.sync(state.into()),
-            SelectPart::Icon => self.icon.sync(state.into()),
-            SelectPart::Text => self.text.sync(state.into()),
+            SelectPart::Prefix => self.prefix.sync(state.into()),
             SelectPart::Suffix => self.suffix.sync(state.into()),
+            SelectPart::Select => {
+                self.item.sync_slot(state, SelectItemPart::Container);
+                self.item.sync_slot(state, SelectItemPart::Text);
+                self.item.sync_slot(state, SelectItemPart::Icon);
+                self.item.sync_slot(state, SelectItemPart::Suffix);
+            }
         }
     }
 }
@@ -186,8 +205,7 @@ impl Default for SelectBasicStyle {
 from_prop_to_toml! {
     SelectBasicStyle {
         container => CONTAINER,
-        icon => ICON,
-        text => TEXT,
+        prefix => PREFIX,
         suffix => SUFFIX
     }
 }
@@ -197,7 +215,7 @@ impl TryFrom<(&Item, SelectState)> for SelectBasicStyle {
 
     fn try_from((value, state): (&Item, SelectState)) -> Result<Self, Self::Error> {
         let inline_table = value.as_inline_table().ok_or(Error::ThemeStyleParse(
-            "[component.select.item.$slot] should be an inline table".to_string(),
+            "[component.item.$slot] should be an inline table".to_string(),
         ))?;
 
         let container = get_from_itable(
@@ -207,31 +225,31 @@ impl TryFrom<(&Item, SelectState)> for SelectBasicStyle {
             |v| (v, ViewState::from(state)).try_into(),
         )?;
 
-        let icon = get_from_itable(
+        let item = get_from_itable(
             inline_table,
-            ICON,
-            || Ok(SelectBasicStyle::default_icon(Theme::default(), state)),
-            |v| (v, SvgState::from(state)).try_into(),
+            INPUT,
+            || Ok(SelectBasicStyle::default_select(Theme::default(), state)),
+            |v| (v, state).try_into(),
         )?;
 
-        let text = get_from_itable(
+        let prefix = get_from_itable(
             inline_table,
-            TEXT,
-            || Ok(SelectBasicStyle::default_text(Theme::default(), state)),
-            |v| (v, LabelState::from(state)).try_into(),
+            PREFIX,
+            || Ok(SelectBasicStyle::default_prefix(Theme::default(), state)),
+            |v| (v, ViewState::from(state)).try_into(),
         )?;
 
         let suffix = get_from_itable(
             inline_table,
             SUFFIX,
             || Ok(SelectBasicStyle::default_suffix(Theme::default(), state)),
-            |v| (v, SvgState::from(state)).try_into(),
+            |v| (v, ViewState::from(state)).try_into(),
         )?;
 
         Ok(Self {
             container,
-            icon,
-            text,
+            item,
+            prefix,
             suffix,
         })
     }
@@ -240,28 +258,38 @@ impl TryFrom<(&Item, SelectState)> for SelectBasicStyle {
 impl SelectBasicStyle {
     pub fn default_container(theme: Theme, state: SelectState) -> ViewBasicStyle {
         let mut container = ViewBasicStyle::from_state(theme, state.into());
-        container.set_cursor(MouseCursor::Hand);
+        container.set_cursor(MouseCursor::Text);
         container.set_background_visible(true);
-        container.set_flow(Flow::Right);
-        container.set_height(Size::Fixed(32.0));
+        container.set_height(Size::Fit);
         container.set_width(Size::Fill);
-        container.set_align(Align { x: 0.0, y: 0.5 });
-        container.set_spacing(12.0);
         container.set_border_radius(Radius::new(2.0));
+        container.set_flow(Flow::Right);
+        container.set_padding(Padding::from_f64(0.0));
+        container.set_spacing(0.0);
         container
     }
-    pub fn default_icon(theme: Theme, state: SelectState) -> SvgBasicStyle {
-        let mut icon = SvgBasicStyle::from_state(theme, state.into());
-        icon.container.height = Size::Fill;
-        icon
+
+    pub fn default_prefix(theme: Theme, state: SelectState) -> ViewBasicStyle {
+        let mut prefix = ViewBasicStyle::from_state(theme, state.into());
+        prefix.set_background_visible(true);
+        prefix.set_padding(Padding::from_f64(0.0));
+        prefix.set_height(Size::Fill);
+        prefix.set_width(Size::Fit);
+        prefix.set_align(Align::from_f64(0.5));
+        prefix.set_border_radius(Radius::from_all(2.0, 0.0, 0.0, 2.0));
+        prefix
     }
-    pub fn default_text(theme: Theme, state: SelectState) -> LabelBasicStyle {
-        let mut label = LabelBasicStyle::from_state(theme, state.into());
-        label.width = Size::Fill;
-        label
+
+    pub fn default_suffix(theme: Theme, state: SelectState) -> ViewBasicStyle {
+        let mut suffix = Self::default_prefix(theme, state);
+        suffix.set_border_radius(Radius::from_all(0.0, 2.0, 2.0, 0.0));
+        suffix
     }
-    pub fn default_suffix(theme: Theme, state: SelectState) -> SvgBasicStyle {
-        SvgBasicStyle::from_state(theme, state.into())
+
+    pub fn default_select(theme: Theme, state: SelectState) -> SelectItemBasicStyle {
+        let mut item = SelectItemBasicStyle::from_state(theme, state);
+        item.container.set_border_radius(Radius::new(0.0));
+        item
     }
 }
 
@@ -315,8 +343,8 @@ impl From<SelectState> for SvgState {
 component_part! {
     SelectPart {
         Container => container => CONTAINER,
-        Icon => icon => ICON,
-        Text => text => TEXT,
+        Select => item => INPUT,
+        Prefix => prefix => PREFIX,
         Suffix => suffix => SUFFIX
     }, SelectState
 }

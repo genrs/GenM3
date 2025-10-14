@@ -1,15 +1,20 @@
 use makepad_widgets::*;
-use toml_edit::Item;
+use toml_edit::{InlineTable, Item, Value};
 
 use crate::{
     component_part, component_state,
     components::{
-        live_props::LiveProps, traits::{BasicStyle, ComponentState, Style}, view::ViewBasicStyle, LabelBasicStyle, LabelState, SlotBasicStyle, SlotStyle, SvgBasicStyle, SvgState, ViewColors, ViewState
+        LabelBasicStyle, LabelState, SelectState, SlotBasicStyle, SlotStyle, SvgBasicStyle,
+        SvgState, ViewColors, ViewState,
+        live_props::LiveProps,
+        traits::{BasicStyle, ComponentState, Style},
+        view::ViewBasicStyle,
     },
     error::Error,
     from_prop_to_toml, get_get_mut,
     prop::{
-        manuel::{ACTIVE, BASIC, CONTAINER, DISABLED, HOVER, ICON, SUFFIX, TEXT}, ApplySlotMapImpl, ApplyStateMapImpl, Radius
+        ApplySlotMapImpl, ApplyStateMapImpl, Radius,
+        manuel::{ACTIVE, BASIC, CONTAINER, DISABLED, HOVER, ICON, SUFFIX, TEXT},
     },
     prop_interconvert,
     themes::Theme,
@@ -19,10 +24,10 @@ use crate::{
 prop_interconvert! {
     SelectItemStyle {
         basic_prop = SelectItemBasicStyle;
-        basic => BASIC, SelectItemBasicStyle::default(),|v| (v, SelectItemState::Basic).try_into(),
-        hover => HOVER, SelectItemBasicStyle::from_state(Theme::default(), SelectItemState::Hover),|v| (v, SelectItemState::Hover).try_into(),
-        active => ACTIVE, SelectItemBasicStyle::from_state(Theme::default(), SelectItemState::Active),|v| (v, SelectItemState::Active).try_into(),
-        disabled => DISABLED, SelectItemBasicStyle::from_state(Theme::default(), SelectItemState::Disabled),|v| (v, SelectItemState::Disabled).try_into()
+        basic => BASIC, SelectItemBasicStyle::default(),|v| (v, SelectState::Basic).try_into(),
+        hover => HOVER, SelectItemBasicStyle::from_state(Theme::default(), SelectState::Hover),|v| (v, SelectState::Hover).try_into(),
+        active => ACTIVE, SelectItemBasicStyle::from_state(Theme::default(), SelectState::Active),|v| (v, SelectState::Active).try_into(),
+        disabled => DISABLED, SelectItemBasicStyle::from_state(Theme::default(), SelectState::Disabled),|v| (v, SelectState::Disabled).try_into()
     }, "[component.select.item] should be a table"
 }
 
@@ -32,11 +37,11 @@ impl SlotStyle for SelectItemStyle {
     fn sync_slot(&mut self, map: &crate::prop::ApplySlotMap<Self::State, Self::Part>) -> () {
         map.sync(
             &mut self.basic,
-            SelectItemState::Basic,
+            SelectState::Basic,
             [
-                (SelectItemState::Hover, &mut self.hover),
-                (SelectItemState::Active, &mut self.active),
-                (SelectItemState::Disabled, &mut self.disabled),
+                (SelectState::Hover, &mut self.hover),
+                (SelectState::Active, &mut self.active),
+                (SelectState::Disabled, &mut self.disabled),
             ],
             [
                 SelectItemPart::Container,
@@ -49,7 +54,7 @@ impl SlotStyle for SelectItemStyle {
 }
 
 impl Style for SelectItemStyle {
-    type State = SelectItemState;
+    type State = SelectState;
 
     type Basic = SelectItemBasicStyle;
 
@@ -58,10 +63,10 @@ impl Style for SelectItemStyle {
     }
 
     get_get_mut! {
-        SelectItemState::Basic => basic,
-        SelectItemState::Hover => hover,
-        SelectItemState::Active => active,
-        SelectItemState::Disabled => disabled
+        SelectState::Basic => basic,
+        SelectState::Hover => hover,
+        SelectState::Active => active,
+        SelectState::Disabled => disabled
     }
 
     fn sync(&mut self, map: &crate::prop::ApplyStateMap<Self::State>) -> ()
@@ -70,11 +75,11 @@ impl Style for SelectItemStyle {
     {
         map.sync(
             &mut self.basic,
-            SelectItemState::Basic,
+            SelectState::Basic,
             [
-                (SelectItemState::Hover, &mut self.hover),
-                (SelectItemState::Active, &mut self.active),
-                (SelectItemState::Disabled, &mut self.disabled),
+                (SelectState::Hover, &mut self.hover),
+                (SelectState::Active, &mut self.active),
+                (SelectState::Disabled, &mut self.disabled),
             ],
         );
     }
@@ -83,18 +88,18 @@ impl Style for SelectItemStyle {
 #[derive(Debug, Clone, Live, LiveHook, LiveRegister, Copy)]
 #[live_ignore]
 pub struct SelectItemBasicStyle {
-    #[live(SelectItemBasicStyle::default_container(Theme::default(), SelectItemState::Basic))]
+    #[live(SelectItemBasicStyle::default_container(Theme::default(), SelectState::Basic))]
     pub container: ViewBasicStyle,
-    #[live(SelectItemBasicStyle::default_icon(Theme::default(), SelectItemState::Basic))]
+    #[live(SelectItemBasicStyle::default_icon(Theme::default(), SelectState::Basic))]
     pub icon: SvgBasicStyle,
-    #[live(SelectItemBasicStyle::default_text(Theme::default(), SelectItemState::Basic))]
+    #[live(SelectItemBasicStyle::default_text(Theme::default(), SelectState::Basic))]
     pub text: LabelBasicStyle,
-    #[live(SelectItemBasicStyle::default_suffix(Theme::default(), SelectItemState::Basic))]
+    #[live(SelectItemBasicStyle::default_suffix(Theme::default(), SelectState::Basic))]
     pub suffix: SvgBasicStyle,
 }
 
 impl BasicStyle for SelectItemBasicStyle {
-    type State = SelectItemState;
+    type State = SelectState;
 
     type Colors = ViewColors;
 
@@ -175,7 +180,7 @@ impl SlotBasicStyle for SelectItemBasicStyle {
 
 impl Default for SelectItemBasicStyle {
     fn default() -> Self {
-        Self::from_state(Theme::default(), SelectItemState::Basic)
+        Self::from_state(Theme::default(), SelectState::Basic)
     }
 }
 
@@ -188,14 +193,10 @@ from_prop_to_toml! {
     }
 }
 
-impl TryFrom<(&Item, SelectItemState)> for SelectItemBasicStyle {
+impl TryFrom<(&InlineTable, SelectState)> for SelectItemBasicStyle {
     type Error = Error;
 
-    fn try_from((value, state): (&Item, SelectItemState)) -> Result<Self, Self::Error> {
-        let inline_table = value.as_inline_table().ok_or(Error::ThemeStyleParse(
-            "[component.select.item.$slot] should be an inline table".to_string(),
-        ))?;
-
+    fn try_from((inline_table, state): (&InlineTable, SelectState)) -> Result<Self, Self::Error> {
         let container = get_from_itable(
             inline_table,
             CONTAINER,
@@ -242,9 +243,29 @@ impl TryFrom<(&Item, SelectItemState)> for SelectItemBasicStyle {
         })
     }
 }
+impl TryFrom<(&Value, SelectState)> for SelectItemBasicStyle {
+    type Error = Error;
+
+    fn try_from((value, state): (&Value, SelectState)) -> Result<Self, Self::Error> {
+        let inline_table = value.as_inline_table().ok_or(Error::ThemeStyleParse(
+            "[component.select.item.$slot] should be an inline table".to_string(),
+        ))?;
+        SelectItemBasicStyle::try_from((inline_table, state))
+    }
+}
+impl TryFrom<(&Item, SelectState)> for SelectItemBasicStyle {
+    type Error = Error;
+
+    fn try_from((value, state): (&Item, SelectState)) -> Result<Self, Self::Error> {
+        let inline_table = value.as_inline_table().ok_or(Error::ThemeStyleParse(
+            "[component.select.item.$slot] should be an inline table".to_string(),
+        ))?;
+        SelectItemBasicStyle::try_from((inline_table, state))
+    }
+}
 
 impl SelectItemBasicStyle {
-    pub fn default_container(theme: Theme, state: SelectItemState) -> ViewBasicStyle {
+    pub fn default_container(theme: Theme, state: SelectState) -> ViewBasicStyle {
         let mut container = ViewBasicStyle::from_state(theme, state.into());
         container.set_cursor(MouseCursor::Hand);
         container.set_background_visible(true);
@@ -256,67 +277,18 @@ impl SelectItemBasicStyle {
         container.set_border_radius(Radius::new(2.0));
         container
     }
-    pub fn default_icon(theme: Theme, state: SelectItemState) -> SvgBasicStyle {
+    pub fn default_icon(theme: Theme, state: SelectState) -> SvgBasicStyle {
         let mut icon = SvgBasicStyle::from_state(theme, state.into());
         icon.container.height = Size::Fill;
         icon
     }
-    pub fn default_text(theme: Theme, state: SelectItemState) -> LabelBasicStyle {
+    pub fn default_text(theme: Theme, state: SelectState) -> LabelBasicStyle {
         let mut label = LabelBasicStyle::from_state(theme, state.into());
         label.width = Size::Fill;
         label
     }
-    pub fn default_suffix(theme: Theme, state: SelectItemState) -> SvgBasicStyle {
+    pub fn default_suffix(theme: Theme, state: SelectState) -> SvgBasicStyle {
         SvgBasicStyle::from_state(theme, state.into())
-    }
-}
-
-component_state! {
-    SelectItemState {
-        Basic => BASIC,
-        Hover => HOVER,
-        Active => ACTIVE,
-        Disabled => DISABLED
-    },
-    _ => SelectItemState::Basic
-}
-
-impl ComponentState for SelectItemState {
-    fn is_disabled(&self) -> bool {
-        matches!(self, SelectItemState::Disabled)
-    }
-}
-
-impl From<SelectItemState> for ViewState {
-    fn from(state: SelectItemState) -> Self {
-        match state {
-            SelectItemState::Basic => ViewState::Basic,
-            SelectItemState::Hover => ViewState::Hover,
-            SelectItemState::Active => ViewState::Pressed,
-            SelectItemState::Disabled => ViewState::Disabled,
-        }
-    }
-}
-
-impl From<SelectItemState> for LabelState {
-    fn from(value: SelectItemState) -> Self {
-        match value {
-            SelectItemState::Basic | SelectItemState::Hover | SelectItemState::Active => {
-                LabelState::Basic
-            }
-            SelectItemState::Disabled => LabelState::Disabled,
-        }
-    }
-}
-
-impl From<SelectItemState> for SvgState {
-    fn from(value: SelectItemState) -> Self {
-        match value {
-            SelectItemState::Basic => SvgState::Basic,
-            SelectItemState::Hover => SvgState::Hover,
-            SelectItemState::Active => SvgState::Pressed,
-            SelectItemState::Disabled => SvgState::Disabled,
-        }
     }
 }
 
@@ -326,5 +298,5 @@ component_part! {
         Icon => icon => ICON,
         Text => text => TEXT,
         Suffix => suffix => SUFFIX
-    }, SelectItemState
+    }, SelectState
 }

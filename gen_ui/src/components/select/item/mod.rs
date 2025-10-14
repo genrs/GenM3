@@ -7,24 +7,11 @@ pub use prop::*;
 use makepad_widgets::*;
 
 use crate::{
-    ComponentAnInit, active_event, animation_open_then_redraw,
-    components::{
-        BasicStyle, Component, GComponent, GLabel, GSvg, LabelBasicStyle, LifeCycle, SlotComponent,
-        SlotStyle, Style, SvgBasicStyle,
-    },
-    error::Error,
-    event_option, hit_hover_in, hit_hover_out, lifecycle, play_animation,
-    prop::{
-        ApplyMapImpl, ApplySlotMap, ApplySlotMapImpl, ApplySlotMergeImpl, DeferWalks, SlotDrawer,
-        ToSlotMap, ToStateMap,
-        manuel::{ACTIVE, BASIC, DISABLED, HOVER},
-        traits::ToFloat,
-    },
-    pure_after_apply, set_animation, set_index, set_scope_path,
-    shader::draw_view::DrawView,
-    sync,
-    themes::conf::Conf,
-    visible,
+    active_event, animation_open_then_redraw, components::{
+        BasicStyle, Component, GComponent, GLabel, GSvg, LabelBasicStyle, LifeCycle, SelectState, SlotComponent, SlotStyle, Style, SvgBasicStyle
+    }, error::Error, event_option, hit_hover_in, hit_hover_out, lifecycle, play_animation, prop::{
+        manuel::{ACTIVE, BASIC, DISABLED, HOVER}, traits::ToFloat, ApplyMapImpl, ApplySlotMap, ApplySlotMapImpl, ApplySlotMergeImpl, DeferWalks, SlotDrawer, ToSlotMap, ToStateMap
+    }, pure_after_apply, set_animation, set_index, set_scope_path, shader::draw_view::DrawView, sync, themes::conf::Conf, visible, ComponentAnInit
 };
 
 live_design! {
@@ -96,7 +83,7 @@ pub struct GSelectItem {
     #[rust]
     pub scope_path: Option<HeapLiveIdPath>,
     #[rust]
-    pub apply_slot_map: ApplySlotMap<SelectItemState, SelectItemPart>,
+    pub apply_slot_map: ApplySlotMap<SelectState, SelectItemPart>,
     #[live]
     pub draw_item: DrawView,
     // --- slot --------------------
@@ -128,7 +115,7 @@ pub struct GSelectItem {
     #[live(true)]
     pub sync: bool,
     #[rust]
-    pub state: SelectItemState,
+    pub state: SelectState,
 }
 
 impl WidgetNode for GSelectItem {
@@ -241,22 +228,22 @@ impl LiveHook for GSelectItem {
                 BASIC => {
                     component
                         .apply_slot_map
-                        .insert(SelectItemState::Basic, applys);
+                        .insert(SelectState::Basic, applys);
                 }
                 HOVER => {
                     component
                         .apply_slot_map
-                        .insert(SelectItemState::Hover, applys);
+                        .insert(SelectState::Hover, applys);
                 }
                 ACTIVE => {
                     component
                         .apply_slot_map
-                        .insert(SelectItemState::Active, applys);
+                        .insert(SelectState::Active, applys);
                 }
                 DISABLED => {
                     component
                         .apply_slot_map
-                        .insert(SelectItemState::Disabled, applys);
+                        .insert(SelectState::Disabled, applys);
                 }
                 _ => {}
             },
@@ -264,7 +251,7 @@ impl LiveHook for GSelectItem {
     }
 }
 
-impl SlotComponent<SelectItemState> for GSelectItem {
+impl SlotComponent<SelectState> for GSelectItem {
     type Part = SelectItemPart;
 
     fn merge_prop_to_slot(&mut self) -> () {
@@ -286,7 +273,7 @@ impl SlotComponent<SelectItemState> for GSelectItem {
 impl Component for GSelectItem {
     type Error = Error;
 
-    type State = SelectItemState;
+    type State = SelectState;
 
     fn merge_conf_prop(&mut self, cx: &mut Cx) -> () {
         let style = &cx.global::<Conf>().components.select_item;
@@ -296,12 +283,12 @@ impl Component for GSelectItem {
 
     fn render(&mut self, _cx: &mut Cx) -> Result<(), Self::Error> {
         if self.disabled {
-            self.switch_state(SelectItemState::Disabled);
+            self.switch_state(SelectState::Disabled);
         } else {
             if self.active {
-                self.switch_state(SelectItemState::Active);
+                self.switch_state(SelectState::Active);
             } else {
-                self.switch_state(SelectItemState::Basic);
+                self.switch_state(SelectState::Basic);
             }
         }
         let state = self.state;
@@ -313,7 +300,7 @@ impl Component for GSelectItem {
     fn handle_when_disabled(&mut self, cx: &mut Cx, _event: &Event, hit: Hit) -> () {
         match hit {
             Hit::FingerHoverIn(_) => {
-                self.switch_state_and_redraw(cx, SelectItemState::Disabled);
+                self.switch_state_and_redraw(cx, SelectState::Disabled);
                 cx.set_cursor(self.style.get(self.state).container.cursor);
             }
             _ => {}
@@ -332,26 +319,26 @@ impl Component for GSelectItem {
                 }
                 Hit::FingerHoverIn(e) => {
                     cx.set_cursor(self.style.get(self.state).container.cursor);
-                    self.switch_state_with_animation(cx, SelectItemState::Hover);
+                    self.switch_state_with_animation(cx, SelectState::Hover);
                     hit_hover_in!(self, cx, e);
                 }
                 Hit::FingerHoverOut(e) => {
-                    self.switch_state_with_animation(cx, SelectItemState::Basic);
+                    self.switch_state_with_animation(cx, SelectState::Basic);
                     hit_hover_out!(self, cx, e);
                 }
                 Hit::FingerUp(e) => {
                     if e.is_over {
                         if e.has_hovers() {
                             self.active = true;
-                            self.switch_state_with_animation(cx, SelectItemState::Active);
+                            self.switch_state_with_animation(cx, SelectState::Active);
                             self.play_animation(cx, id!(hover.active));
                         } else {
-                            self.switch_state_with_animation(cx, SelectItemState::Basic);
+                            self.switch_state_with_animation(cx, SelectState::Basic);
                             self.play_animation(cx, id!(hover.off));
                         }
                         self.active_clicked(cx, Some(e));
                     } else {
-                        self.switch_state_with_animation(cx, SelectItemState::Basic);
+                        self.switch_state_with_animation(cx, SelectState::Basic);
                     }
                 }
                 _ => {}
@@ -412,10 +399,10 @@ impl Component for GSelectItem {
 
         if self.lifecycle.is_created() || !init_global || self.scope_path.is_none() {
             self.lifecycle.next();
-            let basic_prop = self.style.get(SelectItemState::Basic);
-            let hover_prop = self.style.get(SelectItemState::Hover);
-            let active_prop = self.style.get(SelectItemState::Active);
-            let disabled_prop = self.style.get(SelectItemState::Disabled);
+            let basic_prop = self.style.get(SelectState::Basic);
+            let hover_prop = self.style.get(SelectState::Hover);
+            let active_prop = self.style.get(SelectState::Active);
+            let disabled_prop = self.style.get(SelectState::Disabled);
             let (mut basic_index, mut hover_index, mut active_index, mut disabled_index) =
                 (None, None, None, None);
             if let Some(index) = nodes.child_by_path(
@@ -514,7 +501,7 @@ impl Component for GSelectItem {
             let state = self.state;
             let style = self.style.get(state);
             let index = match state {
-                SelectItemState::Basic => nodes.child_by_path(
+                SelectState::Basic => nodes.child_by_path(
                     self.index,
                     &[
                         live_id!(animator).as_field(),
@@ -522,7 +509,7 @@ impl Component for GSelectItem {
                         live_id!(off).as_instance(),
                     ],
                 ),
-                SelectItemState::Hover => nodes.child_by_path(
+                SelectState::Hover => nodes.child_by_path(
                     self.index,
                     &[
                         live_id!(animator).as_field(),
@@ -530,7 +517,7 @@ impl Component for GSelectItem {
                         live_id!(on).as_instance(),
                     ],
                 ),
-                SelectItemState::Active => nodes.child_by_path(
+                SelectState::Active => nodes.child_by_path(
                     self.index,
                     &[
                         live_id!(animator).as_field(),
@@ -538,7 +525,7 @@ impl Component for GSelectItem {
                         live_id!(active).as_instance(),
                     ],
                 ),
-                SelectItemState::Disabled => nodes.child_by_path(
+                SelectState::Disabled => nodes.child_by_path(
                     self.index,
                     &[
                         live_id!(animator).as_field(),
@@ -602,10 +589,10 @@ impl GSelectItem {
         self.active = active;
 
         let (state, hover_id) = match (active, init) {
-            (true, false) => (SelectItemState::Active, Some(id!(hover.active))),
-            (true, true) => (SelectItemState::Active, None),
-            (false, true) => (SelectItemState::Basic, None),
-            (false, false) => (SelectItemState::Basic, Some(id!(hover.off))),
+            (true, false) => (SelectState::Active, Some(id!(hover.active))),
+            (true, true) => (SelectState::Active, None),
+            (false, true) => (SelectState::Basic, None),
+            (false, false) => (SelectState::Basic, Some(id!(hover.off))),
         };
         self.switch_state(state);
         if let Some(hover_id) = hover_id {

@@ -1,4 +1,5 @@
-  - [ ] input
+  - [x] input
+    - [x] input_area
   - [ ] number_input
   - [ ] verification
   - [x] loading
@@ -21,7 +22,6 @@
     - [ ] footer
     - [ ] expand
     - [ ] virtual
-  - [ ] number_input
   - [x] slider
   - [x] progress
   - [ ] tree
