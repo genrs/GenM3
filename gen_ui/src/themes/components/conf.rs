@@ -7,7 +7,7 @@ use crate::components::panel::ColorPanelStyle;
 use crate::components::{
     BadgeStyle, ButtonStyle, CardStyle, CheckboxStyle, CollapseStyle, DividerStyle, ImageStyle,
     InputStyle, LabelStyle, LinkStyle, LoadingStyle, MenuItemProp, MenuProp, PopupContainerProp,
-    PopupProp, ProgressStyle, RadioStyle, RateStyle, SelectStyle, SliderStyle, SubMenuProp,
+    PopupStyle, ProgressStyle, RadioStyle, RateStyle, SelectStyle, SliderStyle, SubMenuProp,
     SvgStyle, SwitchStyle, TabbarItemProp, TabbarProp, TagStyle, ViewStyle,
 };
 use crate::error::Error;
@@ -28,7 +28,7 @@ pub struct ComponentsConf {
     pub divider: DividerStyle,
     pub svg: SvgStyle,
     pub image: ImageStyle,
-    pub popup: PopupProp,
+    pub popup: PopupStyle,
     pub popup_container: PopupContainerProp,
     pub tabbar: TabbarProp,
     pub tabbar_item: TabbarItemProp,
@@ -63,7 +63,7 @@ try_from_toml_item! {
         divider => DIVIDER, DividerStyle::default(), |item| item.try_into(),
         svg => SVG, SvgStyle::default(), |item| item.try_into(),
         image => IMAGE, ImageStyle::default(), |item| item.try_into(),
-        popup => POPUP, PopupProp::default(), |item| item.try_into(),
+        popup => POPUP, PopupStyle::default(), |item| item.try_into(),
         popup_container => POPUP_CONTAINER, PopupContainerProp::default(), |item| item.try_into(),
         tabbar => TABBAR, TabbarProp::default(), |item| item.try_into(),
         tabbar_item => TABBAR_ITEM, TabbarItemProp::default(), |item| item.try_into(),

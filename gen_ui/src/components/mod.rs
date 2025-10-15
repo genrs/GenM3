@@ -60,7 +60,7 @@ pub use tag::*;
 pub use traits::*;
 pub use view::*;
 
-use crate::{component, components::area::GInputArea};
+use crate::{component, components::{area::GInputArea, item::GSelectItem}};
 
 live_design! {
     link genui;
@@ -685,5 +685,6 @@ component! {
     Loading => GLoading,
     Slider => GSlider,
     Rate => GRate,
-    InputArea => GInputArea
+    InputArea => GInputArea,
+    SelectItem => GSelectItem
 }

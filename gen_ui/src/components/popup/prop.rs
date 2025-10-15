@@ -22,13 +22,13 @@ use crate::{
 };
 
 prop_interconvert! {
-    PopupProp {
+    PopupStyle {
         basic_prop = PopupBasicStyle;
         basic => BASIC, PopupBasicStyle::default(),|v| (v, PopupState::Basic).try_into()
     }, "[component.popup] should be a table"
 }
 
-impl Style for PopupProp {
+impl Style for PopupStyle {
     type State = PopupState;
 
     type Basic = PopupBasicStyle;
