@@ -1,6 +1,8 @@
 use makepad_widgets::*;
 
-use crate::components::{CursorBasicStyle, SelectionBasicStyle};
+use crate::components::area::{CursorBasicStyle, SelectionBasicStyle};
+
+
 
 live_design! {
     use link::shaders::*;

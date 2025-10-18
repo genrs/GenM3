@@ -6,7 +6,7 @@ use crate::components::item::SelectItemStyle;
 use crate::components::panel::ColorPanelStyle;
 use crate::components::{
     BadgeStyle, ButtonStyle, CardStyle, CheckboxStyle, CollapseStyle, DividerStyle, ImageStyle,
-    InputStyle, LabelStyle, LinkStyle, LoadingStyle, MenuItemProp, MenuProp, PopupContainerProp,
+    InputStyle, LabelStyle, LinkStyle, LoadingStyle, MenuItemProp, MenuProp, PopupContainerStyle,
     PopupStyle, ProgressStyle, RadioStyle, RateStyle, SelectStyle, SliderStyle, SubMenuProp,
     SvgStyle, SwitchStyle, TabbarItemProp, TabbarProp, TagStyle, ViewStyle,
 };
@@ -29,7 +29,7 @@ pub struct ComponentsConf {
     pub svg: SvgStyle,
     pub image: ImageStyle,
     pub popup: PopupStyle,
-    pub popup_container: PopupContainerProp,
+    pub popup_container: PopupContainerStyle,
     pub tabbar: TabbarProp,
     pub tabbar_item: TabbarItemProp,
     pub tag: TagStyle,
@@ -64,7 +64,7 @@ try_from_toml_item! {
         svg => SVG, SvgStyle::default(), |item| item.try_into(),
         image => IMAGE, ImageStyle::default(), |item| item.try_into(),
         popup => POPUP, PopupStyle::default(), |item| item.try_into(),
-        popup_container => POPUP_CONTAINER, PopupContainerProp::default(), |item| item.try_into(),
+        popup_container => POPUP_CONTAINER, PopupContainerStyle::default(), |item| item.try_into(),
         tabbar => TABBAR, TabbarProp::default(), |item| item.try_into(),
         tabbar_item => TABBAR_ITEM, TabbarItemProp::default(), |item| item.try_into(),
         tag => TAG, TagStyle::default(), |item| item.try_into(),

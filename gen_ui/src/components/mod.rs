@@ -60,7 +60,10 @@ pub use tag::*;
 pub use traits::*;
 pub use view::*;
 
-use crate::{component, components::{area::GInputArea, item::GSelectItem}};
+use crate::{
+    component,
+    components::{area::GInputArea, item::GSelectItem},
+};
 
 live_design! {
     link genui;
@@ -597,6 +600,22 @@ live_design! {
         suffix: <IconCheck> {}
     }
 
+    pub GSelectOptions = <GSelectOptionsBase> {
+        // scroll_bars: <GScrollBars> {}
+    }
+
+    pub GSelect = <GSelectBase> {
+        select_options: <GSelectOptions> {
+            style: {
+                basic: {
+                    theme: Error,
+                    height: 300.0,
+                    width: 300.0,
+                }
+            },
+        }
+    }
+
     pub GBadgeDot = <GBadgeDotBase> {
         text: <GLabel>{
             visible: false
@@ -608,7 +627,7 @@ live_design! {
     }
 
     pub GInputArea = <GInputAreaBase> {
-        
+
     }
 
     pub GInput = <GInputBase> {

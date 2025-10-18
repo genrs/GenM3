@@ -21,7 +21,7 @@ live_design! {
 #[derive(Live, LiveRegister)]
 pub struct GPopupContainer {
     #[live]
-    pub style: PopupContainerProp,
+    pub style: PopupContainerStyle,
     #[live]
     pub popup: GPopup,
     #[live]
