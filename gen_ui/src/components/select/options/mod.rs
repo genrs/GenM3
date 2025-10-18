@@ -1,11 +1,22 @@
 use std::cell::RefCell;
-
+mod prop;
 use makepad_widgets::*;
+pub use prop::*;
 
 use crate::{
     components::{
-        lifecycle::LifeCycle, popup::{GPopup, PopupState}, traits::{BasicStyle, PopupComponent, Style}, PopupContainerBasicStyle, PopupContainerStyle
-    }, error::Error, lifecycle, prop::{manuel::BASIC, ApplyStateMap, Position}, pure_after_apply, set_index, set_scope_path, shader::draw_view::DrawView, themes::conf::Conf
+        PopupContainerBasicStyle, PopupContainerStyle,
+        item::GSelectItem,
+        lifecycle::LifeCycle,
+        popup::{GPopup, PopupState},
+        traits::{BasicStyle, PopupComponent, Style},
+    },
+    error::Error,
+    lifecycle,
+    prop::{ApplyStateMap, Position, manuel::BASIC},
+    pure_after_apply, set_index, set_scope_path,
+    shader::draw_view::DrawView,
+    themes::conf::Conf,
 };
 
 live_design! {
@@ -18,9 +29,13 @@ live_design! {
 #[derive(Live, LiveRegister)]
 pub struct GSelectOptions {
     #[live]
-    pub style: PopupContainerStyle,
-    #[live]
-    pub popup: GPopup,
+    pub style: SelectOptionsStyle,
+    // #[live]
+    // pub popup: GPopup,
+    #[rust]
+    pub children: ComponentMap<LiveId, GSelectItem>,
+    #[rust]
+    live_update_order: SmallVec<[LiveId; 1]>,
     #[live]
     pub draw_options: DrawView,
     #[live]
@@ -60,6 +75,51 @@ impl LiveHook for GSelectOptions {
             },
         );
     }
+
+    fn apply_value_instance(
+        &mut self,
+        cx: &mut Cx,
+        apply: &mut Apply,
+        index: usize,
+        nodes: &[LiveNode],
+    ) -> usize {
+        let id = nodes[index].id;
+        match apply.from {
+            ApplyFrom::Animate | ApplyFrom::Over => {
+                let node_id = nodes[index].id;
+                if let Some((_, component)) =
+                    self.children.iter_mut().find(|(id, _)| **id == node_id)
+                {
+                    component.apply(cx, apply, index, nodes)
+                } else {
+                    nodes.skip_node(index)
+                }
+            }
+            ApplyFrom::NewFromDoc { .. } | ApplyFrom::UpdateFromDoc { .. } => {
+                if nodes[index].is_instance_prop() {
+                    if apply.from.is_update_from_doc() {
+                        //livecoding
+                        self.live_update_order.push(id);
+                    }
+                    //self.draw_order.push(id);
+                    dbg!(self.children.len(), id.to_string());
+                    if let Some((_, node)) = self.children.iter_mut().find(|(id2, _)| **id2 == id) {
+                        node.apply(cx, apply, index, nodes)
+                    } else {
+                        self.children.insert(id, GSelectItem::new(cx));
+                        self.children
+                            .get_mut(&id)
+                            .unwrap()
+                            .apply(cx, apply, index, nodes)
+                    }
+                } else {
+                    cx.apply_error_no_matching_field(live_error_origin!(), index, nodes);
+                    nodes.skip_node(index)
+                }
+            }
+            _ => nodes.skip_node(index),
+        }
+    }
 }
 
 impl PopupComponent for GSelectOptions {
@@ -68,7 +128,7 @@ impl PopupComponent for GSelectOptions {
     type State = PopupState;
 
     fn merge_conf_prop(&mut self, cx: &mut Cx) -> () {
-        let style = &cx.global::<Conf>().components.popup_container;
+        let style = &cx.global::<Conf>().components.select_options;
         self.style = style.clone();
     }
 
@@ -97,12 +157,15 @@ impl PopupComponent for GSelectOptions {
         PopupState::Basic
     }
 
-    fn begin(&mut self, cx: &mut Cx2d) -> () {
+    fn walk(&self) -> Walk {
+        self.style.get(self.current_state()).walk()
+    }
+
+    fn begin(&mut self, cx: &mut Cx2d, walk: Walk) -> () {
         self.draw_list.begin_overlay_reuse(cx);
         cx.begin_pass_sized_turtle(Layout::flow_down());
         let style = self.style.get(self.current_state());
-        self.draw_options
-            .begin(cx, style.walk(), style.layout());
+        self.draw_options.begin(cx, walk, style.layout());
     }
 
     fn end(&mut self, cx: &mut Cx2d, _scope: &mut Scope, shift_area: Area, shift: DVec2) -> () {
@@ -113,19 +176,21 @@ impl PopupComponent for GSelectOptions {
 
     fn redraw(&mut self, cx: &mut Cx) -> () {
         self.draw_list.redraw(cx);
-        self.popup.redraw(cx);
+        // self.popup.redraw(cx);
     }
 
     fn draw_popup(
         &mut self,
         cx: &mut Cx2d,
         scope: &mut Scope,
-        position: Option<Position>,
-        angle_offset: f32,
-        redraw: &mut bool,
+        _position: Option<Position>,
+        _angle_offset: f32,
+        _redraw: &mut bool,
     ) -> () {
-        self.popup
-            .draw_popup(cx, scope, position, angle_offset, redraw);
+        for (_id, child) in self.children.iter_mut() {
+            let walk = child.walk(cx);
+            let _ = child.draw_walk(cx, scope, walk);
+        }
     }
 
     set_index!();
@@ -135,18 +200,8 @@ impl PopupComponent for GSelectOptions {
 
 impl GSelectOptions {
     pub fn area(&self) -> Area {
-        self.popup.area
-    }
-    pub fn draw_container_drawer(
-        &mut self,
-        cx: &mut Cx2d,
-        scope: &mut Scope,
-        position: Position,
-        proportion: f32,
-        redraw: &mut bool,
-    ) -> () {
-        self.popup
-            .draw_container_drawer(cx, scope, position, proportion, redraw);
+        // self.popup.area
+        self.draw_options.area
     }
 
     pub fn handle_event_with(
@@ -156,13 +211,6 @@ impl GSelectOptions {
         scope: &mut Scope,
         sweep_area: Area,
     ) {
-        self.popup.handle_event_with(cx, event, scope, sweep_area);
-    }
-
-    pub fn menu_contains_pos(&self, cx: &mut Cx, pos: DVec2) -> bool {
-        self.popup.menu_contains_pos(cx, pos)
-    }
-    pub fn container_contains_pos(&self, cx: &mut Cx, pos: DVec2) -> bool {
-        self.popup.container_contains_pos(cx, pos)
+        // self.popup.handle_event_with(cx, event, scope, sweep_area);
     }
 }

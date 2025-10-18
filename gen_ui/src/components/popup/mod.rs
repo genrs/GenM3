@@ -214,7 +214,11 @@ impl PopupComponent for GPopup {
         PopupState::Basic
     }
 
-    fn begin(&mut self, _cx: &mut Cx2d) -> () {}
+    fn walk(&self) -> Walk {
+        self.style.get(self.current_state()).walk()
+    }
+
+    fn begin(&mut self, _cx: &mut Cx2d, _walk: Walk) -> () {}
 
     fn end(&mut self, _cx: &mut Cx2d, _scope: &mut Scope, _shift_area: Area, _shift: DVec2) -> () {}
 

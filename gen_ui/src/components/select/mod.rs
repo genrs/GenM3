@@ -197,7 +197,9 @@ impl Widget for GSelect {
             let global = cx.global::<SelectOptionsGlobal>().clone();
             let mut map = global.map.borrow_mut();
             let options_menu = map.get_mut(&self.select_options.unwrap()).unwrap();
-            options_menu.begin(cx);
+            let mut options_walk = options_menu.walk();
+            options_walk.width = Size::Fixed(self.area().rect(cx).size.x);
+            options_menu.begin(cx, options_walk);
             options_menu.draw_popup(
                 cx,
                 scope,
@@ -206,14 +208,12 @@ impl Widget for GSelect {
                 &mut self.redraw_flag,
             );
             // options_menu.item = self.option;
-            // let area = self.area().rect(cx);
-            // let container_size = options_menu.area().rect(cx).size;
-
-            // let shift = DVec2 {
-            //     x: area.size.x / 2.0 - container_size.x / 2.0,
-            //     y: area.size.y,
-            // };
-            options_menu.end(cx, scope, self.area(), DVec2::new());
+            let area = self.area().rect(cx);
+            let shift = DVec2 {
+                x: 0.0,
+                y: area.size.y + 2.0,
+            };
+            options_menu.end(cx, scope, self.area(), shift);
         }
 
         self.set_scope_path(&scope.path);

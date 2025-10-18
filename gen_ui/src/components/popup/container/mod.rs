@@ -104,12 +104,16 @@ impl PopupComponent for GPopupContainer {
         PopupState::Basic
     }
 
-    fn begin(&mut self, cx: &mut Cx2d) -> () {
+    fn walk(&self) -> Walk {
+        self.style.get(self.current_state()).walk()
+    }
+
+    fn begin(&mut self, cx: &mut Cx2d, walk: Walk) -> () {
         self.draw_list.begin_overlay_reuse(cx);
         cx.begin_pass_sized_turtle(Layout::flow_down());
         let style = self.style.get(self.current_state());
         self.draw_popup_container
-            .begin(cx, style.walk(), style.layout());
+            .begin(cx, walk, style.layout());
     }
 
     fn end(&mut self, cx: &mut Cx2d, _scope: &mut Scope, shift_area: Area, shift: DVec2) -> () {

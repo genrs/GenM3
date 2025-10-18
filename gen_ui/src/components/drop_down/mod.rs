@@ -78,7 +78,8 @@ impl Widget for GDropDown {
             let global = cx.global::<PopupMenuGlobal>().clone();
             let mut map = global.map.borrow_mut();
             let popup_menu = map.get_mut(&self.popup.unwrap()).unwrap();
-            popup_menu.begin(cx);
+            let popup_walk = popup_menu.walk();
+            popup_menu.begin(cx, popup_walk);
             match self.mode {
                 PopupMode::Popover | PopupMode::ToolTip => {
                     let area = self.area().rect(cx);

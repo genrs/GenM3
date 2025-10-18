@@ -605,15 +605,7 @@ live_design! {
     }
 
     pub GSelect = <GSelectBase> {
-        select_options: <GSelectOptions> {
-            style: {
-                basic: {
-                    theme: Error,
-                    height: 300.0,
-                    width: 300.0,
-                }
-            },
-        }
+        select_options: <GSelectOptions> {}
     }
 
     pub GBadgeDot = <GBadgeDotBase> {

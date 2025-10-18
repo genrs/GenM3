@@ -44,7 +44,6 @@ impl Style for SelectStyle {
 
     get_get_mut! {
         SelectState::Basic => basic,
-
         SelectState::Hover => hover,
         SelectState::Active => active,
         SelectState::Disabled => disabled

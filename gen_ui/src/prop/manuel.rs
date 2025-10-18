@@ -118,6 +118,7 @@ pub const COLOR_PICKER: &str = "color_picker";
 pub const COLOR_PANEL: &str = "color_panel";
 pub const RATE: &str = "rate";
 pub const SELECT_ITEM: &str = "select_item";
+pub const SELECT_OPTIONS: &str = "select_options";
 pub const SELECT: &str = "select";
 pub const BADGE_DOT: &str = "badge_dot";
 pub const BADGE: &str = "badge";

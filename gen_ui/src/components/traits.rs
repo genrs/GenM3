@@ -92,9 +92,10 @@ where
     fn set_index(&mut self, index: usize) -> ();
     /// ## get current state of component
     fn current_state(&self) -> Self::State;
+    fn walk(&self) -> Walk;
     /// ## Begin to draw popup
     /// this method is used to begin drawing the popup
-    fn begin(&mut self, cx: &mut Cx2d) -> ();
+    fn begin(&mut self, cx: &mut Cx2d, walk: Walk) -> ();
     fn end(&mut self, cx: &mut Cx2d, scope: &mut Scope, shift_area: Area, shift: DVec2) -> ();
     fn redraw(&mut self, cx: &mut Cx) -> ();
     fn set_scope_path(&mut self, path: &HeapLiveIdPath) -> ();

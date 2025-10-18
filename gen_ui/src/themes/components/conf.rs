@@ -3,6 +3,7 @@ use toml_edit::Table;
 use crate::components::area::InputAreaStyle;
 use crate::components::dot::BadgeDotStyle;
 use crate::components::item::SelectItemStyle;
+use crate::components::options::SelectOptionsStyle;
 use crate::components::panel::ColorPanelStyle;
 use crate::components::{
     BadgeStyle, ButtonStyle, CardStyle, CheckboxStyle, CollapseStyle, DividerStyle, ImageStyle,
@@ -12,7 +13,10 @@ use crate::components::{
 };
 use crate::error::Error;
 use crate::prop::manuel::{
-    BADGE, BADGE_DOT, BUTTON, CARD, CHECKBOX, COLLAPSE, COLOR_PANEL, DIVIDER, IMAGE, INPUT, INPUT_AREA, LABEL, LINK, LOADING, MENU, MENU_ITEM, POPUP, POPUP_CONTAINER, PROGRESS, RADIO, RATE, SELECT, SELECT_ITEM, SLIDER, SUB_MENU, SVG, SWITCH, TABBAR, TABBAR_ITEM, TAG, VIEW
+    BADGE, BADGE_DOT, BUTTON, CARD, CHECKBOX, COLLAPSE, COLOR_PANEL, DIVIDER, IMAGE, INPUT,
+    INPUT_AREA, LABEL, LINK, LOADING, MENU, MENU_ITEM, POPUP, POPUP_CONTAINER, PROGRESS, RADIO,
+    RATE, SELECT, SELECT_ITEM, SELECT_OPTIONS, SLIDER, SUB_MENU, SVG, SWITCH, TABBAR, TABBAR_ITEM,
+    TAG, VIEW,
 };
 use crate::try_from_toml_item;
 
@@ -44,6 +48,7 @@ pub struct ComponentsConf {
     pub color_panel: ColorPanelStyle,
     pub rate: RateStyle,
     pub select_item: SelectItemStyle,
+    pub select_options: SelectOptionsStyle,
     pub select: SelectStyle,
     pub badge_dot: BadgeDotStyle,
     pub badge: BadgeStyle,
@@ -79,6 +84,7 @@ try_from_toml_item! {
         color_panel => COLOR_PANEL, ColorPanelStyle::default(), |item| item.try_into(),
         rate => RATE, RateStyle::default(), |item| item.try_into(),
         select_item => SELECT_ITEM, SelectItemStyle::default(), |item| item.try_into(),
+        select_options => SELECT_OPTIONS, SelectOptionsStyle::default(), |item| item.try_into(),
         select => SELECT, SelectStyle::default(), |item| item.try_into(),
         badge_dot => BADGE_DOT, BadgeDotStyle::default(), |item| item.try_into(),
         badge => BADGE, BadgeStyle::default(), |item| item.try_into(),

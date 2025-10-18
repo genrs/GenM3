@@ -2,12 +2,12 @@ use makepad_widgets::*;
 use toml_edit::{InlineTable, Item, Value};
 
 use crate::{
-    component_part, component_state,
+    component_part,
     components::{
         LabelBasicStyle, LabelState, SelectState, SlotBasicStyle, SlotStyle, SvgBasicStyle,
         SvgState, ViewColors, ViewState,
         live_props::LiveProps,
-        traits::{BasicStyle, ComponentState, Style},
+        traits::{BasicStyle, Style},
         view::ViewBasicStyle,
     },
     error::Error,

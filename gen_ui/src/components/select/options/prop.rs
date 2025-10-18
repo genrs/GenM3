@@ -9,28 +9,28 @@ use crate::{
         view::ViewBasicStyle,
     },
     prop::{
+        ApplyStateMapImpl,
         manuel::{
             ABS_POS, ALIGN, BACKGROUND_COLOR, BACKGROUND_VISIBLE, BASIC, CLIP_X, CLIP_Y, CURSOR,
             FLOW, HEIGHT, MARGIN, PADDING, SPACING, THEME, WIDTH,
         },
         traits::{AbsPos, FromLiveColor, FromLiveValue, NewFrom, ToColor, ToTomlValue},
-        ApplyStateMapImpl,
     },
     prop_interconvert, state_color,
     themes::{Theme, TomlValueTo},
 };
 
 prop_interconvert! {
-    PopupContainerStyle {
-        basic_prop = PopupContainerBasicStyle;
-        basic => BASIC, PopupContainerBasicStyle::default(),|v| (v, PopupState::Basic).try_into()
+    SelectOptionsStyle {
+        basic_prop = SelectOptionsBasicStyle;
+        basic => BASIC, SelectOptionsBasicStyle::default(),|v| (v, PopupState::Basic).try_into()
     }, "[component.popup] should be a table"
 }
 
-impl Style for PopupContainerStyle {
+impl Style for SelectOptionsStyle {
     type State = PopupState;
 
-    type Basic = PopupContainerBasicStyle;
+    type Basic = SelectOptionsBasicStyle;
 
     fn get(&self, state: Self::State) -> &Self::Basic {
         match state {
@@ -45,7 +45,7 @@ impl Style for PopupContainerStyle {
     }
 
     fn len() -> usize {
-        PopupContainerBasicStyle::len()
+        SelectOptionsBasicStyle::len()
     }
 
     fn sync(&mut self, map: &crate::prop::ApplyStateMap<Self::State>) -> ()
@@ -57,37 +57,37 @@ impl Style for PopupContainerStyle {
 }
 
 basic_prop_interconvert! {
-    PopupContainerBasicStyle {
+    SelectOptionsBasicStyle {
         state = PopupState;
         {background_color => BACKGROUND_COLOR, |v| v.try_into()};
         {
             background_visible: bool => BACKGROUND_VISIBLE, true, |v| v.to_bool(),
-            padding: Padding => PADDING, Padding::from_f64(0.0), |v| v.to_padding(padding),
+            padding: Padding => PADDING, Padding::from_f64(4.0), |v| v.to_padding(padding),
             margin: Margin => MARGIN, Margin::from_f64(0.0), |v| v.to_margin(margin),
             clip_x: bool => CLIP_X, false, |v| v.to_bool(),
             clip_y: bool => CLIP_Y, false, |v| v.to_bool(),
             align: Align => ALIGN, Align::default(), |v| v.to_align(align),
             cursor: MouseCursor => CURSOR, MouseCursor::default(), |v| v.to_cursor(),
             flow: Flow => FLOW, Flow::Down, |v| v.to_flow(),
-            spacing: f64 => SPACING, 6.0, |v| v.to_f64(),
-            height: Size => HEIGHT, Size::Fill, |v| v.to_size(),
-            width: Size => WIDTH, Size::Fill, |v| v.to_size(),
+            spacing: f64 => SPACING, 0.0, |v| v.to_f64(),
+            height: Size => HEIGHT, Size::Fit, |v| v.to_size(),
+            width: Size => WIDTH, Size::Fit, |v| v.to_size(),
             abs_pos: AbsPos => ABS_POS, None, |v| Ok(v.to_dvec2().map_or(None, |v| Some(v)))
         }
     }, "[component.popup_container] should be a table"
 }
 
 component_color! {
-    PopupContainerColors {
+    SelectOptionsColors {
         colors = (Color);
         background_color
     }
 }
 
-impl BasicStyle for PopupContainerBasicStyle {
+impl BasicStyle for SelectOptionsBasicStyle {
     type State = PopupState;
 
-    type Colors = PopupContainerColors;
+    type Colors = SelectOptionsColors;
 
     fn len() -> usize {
         14
@@ -100,7 +100,7 @@ impl BasicStyle for PopupContainerBasicStyle {
                 self.sync(state);
             }
             BACKGROUND_COLOR => {
-                let PopupContainerColors { background_color } =
+                let SelectOptionsColors { background_color } =
                     Self::state_colors(self.theme, state);
                 self.background_color =
                     Vec4::from_live_color(value).unwrap_or(background_color.into());
@@ -109,7 +109,7 @@ impl BasicStyle for PopupContainerBasicStyle {
                 self.background_visible = bool::from_live_value(value).unwrap_or(true);
             }
             PADDING => {
-                self.padding = Padding::from_live_value(value).unwrap_or(Padding::from_f64(0.0));
+                self.padding = Padding::from_live_value(value).unwrap_or(Padding::from_f64(4.0));
             }
             MARGIN => {
                 self.margin = Margin::from_live_value(value).unwrap_or(Margin::from_f64(0.0));
@@ -135,13 +135,13 @@ impl BasicStyle for PopupContainerBasicStyle {
                 self.flow = Flow::from_live_value(value).unwrap_or(Flow::Down);
             }
             SPACING => {
-                self.spacing = f64::from_live_value(value).unwrap_or(6.0);
+                self.spacing = f64::from_live_value(value).unwrap_or(0.0);
             }
             HEIGHT => {
-                self.height = Size::from_live_value(value).unwrap_or(Size::Fill);
+                self.height = Size::from_live_value(value).unwrap_or(Size::Fit);
             }
             WIDTH => {
-                self.width = Size::from_live_value(value).unwrap_or(Size::Fill);
+                self.width = Size::from_live_value(value).unwrap_or(Size::Fit);
             }
             ABS_POS => {
                 self.abs_pos = DVec2::from_live_value(value);
@@ -151,12 +151,12 @@ impl BasicStyle for PopupContainerBasicStyle {
     }
 
     fn sync(&mut self, state: Self::State) -> () {
-        let PopupContainerColors { background_color } = Self::state_colors(self.theme, state);
+        let SelectOptionsColors { background_color } = Self::state_colors(self.theme, state);
         self.background_color = background_color.into();
     }
 
     fn from_state(theme: Theme, state: Self::State) -> Self {
-        let PopupContainerColors { background_color } = Self::state_colors(theme, state);
+        let SelectOptionsColors { background_color } = Self::state_colors(theme, state);
 
         let cursor = if state.is_disabled() {
             MouseCursor::NotAllowed
@@ -168,16 +168,16 @@ impl BasicStyle for PopupContainerBasicStyle {
             theme,
             background_color: background_color.into(),
             background_visible: true,
-            padding: Padding::from_f64(0.0),
+            padding: Padding::from_f64(4.0),
             margin: Margin::from_f64(0.0),
             clip_x: false,
             clip_y: false,
             align: Align::default(),
             cursor,
             flow: Flow::Down,
-            spacing: 6.0,
-            height: Size::Fill,
-            width: Size::Fill,
+            spacing: 0.0,
+            height: Size::Fit,
+            width: Size::Fit,
             abs_pos: None,
         }
     }
@@ -246,9 +246,9 @@ impl BasicStyle for PopupContainerBasicStyle {
     }
 }
 
-impl From<&PopupContainerBasicStyle> for ViewBasicStyle {
-    fn from(value: &PopupContainerBasicStyle) -> Self {
-        let PopupContainerBasicStyle {
+impl From<&SelectOptionsBasicStyle> for ViewBasicStyle {
+    fn from(value: &SelectOptionsBasicStyle) -> Self {
+        let SelectOptionsBasicStyle {
             theme,
             background_color,
             background_visible,
@@ -284,15 +284,3 @@ impl From<&PopupContainerBasicStyle> for ViewBasicStyle {
         }
     }
 }
-
-// component_state! {
-//     PopupState {
-//         Basic => BASIC
-//     }, _ => PopupState::Basic
-// }
-
-// impl ComponentState for PopupState {
-//     fn is_disabled(&self) -> bool {
-//         false
-//     }
-// }
