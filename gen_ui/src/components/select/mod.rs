@@ -95,7 +95,7 @@ pub struct GSelect {
     pub apply_slot_map: ApplySlotMap<SelectState, SelectPart>,
     #[rust]
     defer_walks: DeferWalks,
-     #[rust(true)]
+    #[rust(true)]
     pub redraw_flag: bool,
 }
 
@@ -200,13 +200,7 @@ impl Widget for GSelect {
             let mut options_walk = options_menu.walk();
             options_walk.width = Size::Fixed(self.area().rect(cx).size.x);
             options_menu.begin(cx, options_walk);
-            options_menu.draw_popup(
-                cx,
-                scope,
-                None,
-                0.0,
-                &mut self.redraw_flag,
-            );
+            options_menu.draw_popup(cx, scope, None, 0.0, &mut self.redraw_flag);
             // options_menu.item = self.option;
             let area = self.area().rect(cx);
             let shift = DVec2 {
@@ -220,7 +214,7 @@ impl Widget for GSelect {
         return DrawStep::done();
     }
 
-    fn handle_event(&mut self, cx: &mut Cx, event: &Event, _scope: &mut Scope) {
+    fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
         if !self.visible {
             return;
         }
@@ -231,7 +225,18 @@ impl Widget for GSelect {
         if self.disabled {
             self.handle_when_disabled(cx, event, hit);
         } else {
-            self.handle_widget_event(cx, event, hit, area);
+            // self.handle_widget_event(cx, event, hit, area);
+            if self.open && self.select_options.is_some() {
+                let global = cx.global::<SelectOptionsGlobal>().clone();
+                let mut map = global.map.borrow_mut();
+                let select_options = map.get_mut(&self.select_options.unwrap()).unwrap();
+                select_options.handle_event_with(cx, event, scope, self.area());
+                if let Event::MouseDown(e) = event {
+                    let is_in = select_options.menu_contains_pos(cx, e.abs);
+                    self.close(cx, is_in);
+                    return;
+                }
+            }
         }
     }
 }
@@ -312,40 +317,40 @@ impl Component for GSelect {
     }
 
     fn handle_widget_event(&mut self, cx: &mut Cx, event: &Event, hit: Hit, area: Area) {
-        animation_open_then_redraw!(self, cx, event);
+        // animation_open_then_redraw!(self, cx, event);
 
-        match hit {
-            Hit::FingerDown(_) => {
-                if self.grab_key_focus {
-                    cx.set_key_focus(area);
-                }
-            }
-            Hit::FingerHoverIn(e) => {
-                cx.set_cursor(self.style.get(self.state).container.cursor);
-                self.switch_state_with_animation(cx, SelectState::Hover);
-                // hit_hover_in!(self, cx, e);
-            }
-            Hit::FingerHoverOut(e) => {
-                self.switch_state_with_animation(cx, SelectState::Basic);
-                // hit_hover_out!(self, cx, e);
-            }
-            Hit::FingerUp(e) => {
-                if e.is_over {
-                    if e.has_hovers() {
-                        self.open = true;
-                        self.switch_state_with_animation(cx, SelectState::Active);
-                        self.play_animation(cx, id!(hover.active));
-                    } else {
-                        self.switch_state_with_animation(cx, SelectState::Basic);
-                        self.play_animation(cx, id!(hover.off));
-                    }
-                    // self.active_clicked(cx, Some(e));
-                } else {
-                    self.switch_state_with_animation(cx, SelectState::Basic);
-                }
-            }
-            _ => {}
-        }
+        // match hit {
+        //     Hit::FingerDown(_) => {
+        //         if self.grab_key_focus {
+        //             cx.set_key_focus(area);
+        //         }
+        //     }
+        //     Hit::FingerHoverIn(e) => {
+        //         cx.set_cursor(self.style.get(self.state).container.cursor);
+        //         self.switch_state_with_animation(cx, SelectState::Hover);
+        //         // hit_hover_in!(self, cx, e);
+        //     }
+        //     Hit::FingerHoverOut(e) => {
+        //         self.switch_state_with_animation(cx, SelectState::Basic);
+        //         // hit_hover_out!(self, cx, e);
+        //     }
+        //     Hit::FingerUp(e) => {
+        //         if e.is_over {
+        //             if e.has_hovers() {
+        //                 self.open = true;
+        //                 self.switch_state_with_animation(cx, SelectState::Active);
+        //                 self.play_animation(cx, id!(hover.active));
+        //             } else {
+        //                 self.switch_state_with_animation(cx, SelectState::Basic);
+        //                 self.play_animation(cx, id!(hover.off));
+        //             }
+        //             // self.active_clicked(cx, Some(e));
+        //         } else {
+        //             self.switch_state_with_animation(cx, SelectState::Basic);
+        //         }
+        //     }
+        //     _ => {}
+        // }
     }
 
     fn switch_state(&mut self, state: Self::State) -> () {
@@ -547,6 +552,17 @@ impl Component for GSelect {
 }
 
 impl GSelect {
+    fn close(&mut self, cx: &mut Cx, is_in: bool) {
+        if !self.open {
+            return;
+        }
+
+        self.open = false;
+        self.redraw(cx);
+        cx.sweep_unlock(self.area());
+        // self.active_toggled(cx, e_kind);
+    }
+
     pub fn count_real_height(&self, cx: &mut Cx) -> f64 {
         let font_metrics = cx.global::<Conf>().theme.font.metrics;
         let style = self.style.get(self.state);

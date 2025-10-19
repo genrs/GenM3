@@ -4,17 +4,12 @@ use toml_edit::{InlineTable, Item, Value};
 use crate::{
     component_part,
     components::{
-        LabelBasicStyle, LabelState, SelectState, SlotBasicStyle, SlotStyle, SvgBasicStyle,
-        SvgState, ViewColors, ViewState,
-        live_props::LiveProps,
-        traits::{BasicStyle, Style},
-        view::ViewBasicStyle,
+        live_props::LiveProps, traits::{BasicStyle, Style}, view::ViewBasicStyle, LabelBasicStyle, LabelState, SelectState, SlotBasicStyle, SlotStyle, SvgBasicStyle, SvgState, ViewColors, ViewState
     },
     error::Error,
     from_prop_to_toml, get_get_mut,
     prop::{
-        ApplySlotMapImpl, ApplyStateMapImpl, Radius,
-        manuel::{ACTIVE, BASIC, CONTAINER, DISABLED, HOVER, ICON, SUFFIX, TEXT},
+        manuel::{ACTIVE, BASIC, CONTAINER, DISABLED, HOVER, ICON, SUFFIX, TEXT}, traits::NewFrom, ApplySlotMapImpl, ApplyStateMapImpl, Radius
     },
     prop_interconvert,
     themes::Theme,
@@ -268,13 +263,15 @@ impl SelectItemBasicStyle {
     pub fn default_container(theme: Theme, state: SelectState) -> ViewBasicStyle {
         let mut container = ViewBasicStyle::from_state(theme, state.into());
         container.set_cursor(MouseCursor::Hand);
-        container.set_background_visible(true);
-        container.set_flow(Flow::Right);
-        container.set_height(Size::Fixed(32.0));
-        container.set_width(Size::Fill);
         container.set_align(Align { x: 0.0, y: 0.5 });
         container.set_spacing(12.0);
+        container.set_background_visible(true);
+        container.set_height(Size::Fit);
+        container.set_width(Size::Fill);
         container.set_border_radius(Radius::new(2.0));
+        container.set_flow(Flow::Right);
+        container.set_margin(Margin::from_f64(0.0));
+        container.set_padding(Padding::from_xy(9.0, 16.0));
         container
     }
     pub fn default_icon(theme: Theme, state: SelectState) -> SvgBasicStyle {

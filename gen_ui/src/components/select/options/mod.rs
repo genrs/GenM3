@@ -1,14 +1,13 @@
-use std::cell::RefCell;
 mod prop;
 use makepad_widgets::*;
 pub use prop::*;
 
 use crate::{
     components::{
-        PopupContainerBasicStyle, PopupContainerStyle,
+        PopupContainerBasicStyle,
         item::GSelectItem,
         lifecycle::LifeCycle,
-        popup::{GPopup, PopupState},
+        popup::PopupState,
         traits::{BasicStyle, PopupComponent, Style},
     },
     error::Error,
@@ -30,10 +29,8 @@ live_design! {
 pub struct GSelectOptions {
     #[live]
     pub style: SelectOptionsStyle,
-    // #[live]
-    // pub popup: GPopup,
     #[rust]
-    pub children: ComponentMap<LiveId, GSelectItem>,
+    pub children: Vec<(LiveId, GSelectItem)>,
     #[rust]
     live_update_order: SmallVec<[LiveId; 1]>,
     #[live]
@@ -52,6 +49,8 @@ pub struct GSelectOptions {
     pub sync: bool,
     #[rust]
     pub lifecycle: LifeCycle,
+    #[rust]
+    pub state: PopupState,
 }
 
 impl LiveHook for GSelectOptions {
@@ -88,7 +87,7 @@ impl LiveHook for GSelectOptions {
             ApplyFrom::Animate | ApplyFrom::Over => {
                 let node_id = nodes[index].id;
                 if let Some((_, component)) =
-                    self.children.iter_mut().find(|(id, _)| **id == node_id)
+                    self.children.iter_mut().find(|(id, _)| *id == node_id)
                 {
                     component.apply(cx, apply, index, nodes)
                 } else {
@@ -102,14 +101,14 @@ impl LiveHook for GSelectOptions {
                         self.live_update_order.push(id);
                     }
                     //self.draw_order.push(id);
-                    dbg!(self.children.len(), id.to_string());
-                    if let Some((_, node)) = self.children.iter_mut().find(|(id2, _)| **id2 == id) {
+                    if let Some((_, node)) = self.children.iter_mut().find(|(id2, _)| *id2 == id) {
                         node.apply(cx, apply, index, nodes)
                     } else {
-                        self.children.insert(id, GSelectItem::new(cx));
+                        self.children.push((id, GSelectItem::new(cx)));
                         self.children
-                            .get_mut(&id)
+                            .last_mut()
                             .unwrap()
+                            .1
                             .apply(cx, apply, index, nodes)
                     }
                 } else {
@@ -134,7 +133,7 @@ impl PopupComponent for GSelectOptions {
 
     fn render(&mut self, _cx: &mut Cx) -> Result<(), Self::Error> {
         let style = self.style.get(self.current_state());
-        self.draw_options.merge(&style.into());
+        self.draw_options.merge(&(*style).into());
         Ok(())
     }
 
@@ -154,7 +153,7 @@ impl PopupComponent for GSelectOptions {
     }
 
     fn current_state(&self) -> Self::State {
-        PopupState::Basic
+        self.state
     }
 
     fn walk(&self) -> Walk {
@@ -176,7 +175,9 @@ impl PopupComponent for GSelectOptions {
 
     fn redraw(&mut self, cx: &mut Cx) -> () {
         self.draw_list.redraw(cx);
-        // self.popup.redraw(cx);
+        for (_id, child) in self.children.iter_mut() {
+            let _ = child.redraw(cx);
+        }
     }
 
     fn draw_popup(
@@ -211,6 +212,12 @@ impl GSelectOptions {
         scope: &mut Scope,
         sweep_area: Area,
     ) {
-        // self.popup.handle_event_with(cx, event, scope, sweep_area);
+        for (_id, child) in self.children.iter_mut() {
+            let _ = child.handle_event_with(cx, event, scope, sweep_area);
+        }
+    }
+
+    pub fn menu_contains_pos(&self, cx: &mut Cx, pos: DVec2) -> bool {
+        self.draw_options.area().clipped_rect(cx).contains(pos)
     }
 }

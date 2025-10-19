@@ -7,7 +7,7 @@ use crate::{
         traits::{BasicStyle, ComponentState, Style},
         view::ViewBasicStyle,
     },
-    from_inherit_to_view_basic_prop,
+    from_inherit_to_view_basic_style,
     prop::{
         manuel::{
             ABS_POS, ALIGN, BACKGROUND_COLOR, BACKGROUND_VISIBLE, BASIC, BLUR_RADIUS, BORDER_COLOR,
@@ -325,7 +325,7 @@ impl BasicStyle for PopupBasicStyle {
     }
 }
 
-from_inherit_to_view_basic_prop!(PopupBasicStyle);
+from_inherit_to_view_basic_style!(PopupBasicStyle);
 
 component_state! {
     PopupState {

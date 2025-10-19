@@ -10,7 +10,7 @@ use crate::{
         ViewColors,
     },
     error::Error,
-    from_inherit_to_view_basic_prop, from_prop_to_toml, get_get_mut, inherits_view_basic_prop,
+    from_inherit_to_view_basic_style, from_prop_to_toml, get_get_mut, inherits_view_basic_prop,
     prop::{
         manuel::{
             ABS_POS, ALIGN, BACKGROUND_COLOR, BACKGROUND_VISIBLE, BASIC, BLUR_RADIUS, BODY,
@@ -363,9 +363,9 @@ inherits_view_basic_prop! {
     }
 }
 
-from_inherit_to_view_basic_prop!(CardHeaderProp);
-from_inherit_to_view_basic_prop!(CardBodyProp);
-from_inherit_to_view_basic_prop!(CardFooterProp);
+from_inherit_to_view_basic_style!(CardHeaderProp);
+from_inherit_to_view_basic_style!(CardBodyProp);
+from_inherit_to_view_basic_style!(CardFooterProp);
 
 component_part! {
     CardPart {

@@ -7,11 +7,24 @@ pub use prop::*;
 use makepad_widgets::*;
 
 use crate::{
-    active_event, animation_open_then_redraw, components::{
-        BasicStyle, Component, GComponent, GLabel, GSvg, LabelBasicStyle, LifeCycle, SelectState, SlotComponent, SlotStyle, Style, SvgBasicStyle
-    }, error::Error, event_option, hit_hover_in, hit_hover_out, lifecycle, play_animation, prop::{
-        manuel::{ACTIVE, BASIC, DISABLED, HOVER}, traits::ToFloat, ApplyMapImpl, ApplySlotMap, ApplySlotMapImpl, ApplySlotMergeImpl, DeferWalks, SlotDrawer, ToSlotMap, ToStateMap
-    }, pure_after_apply, set_animation, set_index, set_scope_path, shader::draw_view::DrawView, sync, themes::conf::Conf, visible, ComponentAnInit
+    ComponentAnInit, active_event, animation_open_then_redraw,
+    components::{
+        BasicStyle, Component, GComponent, GLabel, GSvg, LabelBasicStyle, LifeCycle, SelectState,
+        SlotComponent, SlotStyle, Style, SvgBasicStyle,
+    },
+    error::Error,
+    event_option, hit_hover_in, hit_hover_out, lifecycle, play_animation,
+    prop::{
+        ApplyMapImpl, ApplySlotMap, ApplySlotMapImpl, ApplySlotMergeImpl, DeferWalks, SlotDrawer,
+        ToSlotMap, ToStateMap,
+        manuel::{ACTIVE, BASIC, DISABLED, HOVER},
+        traits::ToFloat,
+    },
+    pure_after_apply, set_animation, set_index, set_scope_path,
+    shader::draw_view::DrawView,
+    sync,
+    themes::conf::Conf,
+    visible,
 };
 
 live_design! {
@@ -226,19 +239,13 @@ impl LiveHook for GSelectItem {
             |_| {},
             |prefix, component, applys| match prefix.to_string().as_str() {
                 BASIC => {
-                    component
-                        .apply_slot_map
-                        .insert(SelectState::Basic, applys);
+                    component.apply_slot_map.insert(SelectState::Basic, applys);
                 }
                 HOVER => {
-                    component
-                        .apply_slot_map
-                        .insert(SelectState::Hover, applys);
+                    component.apply_slot_map.insert(SelectState::Hover, applys);
                 }
                 ACTIVE => {
-                    component
-                        .apply_slot_map
-                        .insert(SelectState::Active, applys);
+                    component.apply_slot_map.insert(SelectState::Active, applys);
                 }
                 DISABLED => {
                     component

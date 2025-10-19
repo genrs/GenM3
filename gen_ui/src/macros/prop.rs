@@ -526,7 +526,7 @@ macro_rules! inherits_view_basic_prop {
                 }
             }
 
-            state_colors! {
+            crate::state_colors! {
                 (bg_level, border_level, shadow_level),
                 $($state_path => ($($level_number),*)),*
             }
@@ -611,7 +611,7 @@ macro_rules! inherits_view_basic_prop {
 }
 
 #[macro_export]
-macro_rules! from_inherit_to_view_basic_prop {
+macro_rules! from_inherit_to_view_basic_style {
     ($struct_name: ident) => {
         impl From<$struct_name> for ViewBasicStyle {
             fn from(value: $struct_name) -> Self {

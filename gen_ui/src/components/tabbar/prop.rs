@@ -7,7 +7,7 @@ use crate::{
         traits::{BasicStyle, ComponentState, Style},
         ViewBasicStyle, ViewState,
     },
-    from_inherit_to_view_basic_prop, get_get_mut, inherits_view_basic_prop,
+    from_inherit_to_view_basic_style, get_get_mut, inherits_view_basic_prop,
     prop::{
         manuel::{
             ABS_POS, ALIGN, BACKGROUND_COLOR, BACKGROUND_VISIBLE, BASIC, BLUR_RADIUS, BORDER_COLOR,
@@ -85,7 +85,7 @@ inherits_view_basic_prop! {
     }
 }
 
-from_inherit_to_view_basic_prop!(TabbarBasicStyle);
+from_inherit_to_view_basic_style!(TabbarBasicStyle);
 
 component_state! {
     TabbarState {
