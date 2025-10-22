@@ -1,6 +1,7 @@
 mod prop;
 use makepad_widgets::*;
 pub use prop::*;
+use super::event::*;
 
 use crate::{
     components::{
@@ -214,6 +215,45 @@ impl GSelectOptions {
     ) {
         for (_id, child) in self.children.iter_mut() {
             let _ = child.handle_event_with(cx, event, scope, sweep_area);
+        }
+    }
+
+    pub fn handle_event_with_action(
+        &mut self,
+        cx: &mut Cx,
+        event: &Event,
+        sweep_area: Area,
+        dispatch_action: &mut dyn FnMut(&mut Cx, SelectEvent),
+    ) {
+        let mut action = None;
+        for (id, child) in self.children.iter_mut() {
+            if action.is_some() {
+                break;
+            }
+            child.handle_event_with_action(cx, event, sweep_area, &mut |_, e| {
+                action.replace((id, e));
+            });
+        }
+        if let Some((id, event)) = action {
+            match event {
+                SelectItemEvent::Clicked(param) => {
+                    if param.active {
+                        for (_index, (item_id, item)) in self.children.iter_mut().enumerate() {
+                            if item_id != id {
+                                item.toggle(cx, false, false);
+                            }
+                        }
+                    }
+                    dispatch_action(
+                        cx,
+                        SelectEvent::Changed(SelectChangedEvent {
+                            meta: param.meta,
+                            value: param.value,
+                        }),
+                    );
+                }
+                _ => {}
+            }
         }
     }
 

@@ -1,7 +1,7 @@
-mod event;
+
 mod prop;
 
-pub use event::*;
+use super::event::*;
 pub use prop::*;
 
 use makepad_widgets::*;
@@ -607,5 +607,54 @@ impl GSelectItem {
         }
 
         self.active_clicked(cx, None);
+    }
+
+    pub fn handle_event_with_action(
+        &mut self,
+        cx: &mut Cx,
+        event: &Event,
+        sweep_area: Area,
+        dispatch_action: &mut dyn FnMut(&mut Cx, SelectItemEvent),
+    ) {
+        animation_open_then_redraw!(self, cx, event);
+
+        if !self.active {
+            match event.hits_with_options(
+                cx,
+                self.area(),
+                HitOptions::new().with_sweep_area(sweep_area),
+            ) {
+                Hit::FingerDown(_) => {
+                    if self.grab_key_focus {
+                        cx.set_key_focus(sweep_area);
+                    }
+                }
+                Hit::FingerHoverIn(e) => {
+                    cx.set_cursor(self.style.get(self.state).container.cursor);
+                    self.switch_state_with_animation(cx, SelectState::Hover);
+                    hit_hover_in!(self, cx, e);
+                }
+                Hit::FingerHoverOut(e) => {
+                    self.switch_state_with_animation(cx, SelectState::Basic);
+                    hit_hover_out!(self, cx, e);
+                }
+                Hit::FingerUp(e) => {
+                    if e.is_over {
+                        if e.has_hovers() {
+                            self.active = true;
+                            self.switch_state_with_animation(cx, SelectState::Active);
+                            self.play_animation(cx, id!(hover.active));
+                        } else {
+                            self.switch_state_with_animation(cx, SelectState::Basic);
+                            self.play_animation(cx, id!(hover.off));
+                        }
+                        self.active_clicked(cx, Some(e));
+                    } else {
+                        self.switch_state_with_animation(cx, SelectState::Basic);
+                    }
+                }
+                _ => {}
+            }
+        }
     }
 }

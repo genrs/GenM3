@@ -233,9 +233,27 @@ impl Widget for GSelect {
                 select_options.handle_event_with(cx, event, scope, self.area());
                 if let Event::MouseDown(e) = event {
                     let is_in = select_options.menu_contains_pos(cx, e.abs);
-                    self.close(cx, is_in);
+                    self.switch_state_with_animation(cx, SelectState::Basic);
+                    self.close_inner(cx, is_in);
                     return;
                 }
+            }
+            match event.hits_with_sweep_area(cx, self.area(), self.area()) {
+                Hit::FingerHoverIn(_) => {
+                    cx.set_cursor(self.style.get(self.state).container.cursor);
+                    self.switch_state_with_animation(cx, SelectState::Hover);
+                }
+                Hit::FingerHoverOut(_) => {
+                    cx.set_cursor(Default::default());
+                    self.switch_state_with_animation(cx, SelectState::Basic);
+                }
+                Hit::FingerUp(e) => {
+                    if e.is_over && e.device.has_hovers() {
+                        self.switch_state_with_animation(cx, SelectState::Active);
+                        self.open_inner(cx);
+                    }
+                }
+                _ => {}
             }
         }
     }
@@ -552,8 +570,8 @@ impl Component for GSelect {
 }
 
 impl GSelect {
-    fn close(&mut self, cx: &mut Cx, is_in: bool) {
-        if !self.open {
+    fn close_inner(&mut self, cx: &mut Cx, is_in: bool) {
+        if !self.open || is_in {
             return;
         }
 
@@ -561,6 +579,16 @@ impl GSelect {
         self.redraw(cx);
         cx.sweep_unlock(self.area());
         // self.active_toggled(cx, e_kind);
+    }
+
+    fn open_inner(&mut self, cx: &mut Cx) {
+        if self.open {
+            return;
+        }
+
+        self.open = true;
+        self.redraw(cx);
+        cx.sweep_lock(self.area());
     }
 
     pub fn count_real_height(&self, cx: &mut Cx) -> f64 {

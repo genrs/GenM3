@@ -257,7 +257,7 @@ impl TryFrom<(&Item, SelectState)> for SelectBasicStyle {
 impl SelectBasicStyle {
     pub fn default_container(theme: Theme, state: SelectState) -> ViewBasicStyle {
         let mut container = ViewBasicStyle::from_state(theme, state.into());
-        container.set_cursor(MouseCursor::Text);
+        container.set_cursor(MouseCursor::Hand);
         container.set_background_visible(true);
         container.set_height(Size::Fit);
         container.set_width(Size::Fill);
