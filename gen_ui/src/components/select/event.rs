@@ -41,5 +41,6 @@ pub enum SelectEvent {
 #[derive(Clone, Debug)]
 pub struct SelectChangedEvent {
     pub meta: Option<FingerUpEvent>,
+    pub index: usize,
     pub value: String,
 }

@@ -250,17 +250,17 @@ impl GSelectOptions {
         dispatch_action: &mut dyn FnMut(&mut Cx, SelectOptionsEvent),
     ) {
         let mut action = None;
-        for (_, child) in self.children.iter_mut() {
+        for (index, (_, child)) in self.children.iter_mut().enumerate() {
             if action.is_some() {
                 break;
             }
             let active_value = child.value.to_string();
             child.handle_event_with_action(cx, event, sweep_area, &mut |_, e| {
-                action.replace((active_value.clone(), e));
+                action.replace((index, active_value.clone(), e));
             });
         }
 
-        if let Some((value, event)) = action {
+        if let Some((index, value, event)) = action {
             match event {
                 SelectItemEvent::Clicked(param) => {
                     if param.active {
@@ -277,6 +277,7 @@ impl GSelectOptions {
                         SelectOptionsEvent::Changed(SelectChangedEvent {
                             meta: param.meta,
                             value: param.value,
+                            index
                         }),
                     );
                 }

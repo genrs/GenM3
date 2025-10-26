@@ -620,4 +620,19 @@ impl GSelectItem {
             }
         }
     }
+
+    pub fn clone_from_ptr(&mut self, cx: &mut Cx, ptr: &Self) {
+        self.style = ptr.style;
+        self.active = ptr.active;
+        self.value = ptr.value.to_string();
+        self.visible = ptr.visible;
+        self.disabled = ptr.disabled;
+        self.grab_key_focus = ptr.grab_key_focus;
+        self.event_open = ptr.event_open;
+        self.animation_open = ptr.animation_open;
+        self.animation_spread = ptr.animation_spread;
+        self.text.clone_from_ptr(cx, &ptr.text);
+       
+        // self.merge_conf_prop(cx);
+    }
 }

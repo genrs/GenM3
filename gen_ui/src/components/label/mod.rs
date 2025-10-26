@@ -252,6 +252,14 @@ impl Component for GLabel {
 }
 
 impl GLabel {
+    pub fn clone_from_ptr(&mut self,cx: &mut Cx, other: &GLabel) {
+        self.style = other.style;
+        self.visible = other.visible;
+        self.disabled = other.disabled;
+        self.mode = other.mode;
+        let _ = self.set_text(cx, other.get_text());
+       
+    }
     pub fn is_set_disabled_color(&mut self) -> bool {
         self.apply_state_map
             .get(&LabelState::Disabled)

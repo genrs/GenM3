@@ -16,8 +16,8 @@ use crate::{
     ComponentAnInit, active_event, animation_open_then_redraw,
     components::{
         BasicStyle, Component, GComponent, GLabel, GSvg, GView, LabelBasicStyle, LifeCycle,
-        PopupComponent, SlotComponent, SlotStyle, Style, SvgBasicStyle, item::GSelectItem,
-        options::GSelectOptions,
+        PopupComponent, SlotComponent, SlotStyle, Style, SvgBasicStyle, ViewBasicStyle,
+        item::GSelectItem, options::GSelectOptions,
     },
     error::Error,
     event_option, hit_hover_in, hit_hover_out, lifecycle, play_animation,
@@ -233,6 +233,7 @@ impl Widget for GSelect {
                 let mut map = global.map.borrow_mut();
                 let select_options = map.get_mut(&self.select_options.unwrap()).unwrap();
                 // select_options.handle_event_with(cx, event, scope, self.area());
+                let mut active_index = None;
                 select_options.handle_event_with_action(
                     cx,
                     event,
@@ -240,13 +241,23 @@ impl Widget for GSelect {
                     &mut |cx, select_event| match select_event {
                         SelectOptionsEvent::Changed(e) => {
                             self.value = e.value.to_string();
+                             active_index = Some(e.index);
                             // pub real select event
                             cx.widget_action(uid, &scope.path, SelectEvent::Changed(e));
+                           
                             // self.close_inner(cx, false);
                         }
                         _ => {}
                     },
                 );
+
+                if let Some(index) = active_index {
+                    self.selected = index as u32;
+                    self.item
+                        .clone_from_ptr(cx,&select_options.children.get(index).unwrap().1);
+                    self.redraw(cx);
+                }
+
                 if let Event::MouseDown(e) = event {
                     let is_in = select_options.menu_contains_pos(cx, e.abs);
                     self.switch_state_with_animation(cx, SelectState::Basic);
@@ -276,19 +287,54 @@ impl Widget for GSelect {
 }
 
 impl LiveHook for GSelect {
-    // pure_after_apply!();
+    pure_after_apply!();
 
-    fn after_apply_from_doc(&mut self, cx: &mut Cx) {
-        self.sync();
-        self.render_after_apply(cx);
+    fn after_new_before_apply(&mut self, cx: &mut Cx) {
+        self.merge_conf_prop(cx);
     }
 
-    fn after_apply(&mut self, cx: &mut Cx, _apply: &mut Apply, _index: usize, _nodes: &[LiveNode]) {
+    fn after_apply(&mut self, cx: &mut Cx, apply: &mut Apply, index: usize, nodes: &[LiveNode]) {
         let global = cx.global::<SelectOptionsGlobal>().clone();
         let mut map = global.map.borrow_mut();
         map.retain(|k, _| cx.live_registry.borrow().generation_valid(*k));
         let menu = self.select_options.unwrap();
         map.get_or_insert(cx, menu, |cx| GSelectOptions::new_from_ptr(cx, Some(menu)));
+
+        self.set_apply_slot_map(
+            apply.from,
+            nodes,
+            index,
+            [
+                live_id!(active),
+                live_id!(basic),
+                live_id!(hover),
+                live_id!(disabled),
+            ],
+            [
+                (SelectPart::Container, &ViewBasicStyle::live_props()),
+                // (SelectPart::Input, &InputAreaBasicStyle::live_props()),
+                (SelectPart::Prefix, &ViewBasicStyle::live_props()),
+                (SelectPart::Suffix, &ViewBasicStyle::live_props()),
+            ],
+            |_| {},
+            |prefix, component, applys| match prefix.to_string().as_str() {
+                BASIC => {
+                    component.apply_slot_map.insert(SelectState::Basic, applys);
+                }
+                HOVER => {
+                    component.apply_slot_map.insert(SelectState::Hover, applys);
+                }
+                ACTIVE => {
+                    component.apply_slot_map.insert(SelectState::Active, applys);
+                }
+                DISABLED => {
+                    component
+                        .apply_slot_map
+                        .insert(SelectState::Disabled, applys);
+                }
+                _ => {}
+            },
+        );
     }
 }
 
@@ -404,6 +450,16 @@ impl Component for GSelect {
 
     fn focus_sync(&mut self) -> () {
         let mut crossed_map = self.apply_slot_map.cross();
+
+        for (part, slot) in [
+            (SelectPart::Prefix, &mut self.prefix),
+            (SelectPart::Suffix, &mut self.suffix),
+        ] {
+            crossed_map.remove(&part).map(|map| {
+                slot.apply_state_map.merge(map.to_state());
+                slot.focus_sync();
+            });
+        }
 
         // sync state if is not Basic
         self.style.sync_slot(&self.apply_slot_map);
