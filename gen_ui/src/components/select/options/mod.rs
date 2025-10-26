@@ -1,7 +1,7 @@
 mod prop;
+use super::event::*;
 use makepad_widgets::*;
 pub use prop::*;
-use super::event::*;
 
 use crate::{
     components::{
@@ -55,7 +55,31 @@ pub struct GSelectOptions {
 }
 
 impl LiveHook for GSelectOptions {
-    pure_after_apply!();
+    #[allow(unused_variables)]
+    #[cfg(feature = "release")]
+    fn after_new_from_doc(&mut self, cx: &mut Cx) {
+        self.sync();
+        self.render_after_apply(cx);
+    }
+
+    #[allow(unused_variables)]
+    #[cfg(feature = "dev")]
+    fn after_apply_from_doc(&mut self, cx: &mut Cx) {
+        self.sync();
+        self.render_after_apply(cx);
+        // check each child should has `value` or generate one
+        for (index, (_, child)) in self.children.iter_mut().enumerate() {
+            if child.value.is_empty() {
+                child.value = index.to_string();
+            }
+        }
+    }
+
+    #[cfg(feature = "dev")]
+    fn after_update_from_doc(&mut self, cx: &mut Cx) {
+        self.merge_conf_prop(cx);
+    }
+
     fn after_new_before_apply(&mut self, cx: &mut Cx) {
         self.merge_conf_prop(cx);
     }
@@ -223,30 +247,34 @@ impl GSelectOptions {
         cx: &mut Cx,
         event: &Event,
         sweep_area: Area,
-        dispatch_action: &mut dyn FnMut(&mut Cx, SelectEvent),
+        dispatch_action: &mut dyn FnMut(&mut Cx, SelectOptionsEvent),
     ) {
         let mut action = None;
-        for (id, child) in self.children.iter_mut() {
+        for (_, child) in self.children.iter_mut() {
             if action.is_some() {
                 break;
             }
+            let active_value = child.value.to_string();
             child.handle_event_with_action(cx, event, sweep_area, &mut |_, e| {
-                action.replace((id, e));
+                action.replace((active_value.clone(), e));
             });
         }
-        if let Some((id, event)) = action {
+
+        if let Some((value, event)) = action {
             match event {
                 SelectItemEvent::Clicked(param) => {
                     if param.active {
-                        for (_index, (item_id, item)) in self.children.iter_mut().enumerate() {
-                            if item_id != id {
-                                item.toggle(cx, false, false);
+                        for (_, child) in self.children.iter_mut() {
+                            if child.value.eq(&value) {
+                                child.toggle(cx, true, false);
+                            } else {
+                                child.toggle(cx, false, false);
                             }
                         }
                     }
                     dispatch_action(
                         cx,
-                        SelectEvent::Changed(SelectChangedEvent {
+                        SelectOptionsEvent::Changed(SelectChangedEvent {
                             meta: param.meta,
                             value: param.value,
                         }),

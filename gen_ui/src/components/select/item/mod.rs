@@ -1,4 +1,3 @@
-
 mod prop;
 
 use super::event::*;
@@ -314,43 +313,9 @@ impl Component for GSelectItem {
         }
     }
 
-    fn handle_widget_event(&mut self, cx: &mut Cx, event: &Event, hit: Hit, area: Area) {
-        animation_open_then_redraw!(self, cx, event);
-
-        if !self.active {
-            match hit {
-                Hit::FingerDown(_) => {
-                    if self.grab_key_focus {
-                        cx.set_key_focus(area);
-                    }
-                }
-                Hit::FingerHoverIn(e) => {
-                    cx.set_cursor(self.style.get(self.state).container.cursor);
-                    self.switch_state_with_animation(cx, SelectState::Hover);
-                    hit_hover_in!(self, cx, e);
-                }
-                Hit::FingerHoverOut(e) => {
-                    self.switch_state_with_animation(cx, SelectState::Basic);
-                    hit_hover_out!(self, cx, e);
-                }
-                Hit::FingerUp(e) => {
-                    if e.is_over {
-                        if e.has_hovers() {
-                            self.active = true;
-                            self.switch_state_with_animation(cx, SelectState::Active);
-                            self.play_animation(cx, id!(hover.active));
-                        } else {
-                            self.switch_state_with_animation(cx, SelectState::Basic);
-                            self.play_animation(cx, id!(hover.off));
-                        }
-                        self.active_clicked(cx, Some(e));
-                    } else {
-                        self.switch_state_with_animation(cx, SelectState::Basic);
-                    }
-                }
-                _ => {}
-            }
-        }
+    fn handle_widget_event(&mut self, _cx: &mut Cx, _event: &Event, _hit: Hit, _area: Area) {
+        // as a select item we need to dispatch action to parent select, see `self.handle_event_with_action`
+        ()
     }
 
     fn switch_state(&mut self, state: Self::State) -> () {
@@ -617,7 +582,6 @@ impl GSelectItem {
         dispatch_action: &mut dyn FnMut(&mut Cx, SelectItemEvent),
     ) {
         animation_open_then_redraw!(self, cx, event);
-
         if !self.active {
             match event.hits_with_options(
                 cx,
@@ -639,19 +603,18 @@ impl GSelectItem {
                     hit_hover_out!(self, cx, e);
                 }
                 Hit::FingerUp(e) => {
-                    if e.is_over {
-                        if e.has_hovers() {
-                            self.active = true;
-                            self.switch_state_with_animation(cx, SelectState::Active);
-                            self.play_animation(cx, id!(hover.active));
-                        } else {
-                            self.switch_state_with_animation(cx, SelectState::Basic);
-                            self.play_animation(cx, id!(hover.off));
-                        }
-                        self.active_clicked(cx, Some(e));
-                    } else {
-                        self.switch_state_with_animation(cx, SelectState::Basic);
+                    self.active = true;
+                    if !e.is_sweep {
+                        dispatch_action(
+                            cx,
+                            SelectItemEvent::Clicked(SelectItemClicked {
+                                meta: Some(e),
+                                active: self.active,
+                                value: self.value.to_string(),
+                            }),
+                        );
                     }
+                    self.switch_state_with_animation(cx, SelectState::Active);
                 }
                 _ => {}
             }

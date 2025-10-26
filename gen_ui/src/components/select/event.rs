@@ -26,6 +26,13 @@ pub struct SelectItemClicked {
 }
 
 #[derive(Clone, Debug, DefaultNone)]
+pub enum SelectOptionsEvent {
+    Changed(SelectChangedEvent),
+    None,
+}
+
+
+#[derive(Clone, Debug, DefaultNone)]
 pub enum SelectEvent {
     Changed(SelectChangedEvent),
     None,

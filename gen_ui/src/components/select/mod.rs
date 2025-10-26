@@ -222,15 +222,31 @@ impl Widget for GSelect {
         cx.global::<ComponentAnInit>().select = true;
         let area = self.area();
         let hit = event.hits(cx, area);
+
         if self.disabled {
             self.handle_when_disabled(cx, event, hit);
         } else {
+            let uid = self.widget_uid();
             // self.handle_widget_event(cx, event, hit, area);
             if self.open && self.select_options.is_some() {
                 let global = cx.global::<SelectOptionsGlobal>().clone();
                 let mut map = global.map.borrow_mut();
                 let select_options = map.get_mut(&self.select_options.unwrap()).unwrap();
-                select_options.handle_event_with(cx, event, scope, self.area());
+                // select_options.handle_event_with(cx, event, scope, self.area());
+                select_options.handle_event_with_action(
+                    cx,
+                    event,
+                    self.area(),
+                    &mut |cx, select_event| match select_event {
+                        SelectOptionsEvent::Changed(e) => {
+                            self.value = e.value.to_string();
+                            // pub real select event
+                            cx.widget_action(uid, &scope.path, SelectEvent::Changed(e));
+                            // self.close_inner(cx, false);
+                        }
+                        _ => {}
+                    },
+                );
                 if let Event::MouseDown(e) = event {
                     let is_in = select_options.menu_contains_pos(cx, e.abs);
                     self.switch_state_with_animation(cx, SelectState::Basic);
