@@ -128,6 +128,14 @@ pub struct GSelectItem {
     pub sync: bool,
     #[rust]
     pub state: SelectState,
+    /// is this item used as the item in GSelect
+    /// ```markdown
+    /// -----------------------------------
+    /// |     |        as item       |    |
+    /// -----------------------------------
+    /// ```
+    #[rust]
+    pub as_item: bool,
 }
 
 impl WidgetNode for GSelectItem {
@@ -180,15 +188,44 @@ impl Widget for GSelectItem {
 
         let style = self.style.get(self.state);
         let _ = self.draw_item.begin(cx, walk, style.layout());
-        let _ = SlotDrawer::new(
-            [
-                (live_id!(icon), (&mut self.icon).into()),
-                (live_id!(text), (&mut self.text).into()),
-                (live_id!(suffix), (&mut self.suffix).into()),
-            ],
-            &mut self.defer_walks,
-        )
-        .draw_walk(cx, scope);
+
+        let mut slots: [(LiveId, GComponent); 3] = [
+            (live_id!(icon), (&mut self.icon).into()),
+            (live_id!(text), (&mut self.text).into()),
+            (live_id!(suffix), (&mut self.suffix).into()),
+        ];
+
+        self.defer_walks.clear();
+        for (id, component) in &mut slots {
+            if component.visible() {
+                let walk = component.walk(cx);
+                if let Some(fw) = cx.defer_walk(walk) {
+                    self.defer_walks.push((*id, fw));
+                } else {
+                    if *id == live_id!(suffix) {
+                        if !self.active || self.as_item {
+                            continue;
+                        }
+                    }
+                    let _ = component.draw_walk(cx, scope, walk);
+                }
+            }
+        }
+
+        for (id, df_walk) in self.defer_walks.iter_mut() {
+            for (slot_id, slot) in &mut slots {
+                if *id == *slot_id {
+                    let res_walk = df_walk.resolve(cx);
+                    if *id == live_id!(suffix) {
+                        if !self.active || self.as_item {
+                            continue;
+                        }
+                    }
+                    let _ = slot.draw_walk(cx, scope, res_walk);
+                    break;
+                }
+            }
+        }
 
         let _ = self.draw_item.end(cx);
         self.set_scope_path(&scope.path);
@@ -632,7 +669,8 @@ impl GSelectItem {
         self.animation_open = ptr.animation_open;
         self.animation_spread = ptr.animation_spread;
         self.text.clone_from_ptr(cx, &ptr.text);
-       
-        // self.merge_conf_prop(cx);
+        self.icon.clone_from_ptr(cx, &ptr.icon);
+        self.as_item = true;
+        // self.suffix.clone_from_ptr(cx, &ptr.suffix);
     }
 }

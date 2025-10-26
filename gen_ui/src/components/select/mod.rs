@@ -13,25 +13,11 @@ pub use register::register as select_register;
 use makepad_widgets::*;
 
 use crate::{
-    ComponentAnInit, active_event, animation_open_then_redraw,
-    components::{
-        BasicStyle, Component, GComponent, GLabel, GSvg, GView, LabelBasicStyle, LifeCycle,
-        PopupComponent, SlotComponent, SlotStyle, Style, SvgBasicStyle, ViewBasicStyle,
-        item::GSelectItem, options::GSelectOptions,
-    },
-    error::Error,
-    event_option, hit_hover_in, hit_hover_out, lifecycle, play_animation,
-    prop::{
-        ApplyMapImpl, ApplySlotMap, ApplySlotMapImpl, ApplySlotMergeImpl, DeferWalks, SlotDrawer,
-        ToSlotMap, ToStateMap,
-        manuel::{ACTIVE, BASIC, DISABLED, HOVER},
-        traits::ToFloat,
-    },
-    pure_after_apply, set_animation, set_index, set_scope_path,
-    shader::draw_view::DrawView,
-    sync,
-    themes::conf::Conf,
-    visible,
+    active_event, animation_open_then_redraw, components::{
+        item::{GSelectItem, SelectItemBasicStyle}, options::GSelectOptions, BasicStyle, Component, GComponent, GLabel, GSvg, GView, LabelBasicStyle, LifeCycle, PopupComponent, SlotComponent, SlotStyle, Style, SvgBasicStyle, ViewBasicStyle
+    }, error::Error, event_option, hit_hover_in, hit_hover_out, lifecycle, play_animation, prop::{
+        manuel::{ACTIVE, BASIC, DISABLED, HOVER}, traits::ToFloat, ApplyMapImpl, ApplySlotMap, ApplySlotMapImpl, ApplySlotMergeImpl, DeferWalks, SlotDrawer, ToSlotMap, ToStateMap
+    }, pure_after_apply, set_animation, set_index, set_scope_path, shader::draw_view::DrawView, sync, themes::conf::Conf, visible, ComponentAnInit
 };
 
 live_design! {
@@ -154,13 +140,13 @@ impl Widget for GSelect {
 
         let style = self.style.get(self.state);
         let _ = self.draw_select.begin(cx, walk, style.layout());
+        self.item.as_item = true;
         let real_height = self.count_real_height(cx);
         let mut slots: [(LiveId, GComponent); 3] = [
             (live_id!(prefix), (&mut self.prefix).into()),
             (live_id!(item), (&mut self.item).into()),
             (live_id!(suffix), (&mut self.suffix).into()),
         ];
-
         self.defer_walks.clear();
         for (id, component) in &mut slots {
             if component.visible() {
@@ -241,10 +227,10 @@ impl Widget for GSelect {
                     &mut |cx, select_event| match select_event {
                         SelectOptionsEvent::Changed(e) => {
                             self.value = e.value.to_string();
-                             active_index = Some(e.index);
+                            active_index = Some(e.index);
                             // pub real select event
                             cx.widget_action(uid, &scope.path, SelectEvent::Changed(e));
-                           
+
                             // self.close_inner(cx, false);
                         }
                         _ => {}
@@ -254,7 +240,7 @@ impl Widget for GSelect {
                 if let Some(index) = active_index {
                     self.selected = index as u32;
                     self.item
-                        .clone_from_ptr(cx,&select_options.children.get(index).unwrap().1);
+                        .clone_from_ptr(cx, &select_options.children.get(index).unwrap().1);
                     self.redraw(cx);
                 }
 
@@ -312,7 +298,7 @@ impl LiveHook for GSelect {
             ],
             [
                 (SelectPart::Container, &ViewBasicStyle::live_props()),
-                // (SelectPart::Input, &InputAreaBasicStyle::live_props()),
+                (SelectPart::Select, &SelectItemBasicStyle::live_props()),
                 (SelectPart::Prefix, &ViewBasicStyle::live_props()),
                 (SelectPart::Suffix, &ViewBasicStyle::live_props()),
             ],

@@ -533,6 +533,13 @@ impl Component for GSvg {
 }
 
 impl GSvg {
+    pub fn clone_from_ptr(&mut self, _cx: &mut Cx, other: &GSvg) {
+        self.style = other.style;
+        self.visible = other.visible;
+        self.disabled = other.disabled;
+        self.src = other.src.clone();
+        self.state = other.state;
+    }
     active_event! {
         active_hover_in: SvgEvent::HoverIn |meta: FingerHoverEvent| => SvgHoverIn { meta },
         active_hover_out: SvgEvent::HoverOut |meta: FingerHoverEvent| => SvgHoverOut { meta },
