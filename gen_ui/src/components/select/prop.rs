@@ -267,7 +267,7 @@ impl SelectBasicStyle {
 
     pub fn default_prefix(theme: Theme, state: SelectState) -> ViewBasicStyle {
         let mut prefix = ViewBasicStyle::from_state(theme, state.into());
-        prefix.set_background_visible(true);
+        prefix.set_background_visible(false);
         prefix.set_padding(Padding::from_f64(0.0));
         prefix.set_height(Size::Fill);
         prefix.set_width(Size::Fit);
@@ -285,6 +285,7 @@ impl SelectBasicStyle {
     pub fn default_select(theme: Theme, state: SelectState) -> SelectItemBasicStyle {
         let mut item = SelectItemBasicStyle::from_state(theme, state);
         item.container.set_border_radius(Radius::new(0.0));
+        item.container.set_background_visible(false);
         item
     }
 }

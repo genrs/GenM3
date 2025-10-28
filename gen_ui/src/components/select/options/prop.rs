@@ -25,7 +25,7 @@ prop_interconvert! {
     SelectOptionsStyle {
         basic_prop = SelectOptionsBasicStyle;
         basic => BASIC, SelectOptionsBasicStyle::default(),|v| (v, PopupState::Basic).try_into()
-    }, "[component.popup] should be a table"
+    }, "[component.select.options] should be a table"
 }
 
 impl Style for SelectOptionsStyle {

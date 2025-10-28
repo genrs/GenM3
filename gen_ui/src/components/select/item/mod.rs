@@ -9,13 +9,13 @@ use crate::{
     ComponentAnInit, active_event, animation_open_then_redraw,
     components::{
         BasicStyle, Component, GComponent, GLabel, GSvg, LabelBasicStyle, LifeCycle, SelectState,
-        SlotComponent, SlotStyle, Style, SvgBasicStyle,
+        SlotComponent, SlotStyle, Style, SvgBasicStyle, ViewBasicStyle,
     },
     error::Error,
     event_option, hit_hover_in, hit_hover_out, lifecycle, play_animation,
     prop::{
-        ApplyMapImpl, ApplySlotMap, ApplySlotMapImpl, ApplySlotMergeImpl, DeferWalks, SlotDrawer,
-        ToSlotMap, ToStateMap,
+        ApplyMapImpl, ApplySlotMap, ApplySlotMapImpl, ApplySlotMergeImpl, DeferWalks, ToSlotMap,
+        ToStateMap,
         manuel::{ACTIVE, BASIC, DISABLED, HOVER},
         traits::ToFloat,
     },
@@ -269,6 +269,7 @@ impl LiveHook for GSelectItem {
             ],
             [
                 (SelectItemPart::Icon, &svg_props),
+                (SelectItemPart::Container, &ViewBasicStyle::live_props()),
                 (SelectItemPart::Text, &LabelBasicStyle::live_props()),
                 (SelectItemPart::Suffix, &svg_props),
             ],
@@ -660,7 +661,7 @@ impl GSelectItem {
 
     pub fn clone_from_ptr(&mut self, cx: &mut Cx, ptr: &Self) {
         self.style = ptr.style;
-        self.active = ptr.active;
+        // self.active = ptr.active;
         self.value = ptr.value.to_string();
         self.visible = ptr.visible;
         self.disabled = ptr.disabled;
@@ -671,6 +672,7 @@ impl GSelectItem {
         self.text.clone_from_ptr(cx, &ptr.text);
         self.icon.clone_from_ptr(cx, &ptr.icon);
         self.as_item = true;
+        self.style.basic.container.background_visible = false;
         // self.suffix.clone_from_ptr(cx, &ptr.suffix);
     }
 }

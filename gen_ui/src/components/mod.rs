@@ -606,6 +606,12 @@ live_design! {
 
     pub GSelect = <GSelectBase> {
         select_options: <GSelectOptions> {}
+        prefix: <GView> {
+            visible: false
+        }
+        suffix: <GView> {
+            visible: false
+        }
     }
 
     pub GBadgeDot = <GBadgeDotBase> {

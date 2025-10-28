@@ -121,6 +121,7 @@ impl LiveHook for GPopup {
         }
 
         self.set_apply_state_map(
+            apply.from,
             nodes,
             index,
             &PopupBasicStyle::live_props(),

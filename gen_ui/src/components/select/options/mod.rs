@@ -14,7 +14,7 @@ use crate::{
     error::Error,
     lifecycle,
     prop::{ApplyStateMap, Position, manuel::BASIC},
-    pure_after_apply, set_index, set_scope_path,
+    set_index, set_scope_path,
     shader::draw_view::DrawView,
     themes::conf::Conf,
 };
@@ -84,8 +84,9 @@ impl LiveHook for GSelectOptions {
         self.merge_conf_prop(cx);
     }
 
-    fn after_apply(&mut self, _cx: &mut Cx, _apply: &mut Apply, index: usize, nodes: &[LiveNode]) {
+    fn after_apply(&mut self, _cx: &mut Cx, apply: &mut Apply, index: usize, nodes: &[LiveNode]) {
         self.set_apply_state_map(
+            apply.from,
             nodes,
             index,
             &PopupContainerBasicStyle::live_props(),

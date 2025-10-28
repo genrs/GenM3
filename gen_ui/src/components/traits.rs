@@ -47,6 +47,7 @@ where
     /// ## set apply state map
     fn set_apply_state_map<'m, LP, P, NF, IF>(
         &mut self,
+        apply: ApplyFrom,
         nodes: &[LiveNode],
         index: usize,
         live_props: LP,
@@ -63,7 +64,9 @@ where
         Self::State: Eq + Hash + Copy,
     {
         if self.lifecycle().is_created() {
-            self.set_index(index);
+            if let ApplyFrom::NewFromDoc { .. } = apply {
+                self.set_index(index);
+            }
             next_or(self);
         }
 
@@ -71,7 +74,7 @@ where
             let mut applys = PropMap::new();
             for (state, fields) in live_props {
                 let mut paths = vec![
-                    live_id!(prop).as_field(),
+                    live_id!(style).as_field(),
                     prefix.as_field(),
                     state.as_field(),
                 ];

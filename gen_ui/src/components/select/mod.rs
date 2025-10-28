@@ -13,18 +13,73 @@ pub use register::register as select_register;
 use makepad_widgets::*;
 
 use crate::{
-    active_event, animation_open_then_redraw, components::{
-        item::{GSelectItem, SelectItemBasicStyle}, options::GSelectOptions, BasicStyle, Component, GComponent, GLabel, GSvg, GView, LabelBasicStyle, LifeCycle, PopupComponent, SlotComponent, SlotStyle, Style, SvgBasicStyle, ViewBasicStyle
-    }, error::Error, event_option, hit_hover_in, hit_hover_out, lifecycle, play_animation, prop::{
-        manuel::{ACTIVE, BASIC, DISABLED, HOVER}, traits::ToFloat, ApplyMapImpl, ApplySlotMap, ApplySlotMapImpl, ApplySlotMergeImpl, DeferWalks, SlotDrawer, ToSlotMap, ToStateMap
-    }, pure_after_apply, set_animation, set_index, set_scope_path, shader::draw_view::DrawView, sync, themes::conf::Conf, visible, ComponentAnInit
+    ComponentAnInit,
+    components::{
+        BasicStyle, Component, GComponent, GView, LifeCycle, PopupComponent, SlotComponent,
+        SlotStyle, Style, ViewBasicStyle,
+        item::{GSelectItem, SelectItemBasicStyle},
+        options::GSelectOptions,
+    },
+    error::Error,
+    lifecycle, play_animation,
+    prop::{
+        ApplyMapImpl, ApplySlotMap, ApplySlotMapImpl, DeferWalks, ToStateMap,
+        manuel::{ACTIVE, BASIC, DISABLED, HOVER},
+        traits::ToFloat,
+    },
+    pure_after_apply, set_animation, set_index, set_scope_path,
+    shader::draw_view::DrawView,
+    sync,
+    themes::conf::Conf,
+    visible,
 };
 
 live_design! {
     link genui_basic;
     use link::genui_animation_prop::*;
 
-    pub GSelectBase = {{GSelect}} {}
+    pub GSelectBase = {{GSelect}} {
+        animator: {
+            hover = {
+                default: off,
+
+                off = {
+                    from: {all: Forward {duration: (AN_DURATION)}},
+                    ease: InOutQuad,
+                    apply: {
+                        draw_select: <AN_DRAW_VIEW> {}
+                    }
+                }
+
+                on = {
+                    from: {
+                        all: Forward {duration: (AN_DURATION),},
+                        active: Forward {duration: (AN_DURATION)},
+                    },
+                    ease: InOutQuad,
+                    apply: {
+                       draw_select: <AN_DRAW_VIEW> {}
+                    }
+                }
+
+                active = {
+                    from: {all: Forward {duration: (AN_DURATION)}},
+                    ease: InOutQuad,
+                    apply: {
+                        draw_select: <AN_DRAW_VIEW> {}
+                    }
+                }
+
+                disabled = {
+                    from: {all: Forward {duration: (AN_DURATION)}},
+                    ease: InOutQuad,
+                    apply: {
+                        draw_select: <AN_DRAW_VIEW> {}
+                    }
+                }
+            }
+        }
+    }
 }
 
 #[derive(Live, WidgetRef, WidgetSet, LiveRegisterWidget)]
@@ -65,7 +120,7 @@ pub struct GSelect {
     #[live(true)]
     pub visible: bool,
     // --- others -------------------
-    #[live(true)]
+    #[live]
     pub open: bool,
     #[live]
     pub selected: u32,
@@ -205,7 +260,7 @@ impl Widget for GSelect {
             return;
         }
         self.set_animation(cx);
-        cx.global::<ComponentAnInit>().select = true;
+        cx.global::<ComponentAnInit>().select_item = true;
         let area = self.area();
         let hit = event.hits(cx, area);
 
@@ -382,41 +437,8 @@ impl Component for GSelect {
         }
     }
 
-    fn handle_widget_event(&mut self, cx: &mut Cx, event: &Event, hit: Hit, area: Area) {
-        // animation_open_then_redraw!(self, cx, event);
-
-        // match hit {
-        //     Hit::FingerDown(_) => {
-        //         if self.grab_key_focus {
-        //             cx.set_key_focus(area);
-        //         }
-        //     }
-        //     Hit::FingerHoverIn(e) => {
-        //         cx.set_cursor(self.style.get(self.state).container.cursor);
-        //         self.switch_state_with_animation(cx, SelectState::Hover);
-        //         // hit_hover_in!(self, cx, e);
-        //     }
-        //     Hit::FingerHoverOut(e) => {
-        //         self.switch_state_with_animation(cx, SelectState::Basic);
-        //         // hit_hover_out!(self, cx, e);
-        //     }
-        //     Hit::FingerUp(e) => {
-        //         if e.is_over {
-        //             if e.has_hovers() {
-        //                 self.open = true;
-        //                 self.switch_state_with_animation(cx, SelectState::Active);
-        //                 self.play_animation(cx, id!(hover.active));
-        //             } else {
-        //                 self.switch_state_with_animation(cx, SelectState::Basic);
-        //                 self.play_animation(cx, id!(hover.off));
-        //             }
-        //             // self.active_clicked(cx, Some(e));
-        //         } else {
-        //             self.switch_state_with_animation(cx, SelectState::Basic);
-        //         }
-        //     }
-        //     _ => {}
-        // }
+    fn handle_widget_event(&mut self, _cx: &mut Cx, _event: &Event, _hit: Hit, _area: Area) {
+        ()
     }
 
     fn switch_state(&mut self, state: Self::State) -> () {
