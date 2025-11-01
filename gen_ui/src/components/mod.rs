@@ -29,7 +29,9 @@ mod tabbar;
 mod tag;
 mod traits;
 mod view;
+mod pagination;
 
+pub use pagination::*;
 pub use badge::*;
 pub use button::*;
 pub use card::*;
