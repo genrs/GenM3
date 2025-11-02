@@ -296,7 +296,6 @@ impl Component for GButton {
 
     fn handle_widget_event(&mut self, cx: &mut Cx, event: &Event, hit: Hit, area: Area) {
         animation_open_then_redraw!(self, cx, event);
-
         match hit {
             Hit::FingerDown(e) => {
                 self.switch_state_with_animation(cx, ButtonState::Pressed);

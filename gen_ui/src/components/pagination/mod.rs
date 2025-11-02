@@ -7,7 +7,10 @@ pub use prop::*;
 use makepad_widgets::*;
 
 use crate::{
-    components::{BasicStyle, Component, GButton, LifeCycle, Style},
+    components::{
+        BasicStyle, ButtonEvent, ButtonState, Component, GButton, GLabelWidgetRefExt, LifeCycle,
+        Style,
+    },
     error::Error,
     lifecycle, play_animation,
     prop::{ApplyStateMap, traits::ToFloat},
@@ -58,7 +61,7 @@ pub struct GPagination {
     pub draw_pagination: DrawView,
     #[live(true)]
     pub visible: bool,
-    #[live(true)]
+    #[live(false)]
     pub disabled: bool,
     #[rust]
     pub scope_path: Option<HeapLiveIdPath>,
@@ -81,6 +84,8 @@ pub struct GPagination {
     pub current: usize,
     #[live(5)]
     pub page_size: i32,
+    #[rust]
+    pub display_pages: Vec<String>,
 }
 
 impl WidgetNode for GPagination {
@@ -138,66 +143,76 @@ impl Widget for GPagination {
             let walk = self.prefix.walk(cx);
             let _ = self.prefix.draw_walk(cx, scope, walk);
         }
-        // for (_id, item) in self.item.iter_mut() {
-        //     if item.visible {
-        //         let walk = item.walk(cx);
-        //         let _ = item.draw_walk(cx, scope, walk);
+        // self.item.clear();
+        // // 根据 current 和 page_size 计算出当前页的按钮范围
+        // let (start_page, end_page, show_prefix_ellipsis, show_suffix_ellipsis) =
+        //     self.count_display_pages();
+        // // 确定 item 数量
+        // let display_count = end_page - start_page
+        //     + 1
+        //     + (show_prefix_ellipsis.to_f32() as usize)
+        //     + (show_suffix_ellipsis.to_f32() as usize);
+        // for i in 0..display_count {
+        //     let mut display = None;
+        //     // 第一个按钮永远是1这个按钮
+        //     if i == 0 {
+        //         self.item
+        //             .push((live_id!(page_1), GButton::new_from_ptr(cx, self.btn)));
+        //         display = Some("1".to_string());
+        //     } else if i == display_count - 1 {
+        //         // 最后一个按钮永远是total这个按钮
+        //         self.item
+        //             .push((live_id!(page_total), GButton::new_from_ptr(cx, self.btn)));
+        //         display = Some(self.total.to_string());
+        //     }
+        //     // 显示前缀省略号
+        //     if show_prefix_ellipsis && display.is_none() && i == 1 {
+        //         self.item.push((
+        //             live_id!(prefix_ellipsis),
+        //             GButton::new_from_ptr(cx, self.btn),
+        //         ));
+        //         display = Some("...".to_string());
+        //     }
+        //     if show_suffix_ellipsis && display.is_none() && i == display_count - 2 {
+        //         // 显示后缀省略号
+        //         self.item.push((
+        //             live_id!(suffix_ellipsis),
+        //             GButton::new_from_ptr(cx, self.btn),
+        //         ));
+        //         display = Some("...".to_string());
+        //     }
+
+        //     // 中间的页码按钮
+        //     if display.is_none() {
+        //         let page_number = start_page + i - (if show_prefix_ellipsis { 1 } else { 0 });
+        //         self.item
+        //             .push((live_id!(page_number), GButton::new_from_ptr(cx, self.btn)));
+        //         display = Some(page_number.to_string());
+        //     }
+        //     // 对按钮进行绘制
+        //     if let Some(text) = display {
+        //         let btn = &mut self.item.last_mut().unwrap().1;
+        //         let walk = btn.walk(cx);
+        //         btn.set_text(cx, &text);
+        //         // 如果current等于按钮的页码，则设置为选中状态
+        //         if self.current.to_string() == text {
+        //             btn.switch_state_and_redraw(cx, ButtonState::Pressed);
+        //         }
+        //         let _ = btn.draw_walk(cx, scope, walk);
+        //         continue;
         //     }
         // }
 
-        // 根据 current 和 page_size 计算出当前页的按钮范围
-        let (start_page, end_page, show_prefix_ellipsis, show_suffix_ellipsis) =
-            self.count_display_pages();
-        // 确定 item 数量
-        let display_count = end_page - start_page
-            + 1
-            + (show_prefix_ellipsis.to_f32() as usize)
-            + (show_suffix_ellipsis.to_f32() as usize);
-        for i in 0..display_count {
-            let mut display = None;
-            // 第一个按钮永远是1这个按钮
-            if i == 0 {
-                self.item
-                    .push((live_id!(page_1), GButton::new_from_ptr(cx, self.btn)));
-                display = Some("1".to_string());
-            } else if i == display_count - 1 {
-                // 最后一个按钮永远是total这个按钮
-                self.item
-                    .push((live_id!(page_total), GButton::new_from_ptr(cx, self.btn)));
-                display = Some(self.total.to_string());
+        for ((_id, btn), text) in self.item.iter_mut().zip(self.display_pages.iter()) {
+            let walk = btn.walk(cx);
+            btn.set_text(cx, &text);
+            // 如果current等于按钮的页码，则设置为选中状态
+            if self.current.to_string().eq(text) {
+                btn.switch_state_with_animation(cx, ButtonState::Pressed);
+            }else {
+                btn.switch_state_with_animation(cx, ButtonState::Basic);
             }
-            // 显示前缀省略号
-            if show_prefix_ellipsis && display.is_none() && i == 1 {
-                self.item.push((
-                    live_id!(prefix_ellipsis),
-                    GButton::new_from_ptr(cx, self.btn),
-                ));
-                display = Some("...".to_string());
-            }
-            if show_suffix_ellipsis && display.is_none() && i == display_count - 2 {
-                // 显示后缀省略号
-                self.item.push((
-                    live_id!(suffix_ellipsis),
-                    GButton::new_from_ptr(cx, self.btn),
-                ));
-                display = Some("...".to_string());
-            }
-
-            // 中间的页码按钮
-            if display.is_none() {
-                let page_number = start_page + i - (if show_prefix_ellipsis { 1 } else { 0 });
-                self.item
-                    .push((live_id!(page_number), GButton::new_from_ptr(cx, self.btn)));
-                display = Some(page_number.to_string());
-            }
-            // 对按钮进行绘制
-            if let Some(text) = display {
-                let btn = &mut self.item.last_mut().unwrap().1;
-                let walk = btn.walk(cx);
-                btn.set_text(cx, &text);
-                let _ = btn.draw_walk(cx, scope, walk);
-                continue;
-            }
+            let _ = btn.draw_walk(cx, scope, walk);
         }
 
         if self.suffix.visible {
@@ -209,12 +224,90 @@ impl Widget for GPagination {
         DrawStep::done()
     }
 
-    fn handle_event(&mut self, _cx: &mut Cx, _event: &Event, _scope: &mut Scope) {}
+    fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
+        if !self.visible {
+            return;
+        }
+        // if self.disabled {
+        //     let area = self.area();
+        //     let hit = event.hits(cx, area);
+        //     self.handle_when_disabled(cx, event, hit);
+        //     return;
+        // }
+        // 事件捕捉 ----------------------------------------------------------------------------------------------------
+
+        self.match_event(cx, event);
+        // 点击前缀按钮会让current - 1， 点击后缀按钮会让current + 1, 如果 current - 1 或 + 1 超过范围则直接设置为边界值
+        self.prefix.handle_event(cx, event, scope);
+        self.suffix.handle_event(cx, event, scope);
+        // 点击页码按钮会让 current 变为对应的页码，页码中的省略号按钮，前省略号会让 current - 5，后省略号会让 current + 5，超过范围则设置为边界值
+        for (_id, item) in self.item.iter_mut() {
+            item.handle_event(cx, event, scope); // 这里发现action只有fingerdown没有clicked
+        }
+    }
+}
+
+impl MatchEvent for GPagination {
+    fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions) {
+        if let Some(_) = self.prefix.clicked(actions) {
+            if self.current > 1 {
+                self.current -= 1;
+            }
+        }
+
+        if let Some(_) = self.suffix.clicked(actions) {
+            if self.current < self.total {
+                self.current += 1;
+            }
+        }
+
+        for (id, item) in self.item.iter_mut() {
+            if let Some(_) = item.clicked(actions) {
+                let text = item.slot.as_glabel().get_text();
+                dbg!("Clicked page button: {}", &text);
+                if *id == live_id!(prefix_ellipsis) {
+                    // 前省略号
+                    if self.current > 5 {
+                        self.current -= 5;
+                    } else {
+                        self.current = 1;
+                    }
+                } else if *id == live_id!(suffix_ellipsis) {
+                    // 后省略号
+                    if self.current + 5 < self.total {
+                        self.current += 5;
+                    } else {
+                        self.current = self.total;
+                    }
+                } else {
+                    // 普通页码按钮
+                    if let Ok(page) = text.parse::<usize>() {
+                        self.current = page;
+                    }
+                }
+            }
+        }
+
+        
+    }
 }
 
 impl LiveHook for GPagination {
-    pure_after_apply!();
+    // pure_after_apply!();
+    #[allow(unused_variables)]
+    #[cfg(feature = "dev")]
+    fn after_apply_from_doc(&mut self, cx: &mut Cx) {
+        self.sync();
+        self.render_after_apply(cx);
+    }
 
+    #[cfg(feature = "dev")]
+    fn after_update_from_doc(&mut self, cx: &mut Cx) {
+        self.merge_conf_prop(cx);
+    }
+    fn after_new_before_apply(&mut self, cx: &mut Cx) {
+        self.merge_conf_prop(cx);
+    }
     fn apply_value_instance(
         &mut self,
         cx: &mut Cx,
@@ -246,6 +339,56 @@ impl LiveHook for GPagination {
                 }
             }
             _ => nodes.skip_node(index),
+        }
+    }
+
+    fn after_apply(&mut self, cx: &mut Cx, _apply: &mut Apply, _index: usize, _nodes: &[LiveNode]) {
+        // 根据 current 和 page_size 计算出当前页的按钮范围
+        let (start_page, end_page, show_prefix_ellipsis, show_suffix_ellipsis) =
+            self.count_display_pages();
+        // 确定 item 数量
+        let display_count = end_page - start_page
+            + 1
+            + (show_prefix_ellipsis.to_f32() as usize)
+            + (show_suffix_ellipsis.to_f32() as usize);
+        for i in 0..display_count {
+            // 第一个按钮永远是1这个按钮
+            if i == 0 {
+                self.item
+                    .push((live_id!(page_1), GButton::new_from_ptr(cx, self.btn)));
+                self.display_pages.push("1".to_string());
+                continue;
+            } else if i == display_count - 1 {
+                // 最后一个按钮永远是total这个按钮
+                self.item
+                    .push((live_id!(page_total), GButton::new_from_ptr(cx, self.btn)));
+                self.display_pages.push(self.total.to_string());
+                continue;
+            }
+            // 显示前缀省略号
+            if show_prefix_ellipsis && i == 1 {
+                self.item.push((
+                    live_id!(prefix_ellipsis),
+                    GButton::new_from_ptr(cx, self.btn),
+                ));
+                self.display_pages.push("...".to_string());
+                continue;
+            }
+            if show_suffix_ellipsis && i == display_count - 2 {
+                // 显示后缀省略号
+                self.item.push((
+                    live_id!(suffix_ellipsis),
+                    GButton::new_from_ptr(cx, self.btn),
+                ));
+                self.display_pages.push("...".to_string());
+                continue;
+            }
+
+            // 中间的页码按钮
+            let page_number = start_page + i - (if show_prefix_ellipsis { 1 } else { 0 });
+            self.item
+                .push((live_id!(page_number), GButton::new_from_ptr(cx, self.btn)));
+            self.display_pages.push(page_number.to_string());
         }
     }
 }

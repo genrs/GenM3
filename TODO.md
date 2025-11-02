@@ -10,9 +10,10 @@
     - [ ] panel
     - [ ] header
     - [ ] item
-  - [ ] select
+  - [x] select
+    - [x] options
     - [x] item
-  - [ ] pagination
+  - [x] pagination
   - [ ] color_picker
     - [x] color_panel
   - [ ] table
@@ -28,7 +29,7 @@
     - [ ] leaf
     - [ ] branch
   - [x] rate
-  - [ ] upload
+  - [ ] upload (maybe)
   - [x] badge
     - [x] dot
   - [ ] audio api

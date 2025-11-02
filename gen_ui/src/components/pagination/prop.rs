@@ -242,10 +242,10 @@ impl PaginationBasicStyle {
     pub fn default_container(theme: Theme, state: PaginationState) -> ViewBasicStyle {
         let mut container = ViewBasicStyle::from_state(theme, state.into());
         container.set_cursor(Default::default());
-        container.set_background_visible(true);
+        container.set_background_visible(false);
         container.set_flow(Flow::Right);
         container.set_height(Size::Fit);
-        container.set_width(Size::Fill);
+        container.set_width(Size::Fit);
         container
     }
 
