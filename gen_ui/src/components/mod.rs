@@ -655,7 +655,11 @@ live_design! {
                 text: "<"
             }
         }
-
+        btn: <GButton> {
+            slot: {
+                text: ""
+            }
+        }
         suffix: <GButton> {
             slot: {
                 text: ">"

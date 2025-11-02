@@ -6,14 +6,25 @@ use makepad_widgets::*;
 pub use prop::*;
 
 use crate::{
-    active_event, animation_open_then_redraw, area, area_ref, components::{
+    ComponentAnInit, active_event, animation_open_then_redraw, area, area_ref,
+    components::{
+        GLabelWidgetRefExt,
         lifecycle::LifeCycle,
         traits::{BasicStyle, Component, Style},
-    }, error::Error, event_option, event_option_ref, getter, getter_setter_ref, hit_finger_down, hit_finger_up, hit_hover_in, hit_hover_out, lifecycle, play_animation, prop::{
+    },
+    error::Error,
+    event_option, event_option_ref, getter, getter_setter_ref, hit_finger_down, hit_finger_up,
+    hit_hover_in, hit_hover_out, lifecycle, play_animation,
+    prop::{
+        ApplyStateMap, Radius,
         manuel::{BASIC, DISABLED, HOVER, PRESSED},
         traits::{ToColor, ToFloat},
-        ApplyStateMap, Radius,
-    }, pure_after_apply, set_animation, set_index, set_scope_path, setter, shader::draw_view::DrawView, switch_state, sync, themes::{conf::Conf, Theme}, visible, ComponentAnInit
+    },
+    pure_after_apply, set_animation, set_index, set_scope_path, setter,
+    shader::draw_view::DrawView,
+    switch_state, sync,
+    themes::{Theme, conf::Conf},
+    visible,
 };
 
 live_design! {
@@ -203,6 +214,11 @@ impl Widget for GButton {
         } else {
             self.handle_widget_event(cx, event, hit, sweep_area);
         }
+    }
+
+    /// only if use default button which let text be slot child
+    fn set_text(&mut self, cx: &mut Cx, v: &str) {
+        let _ = self.slot.as_glabel().set_text(cx, v.to_string());
     }
 }
 
