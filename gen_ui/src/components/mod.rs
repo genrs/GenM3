@@ -648,6 +648,20 @@ live_design! {
             }
         }
     }
+
+    pub GPagination = <GPaginationBase> {
+        prefix: <GButton> {
+            slot: {
+                text: "<"
+            }
+        }
+
+        suffix: <GButton> {
+            slot: {
+                text: ">"
+            }
+        }
+    }
 }
 
 pub fn components_register(cx: &mut Cx) {
@@ -678,6 +692,7 @@ pub fn components_register(cx: &mut Cx) {
     select::select_register(cx);
     badge::badge_register(cx);
     input::input_register(cx);
+    pagination::live_design(cx);
 }
 
 component! {

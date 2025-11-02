@@ -125,6 +125,7 @@ pub const BADGE_DOT: &str = "badge_dot";
 pub const BADGE: &str = "badge";
 pub const INPUT: &str = "input";
 pub const INPUT_AREA: &str = "input_area";
+pub const PAGINATION: &str = "pagination";
 // --- mode ------------------------------------------------------
 pub const MODE: &str = "mode";
 pub const ROUND: &str = "Round";

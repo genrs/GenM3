@@ -13,7 +13,7 @@ use crate::{
     from_prop_to_toml, get_get_mut,
     prop::{
         ApplySlotMapImpl, ApplyStateMapImpl, Applys,
-        manuel::{BASIC, CONTAINER, ITEM, PREFIX, SUFFIX},
+        manuel::{BASIC, CONTAINER, DISABLED, ITEM, PREFIX, SUFFIX},
     },
     prop_interconvert,
     themes::Theme,
@@ -23,7 +23,8 @@ use crate::{
 prop_interconvert! {
     PaginationStyle {
         basic_prop = PaginationBasicStyle;
-        basic => BASIC, PaginationBasicStyle::default(), |v| (v, PaginationState::Basic).try_into()
+        basic => BASIC, PaginationBasicStyle::default(), |v| (v, PaginationState::Basic).try_into(),
+        disabled => DISABLED, PaginationBasicStyle::from_state(Theme::default(), PaginationState::Disabled), |v| (v, PaginationState::Disabled).try_into()
     }, "[component.pagination] should be a table"
 }
 
@@ -33,7 +34,8 @@ impl Style for PaginationStyle {
     type Basic = PaginationBasicStyle;
 
     get_get_mut! {
-        PaginationState::Basic => basic
+        PaginationState::Basic => basic,
+        PaginationState::Disabled => disabled
     }
 
     fn len() -> usize {
@@ -44,7 +46,11 @@ impl Style for PaginationStyle {
     where
         Self::State: Eq + std::hash::Hash + Copy,
     {
-        map.sync(&mut self.basic, PaginationState::Basic, []);
+        map.sync(
+            &mut self.basic,
+            PaginationState::Basic,
+            [(PaginationState::Disabled, &mut self.disabled)],
+        );
     }
 }
 
@@ -55,7 +61,7 @@ impl SlotStyle for PaginationStyle {
         map.sync(
             &mut self.basic,
             PaginationState::Basic,
-            [],
+            [(PaginationState::Disabled, &mut self.disabled)],
             [
                 PaginationPart::Container,
                 PaginationPart::Prefix,
@@ -177,7 +183,7 @@ impl TryFrom<(&Item, PaginationState)> for PaginationBasicStyle {
 
     fn try_from((value, state): (&Item, PaginationState)) -> Result<Self, Self::Error> {
         let inline_table = value.as_inline_table().ok_or(Error::ThemeStyleParse(
-            "[component.card.$slot] should be an inline table".to_string(),
+            "[component.pagination.$slot] should be an inline table".to_string(),
         ))?;
 
         let container = get_from_itable(
@@ -237,6 +243,9 @@ impl PaginationBasicStyle {
         let mut container = ViewBasicStyle::from_state(theme, state.into());
         container.set_cursor(Default::default());
         container.set_background_visible(true);
+        container.set_flow(Flow::Right);
+        container.set_height(Size::Fit);
+        container.set_width(Size::Fill);
         container
     }
 
@@ -261,7 +270,8 @@ impl PaginationBasicStyle {
 
 component_state! {
     PaginationState {
-        Basic => BASIC
+        Basic => BASIC,
+        Disabled => DISABLED
     }, _ => PaginationState::Basic
 }
 
@@ -275,6 +285,7 @@ impl From<PaginationState> for ViewState {
     fn from(value: PaginationState) -> Self {
         match value {
             PaginationState::Basic => ViewState::Basic,
+            PaginationState::Disabled => ViewState::Disabled,
         }
     }
 }
@@ -283,6 +294,7 @@ impl From<ViewState> for PaginationState {
     fn from(value: ViewState) -> Self {
         match value {
             ViewState::Basic => PaginationState::Basic,
+            ViewState::Disabled => PaginationState::Disabled,
             _ => panic!("PaginationState can only be Basic or Hover"),
         }
     }
@@ -292,6 +304,7 @@ impl From<PaginationState> for ButtonState {
     fn from(value: PaginationState) -> Self {
         match value {
             PaginationState::Basic => ButtonState::Basic,
+            PaginationState::Disabled => ButtonState::Disabled,
         }
     }
 }
