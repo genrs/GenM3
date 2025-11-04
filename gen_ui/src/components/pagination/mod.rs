@@ -8,13 +8,16 @@ use makepad_widgets::*;
 
 use crate::{
     components::{
-        BasicStyle, ButtonEvent, ButtonState, Component, GButton, GLabelWidgetRefExt, LifeCycle,
-        Style,
+        BasicStyle, ButtonState, Component, GButton, GLabelWidgetRefExt, LifeCycle, Style,
     },
     error::Error,
-    lifecycle, play_animation,
-    prop::{ApplyStateMap, traits::ToFloat},
-    pure_after_apply, set_index, set_scope_path,
+    lifecycle,
+    prop::{
+        ApplyStateMap,
+        manuel::{BASIC, DISABLED},
+        traits::ToFloat,
+    },
+    set_index, set_scope_path,
     shader::draw_view::DrawView,
     switch_state, sync,
     themes::conf::Conf,
@@ -143,73 +146,13 @@ impl Widget for GPagination {
             let walk = self.prefix.walk(cx);
             let _ = self.prefix.draw_walk(cx, scope, walk);
         }
-        // self.item.clear();
-        // // 根据 current 和 page_size 计算出当前页的按钮范围
-        // let (start_page, end_page, show_prefix_ellipsis, show_suffix_ellipsis) =
-        //     self.count_display_pages();
-        // // 确定 item 数量
-        // let display_count = end_page - start_page
-        //     + 1
-        //     + (show_prefix_ellipsis.to_f32() as usize)
-        //     + (show_suffix_ellipsis.to_f32() as usize);
-        // for i in 0..display_count {
-        //     let mut display = None;
-        //     // 第一个按钮永远是1这个按钮
-        //     if i == 0 {
-        //         self.item
-        //             .push((live_id!(page_1), GButton::new_from_ptr(cx, self.btn)));
-        //         display = Some("1".to_string());
-        //     } else if i == display_count - 1 {
-        //         // 最后一个按钮永远是total这个按钮
-        //         self.item
-        //             .push((live_id!(page_total), GButton::new_from_ptr(cx, self.btn)));
-        //         display = Some(self.total.to_string());
-        //     }
-        //     // 显示前缀省略号
-        //     if show_prefix_ellipsis && display.is_none() && i == 1 {
-        //         self.item.push((
-        //             live_id!(prefix_ellipsis),
-        //             GButton::new_from_ptr(cx, self.btn),
-        //         ));
-        //         display = Some("...".to_string());
-        //     }
-        //     if show_suffix_ellipsis && display.is_none() && i == display_count - 2 {
-        //         // 显示后缀省略号
-        //         self.item.push((
-        //             live_id!(suffix_ellipsis),
-        //             GButton::new_from_ptr(cx, self.btn),
-        //         ));
-        //         display = Some("...".to_string());
-        //     }
-
-        //     // 中间的页码按钮
-        //     if display.is_none() {
-        //         let page_number = start_page + i - (if show_prefix_ellipsis { 1 } else { 0 });
-        //         self.item
-        //             .push((live_id!(page_number), GButton::new_from_ptr(cx, self.btn)));
-        //         display = Some(page_number.to_string());
-        //     }
-        //     // 对按钮进行绘制
-        //     if let Some(text) = display {
-        //         let btn = &mut self.item.last_mut().unwrap().1;
-        //         let walk = btn.walk(cx);
-        //         btn.set_text(cx, &text);
-        //         // 如果current等于按钮的页码，则设置为选中状态
-        //         if self.current.to_string() == text {
-        //             btn.switch_state_and_redraw(cx, ButtonState::Pressed);
-        //         }
-        //         let _ = btn.draw_walk(cx, scope, walk);
-        //         continue;
-        //     }
-        // }
-
         for ((_id, btn), text) in self.item.iter_mut().zip(self.display_pages.iter()) {
             let walk = btn.walk(cx);
             btn.set_text(cx, &text);
             // 如果current等于按钮的页码，则设置为选中状态
             if self.current.to_string().eq(text) {
                 btn.switch_state_with_animation(cx, ButtonState::Pressed);
-            }else {
+            } else {
                 btn.switch_state_with_animation(cx, ButtonState::Basic);
             }
             let _ = btn.draw_walk(cx, scope, walk);
@@ -242,7 +185,11 @@ impl Widget for GPagination {
         self.suffix.handle_event(cx, event, scope);
         // 点击页码按钮会让 current 变为对应的页码，页码中的省略号按钮，前省略号会让 current - 5，后省略号会让 current + 5，超过范围则设置为边界值
         for (_id, item) in self.item.iter_mut() {
-            item.handle_event(cx, event, scope); // 这里发现action只有fingerdown没有clicked
+            // 如果current等于按钮的页码，则跳过
+            if self.current.to_string() == item.slot.as_glabel().get_text() {
+                continue;
+            }
+            item.handle_event(cx, event, scope);
         }
     }
 }
@@ -264,7 +211,6 @@ impl MatchEvent for GPagination {
         for (id, item) in self.item.iter_mut() {
             if let Some(_) = item.clicked(actions) {
                 let text = item.slot.as_glabel().get_text();
-                dbg!("Clicked page button: {}", &text);
                 if *id == live_id!(prefix_ellipsis) {
                     // 前省略号
                     if self.current > 5 {
@@ -287,8 +233,6 @@ impl MatchEvent for GPagination {
                 }
             }
         }
-
-        
     }
 }
 
@@ -342,7 +286,30 @@ impl LiveHook for GPagination {
         }
     }
 
-    fn after_apply(&mut self, cx: &mut Cx, _apply: &mut Apply, _index: usize, _nodes: &[LiveNode]) {
+    fn after_apply(&mut self, cx: &mut Cx, apply: &mut Apply, index: usize, nodes: &[LiveNode]) {
+        self.set_apply_state_map(
+            apply.from,
+            nodes,
+            index,
+            &PaginationBasicStyle::live_props(),
+            [live_id!(basic), live_id!(disabled)],
+            |_| {},
+            |prefix, component, applys| match prefix.to_string().as_str() {
+                BASIC => {
+                    component
+                        .apply_state_map
+                        .insert(PaginationState::Basic, applys);
+                }
+                DISABLED => {
+                    component
+                        .apply_state_map
+                        .insert(PaginationState::Disabled, applys);
+                }
+                _ => {}
+            },
+        );
+
+        self.item.clear();
         // 根据 current 和 page_size 计算出当前页的按钮范围
         let (start_page, end_page, show_prefix_ellipsis, show_suffix_ellipsis) =
             self.count_display_pages();
@@ -403,7 +370,7 @@ impl Component for GPagination {
         self.style = style.clone();
     }
 
-    fn render(&mut self, cx: &mut Cx) -> Result<(), Self::Error> {
+    fn render(&mut self, _cx: &mut Cx) -> Result<(), Self::Error> {
         if self.disabled {
             self.switch_state(PaginationState::Disabled);
         }
@@ -423,11 +390,11 @@ impl Component for GPagination {
         }
     }
 
-    fn handle_widget_event(&mut self, cx: &mut Cx, event: &Event, hit: Hit, area: Area) {
-        todo!()
+    fn handle_widget_event(&mut self, _cx: &mut Cx, _event: &Event, _hit: Hit, _area: Area) {
+        ()
     }
 
-    fn switch_state_with_animation(&mut self, cx: &mut Cx, state: Self::State) -> () {
+    fn switch_state_with_animation(&mut self, _cx: &mut Cx, _state: Self::State) -> () {
         ()
     }
 
@@ -435,10 +402,10 @@ impl Component for GPagination {
         self.style.sync(&self.apply_state_map);
     }
 
-    fn set_animation(&mut self, cx: &mut Cx) -> () {
-        todo!()
+    fn set_animation(&mut self, _cx: &mut Cx) -> () {
+        ()
     }
-    fn play_animation(&mut self, cx: &mut Cx, state: &[LiveId; 2]) -> () {
+    fn play_animation(&mut self, _cx: &mut Cx, _state: &[LiveId; 2]) -> () {
         ()
     }
 
