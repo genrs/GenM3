@@ -4,7 +4,7 @@ use makepad_widgets::*;
 use toml_edit::Item;
 
 use crate::{
-    basic_prop_interconvert, component_color, component_part, component_state,
+    component_part, component_state,
     components::{
         LabelState, ViewColors,
         area::{InputAreaBasicStyle, InputAreaPart},
@@ -16,12 +16,10 @@ use crate::{
     from_prop_to_toml, get_get_mut,
     prop::{
         ApplySlotMapImpl, ApplyStateMapImpl, Applys, Radius,
-        manuel::{
-            BASIC, COLOR, CONTAINER, DISABLED, EMPTY, FOCUS, HOVER, INPUT, PREFIX, SUFFIX, THEME,
-        },
-        traits::{FromLiveColor, FromLiveValue, NewFrom, ToColor, ToTomlValue},
+        manuel::{BASIC, CONTAINER, DISABLED, EMPTY, FOCUS, HOVER, INPUT, PREFIX, SUFFIX},
+        traits::NewFrom,
     },
-    prop_interconvert, state_color,
+    prop_interconvert,
     themes::Theme,
     utils::get_from_itable,
 };

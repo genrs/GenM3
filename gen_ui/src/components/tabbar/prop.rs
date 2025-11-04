@@ -3,12 +3,13 @@ use makepad_widgets::*;
 use crate::{
     component_state,
     components::{
+        ViewBasicStyle, ViewState,
         live_props::LiveProps,
         traits::{BasicStyle, ComponentState, Style},
-        ViewBasicStyle, ViewState,
     },
     from_inherit_to_view_basic_style, get_get_mut, inherits_view_basic_prop,
     prop::{
+        ApplyStateMapImpl, Radius,
         manuel::{
             ABS_POS, ALIGN, BACKGROUND_COLOR, BACKGROUND_VISIBLE, BASIC, BLUR_RADIUS, BORDER_COLOR,
             BORDER_RADIUS, BORDER_WIDTH, CLIP_X, CLIP_Y, CURSOR, DISABLED, FLOW, HEIGHT, MARGIN,
@@ -16,9 +17,8 @@ use crate::{
             WIDTH,
         },
         traits::{AbsPos, FromLiveColor, FromLiveValue, NewFrom, ToColor, ToTomlValue},
-        ApplyStateMapImpl, Radius,
     },
-    prop_interconvert, state_colors,
+    prop_interconvert,
     themes::{Theme, TomlValueTo},
 };
 

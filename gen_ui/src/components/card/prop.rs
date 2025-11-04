@@ -4,14 +4,15 @@ use toml_edit::Item;
 use crate::{
     component_part, component_state,
     components::{
-        live_props::LiveProps,
-        traits::{BasicStyle, ComponentState, Style, SlotBasicStyle, SlotStyle},
-        view::{ViewBasicStyle, ViewState},
         ViewColors,
+        live_props::LiveProps,
+        traits::{BasicStyle, ComponentState, SlotBasicStyle, SlotStyle, Style},
+        view::{ViewBasicStyle, ViewState},
     },
     error::Error,
     from_inherit_to_view_basic_style, from_prop_to_toml, get_get_mut, inherits_view_basic_prop,
     prop::{
+        ApplySlotMapImpl, ApplyStateMapImpl, Applys, Radius,
         manuel::{
             ABS_POS, ALIGN, BACKGROUND_COLOR, BACKGROUND_VISIBLE, BASIC, BLUR_RADIUS, BODY,
             BORDER_COLOR, BORDER_RADIUS, BORDER_WIDTH, CLIP_X, CLIP_Y, CONTAINER, CURSOR, FLOW,
@@ -19,9 +20,8 @@ use crate::{
             SHADOW_OFFSET, SPACING, SPREAD_RADIUS, THEME, WIDTH,
         },
         traits::{AbsPos, FromLiveColor, FromLiveValue, NewFrom, ToColor, ToTomlValue},
-        ApplySlotMapImpl, ApplyStateMapImpl, Applys, Radius,
     },
-    prop_interconvert, state_colors,
+    prop_interconvert,
     themes::{Theme, TomlValueTo},
     utils::get_from_itable,
 };

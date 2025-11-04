@@ -21,7 +21,7 @@ use crate::{
         traits::{AbsPos, FromLiveColor, FromLiveValue, NewFrom, ToColor, ToTomlValue},
         ApplySlotMapImpl, Radius,
     },
-    prop_interconvert, state_color, state_colors,
+    prop_interconvert, state_color, 
     themes::{Theme, TomlValueTo},
     utils::get_from_itable,
 };
