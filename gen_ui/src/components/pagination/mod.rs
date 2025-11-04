@@ -9,19 +9,11 @@ use makepad_widgets::*;
 use crate::{
     components::{
         BasicStyle, ButtonState, Component, GButton, GLabelWidgetRefExt, LifeCycle, Style,
-    },
-    error::Error,
-    lifecycle,
-    prop::{
+    }, error::Error, event_option, lifecycle, prop::{
         ApplyStateMap,
         manuel::{BASIC, DISABLED},
         traits::ToFloat,
-    },
-    set_index, set_scope_path,
-    shader::draw_view::DrawView,
-    switch_state, sync,
-    themes::conf::Conf,
-    visible,
+    }, set_index, set_scope_path, shader::draw_view::DrawView, switch_state, sync, themes::conf::Conf, visible
 };
 
 live_design! {
@@ -89,6 +81,8 @@ pub struct GPagination {
     pub page_size: i32,
     #[rust]
     pub display_pages: Vec<String>,
+    #[live(true)]
+    pub event_open: bool,
 }
 
 impl WidgetNode for GPagination {
@@ -196,20 +190,23 @@ impl Widget for GPagination {
 
 impl MatchEvent for GPagination {
     fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions) {
-        if let Some(_) = self.prefix.clicked(actions) {
+        let mut meta = None;
+        if let Some(e) = self.prefix.clicked(actions) {
             if self.current > 1 {
                 self.current -= 1;
+                meta = Some(e.meta);
             }
         }
 
-        if let Some(_) = self.suffix.clicked(actions) {
+        if let Some(e) = self.suffix.clicked(actions) {
             if self.current < self.total {
                 self.current += 1;
+                meta = Some(e.meta);
             }
         }
 
         for (id, item) in self.item.iter_mut() {
-            if let Some(_) = item.clicked(actions) {
+            if let Some(e) = item.clicked(actions) {
                 let text = item.slot.as_glabel().get_text();
                 if *id == live_id!(prefix_ellipsis) {
                     // 前省略号
@@ -231,7 +228,12 @@ impl MatchEvent for GPagination {
                         self.current = page;
                     }
                 }
+                meta = Some(e.meta);
             }
+        }
+
+        if let Some(meta) = meta {
+            self.active_changed(cx, Some(meta));
         }
     }
 }
@@ -418,6 +420,24 @@ impl Component for GPagination {
 }
 
 impl GPagination {
+    pub fn active_changed(&mut self, cx: &mut Cx, meta: Option<FingerUpEvent>) {
+        if self.event_open {
+            self.scope_path.as_ref().map(|path| {
+                cx.widget_action(
+                    self.widget_uid(),
+                    path,
+                    PaginationEvent::Changed(PaginationChanged {
+                        meta,
+                        current: self.current,
+                        page_size: self.page_size as usize,
+                    }),
+                );
+            });
+        }
+    }
+    event_option! {
+        changed: PaginationEvent::Changed => PaginationChanged
+    }
     /// count display pages by current page and page size
     /// return (start_page, end_page, show_prefix_ellipsis, show_suffix_ellipsis)
     /// - total <= 5: (1, total, false, false) `1 2 3 4 5`
