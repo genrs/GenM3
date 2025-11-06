@@ -8,12 +8,21 @@ use makepad_widgets::*;
 
 use crate::{
     components::{
-        BasicStyle, ButtonState, Component, GButton, GLabelWidgetRefExt, LifeCycle, Style,
-    }, error::Error, event_option, lifecycle, prop::{
-        ApplyStateMap,
+        BasicStyle, ButtonBasicStyle, ButtonState, Component, GButton, GLabelWidgetRefExt,
+        LifeCycle, SlotComponent, SlotStyle, Style, ViewBasicStyle,
+    },
+    error::Error,
+    event_option, lifecycle,
+    prop::{
+        ApplyMapImpl, ApplySlotMap, ApplySlotMapImpl, ApplyStateMap, ToStateMap,
         manuel::{BASIC, DISABLED},
-        traits::ToFloat,
-    }, set_index, set_scope_path, shader::draw_view::DrawView, switch_state, sync, themes::conf::Conf, visible
+        traits::{ToColor, ToFloat},
+    },
+    set_index, set_scope_path,
+    shader::draw_view::DrawView,
+    switch_state, sync,
+    themes::conf::Conf,
+    visible,
 };
 
 live_design! {
@@ -61,7 +70,7 @@ pub struct GPagination {
     #[rust]
     pub scope_path: Option<HeapLiveIdPath>,
     #[rust]
-    pub apply_state_map: ApplyStateMap<PaginationState>,
+    pub apply_slot_map: ApplySlotMap<PaginationState, PaginationPart>,
     #[rust]
     pub index: usize,
     #[rust(true)]
@@ -83,6 +92,10 @@ pub struct GPagination {
     pub display_pages: Vec<String>,
     #[live(true)]
     pub event_open: bool,
+    #[live(true)]
+    pub animation_open: bool,
+    #[rust]
+    apply_items_map: ApplyStateMap<ButtonState>,
 }
 
 impl WidgetNode for GPagination {
@@ -143,6 +156,8 @@ impl Widget for GPagination {
         for ((_id, btn), text) in self.item.iter_mut().zip(self.display_pages.iter()) {
             let walk = btn.walk(cx);
             btn.set_text(cx, &text);
+            btn.apply_state_map = self.apply_items_map.clone();
+            btn.focus_sync();
             // 如果current等于按钮的页码，则设置为选中状态
             if self.current.to_string().eq(text) {
                 btn.switch_state_with_animation(cx, ButtonState::Pressed);
@@ -165,14 +180,13 @@ impl Widget for GPagination {
         if !self.visible {
             return;
         }
-        // if self.disabled {
-        //     let area = self.area();
-        //     let hit = event.hits(cx, area);
-        //     self.handle_when_disabled(cx, event, hit);
-        //     return;
-        // }
+        if self.disabled {
+            let area = self.area();
+            let hit = event.hits(cx, area);
+            self.handle_when_disabled(cx, event, hit);
+            return;
+        }
         // 事件捕捉 ----------------------------------------------------------------------------------------------------
-
         self.match_event(cx, event);
         // 点击前缀按钮会让current - 1， 点击后缀按钮会让current + 1, 如果 current - 1 或 + 1 超过范围则直接设置为边界值
         self.prefix.handle_event(cx, event, scope);
@@ -240,6 +254,7 @@ impl MatchEvent for GPagination {
 
 impl LiveHook for GPagination {
     // pure_after_apply!();
+
     #[allow(unused_variables)]
     #[cfg(feature = "dev")]
     fn after_apply_from_doc(&mut self, cx: &mut Cx) {
@@ -289,22 +304,28 @@ impl LiveHook for GPagination {
     }
 
     fn after_apply(&mut self, cx: &mut Cx, apply: &mut Apply, index: usize, nodes: &[LiveNode]) {
-        self.set_apply_state_map(
+        let btn_live_props = ButtonBasicStyle::live_props();
+        self.set_apply_slot_map(
             apply.from,
             nodes,
             index,
-            &PaginationBasicStyle::live_props(),
             [live_id!(basic), live_id!(disabled)],
+            [
+                (PaginationPart::Container, &ViewBasicStyle::live_props()),
+                (PaginationPart::Prefix, &btn_live_props),
+                (PaginationPart::Suffix, &btn_live_props),
+                (PaginationPart::Item, &btn_live_props),
+            ],
             |_| {},
             |prefix, component, applys| match prefix.to_string().as_str() {
                 BASIC => {
                     component
-                        .apply_state_map
+                        .apply_slot_map
                         .insert(PaginationState::Basic, applys);
                 }
                 DISABLED => {
                     component
-                        .apply_state_map
+                        .apply_slot_map
                         .insert(PaginationState::Disabled, applys);
                 }
                 _ => {}
@@ -320,6 +341,7 @@ impl LiveHook for GPagination {
             + 1
             + (show_prefix_ellipsis.to_f32() as usize)
             + (show_suffix_ellipsis.to_f32() as usize);
+
         for i in 0..display_count {
             // 第一个按钮永远是1这个按钮
             if i == 0 {
@@ -355,10 +377,23 @@ impl LiveHook for GPagination {
 
             // 中间的页码按钮
             let page_number = start_page + i - (if show_prefix_ellipsis { 1 } else { 0 });
-            self.item
-                .push((live_id!(page_number), GButton::new_from_ptr(cx, self.btn)));
+            let mut btn = GButton::new_from_ptr(cx, self.btn);
+            btn.style.basic = self.style.basic.item;
+            btn.style.disabled = self.style.disabled.item;
+            self.item.push((live_id!(page_number), btn));
             self.display_pages.push(page_number.to_string());
         }
+    }
+}
+
+impl SlotComponent<PaginationState> for GPagination {
+    type Part = PaginationPart;
+
+    fn merge_prop_to_slot(&mut self) -> () {
+        self.prefix.style.basic = self.style.basic.prefix;
+        self.prefix.style.disabled = self.style.disabled.prefix;
+        self.suffix.style.basic = self.style.basic.suffix;
+        self.suffix.style.disabled = self.style.disabled.suffix;
     }
 }
 
@@ -370,6 +405,7 @@ impl Component for GPagination {
     fn merge_conf_prop(&mut self, cx: &mut Cx) -> () {
         let style = &cx.global::<Conf>().components.pagination;
         self.style = style.clone();
+        self.merge_prop_to_slot();
     }
 
     fn render(&mut self, _cx: &mut Cx) -> Result<(), Self::Error> {
@@ -396,12 +432,32 @@ impl Component for GPagination {
         ()
     }
 
-    fn switch_state_with_animation(&mut self, _cx: &mut Cx, _state: Self::State) -> () {
-        ()
+    fn switch_state_with_animation(&mut self, cx: &mut Cx, state: Self::State) -> () {
+        if !self.animation_open {
+            return;
+        }
+        self.switch_state(state);
+        self.set_animation(cx);
+        self.redraw(cx);
     }
 
     fn focus_sync(&mut self) -> () {
-        self.style.sync(&self.apply_state_map);
+        let mut crossed_map = self.apply_slot_map.cross();
+        for (part, slot) in [
+            (PaginationPart::Prefix, &mut self.prefix),
+            (PaginationPart::Suffix, &mut self.suffix),
+        ] {
+            crossed_map.remove(&part).map(|map| {
+                slot.apply_state_map.merge(map.to_state());
+                slot.focus_sync();
+            });
+        }
+
+        crossed_map.remove(&PaginationPart::Item).map(|map| {
+            self.apply_items_map.merge(map.to_state());
+        });
+
+        self.style.sync_slot(&self.apply_slot_map);
     }
 
     fn set_animation(&mut self, _cx: &mut Cx) -> () {
