@@ -4,7 +4,8 @@ use toml_edit::Item;
 use crate::{
     component_part, component_state,
     components::{
-        ButtonBasicStyle, ButtonState, ViewColors,
+        InputState, ViewColors,
+        area::InputAreaBasicStyle,
         live_props::LiveProps,
         traits::{BasicStyle, ComponentState, SlotBasicStyle, SlotStyle, Style},
         view::{ViewBasicStyle, ViewState},
@@ -13,7 +14,7 @@ use crate::{
     from_prop_to_toml, get_get_mut,
     prop::{
         ApplySlotMapImpl, ApplyStateMapImpl, Applys,
-        manuel::{BASIC, CONTAINER, DISABLED, ITEM, PREFIX, SUFFIX},
+        manuel::{BASIC, CONTAINER, DISABLED, ITEM},
     },
     prop_interconvert,
     themes::Theme,
@@ -62,12 +63,7 @@ impl SlotStyle for VerificationStyle {
             &mut self.basic,
             VerificationState::Basic,
             [(VerificationState::Disabled, &mut self.disabled)],
-            [
-                VerificationPart::Container,
-                VerificationPart::Prefix,
-                VerificationPart::Item,
-                VerificationPart::Suffix,
-            ],
+            [VerificationPart::Container, VerificationPart::Item],
         );
     }
 }
@@ -77,12 +73,8 @@ impl SlotStyle for VerificationStyle {
 pub struct VerificationBasicStyle {
     #[live(VerificationBasicStyle::default_container(Theme::default(), VerificationState::Basic))]
     pub container: ViewBasicStyle,
-    #[live(VerificationBasicStyle::default_prefix(Theme::default(), VerificationState::Basic))]
-    pub prefix: ButtonBasicStyle,
     #[live(VerificationBasicStyle::default_item(Theme::default(), VerificationState::Basic))]
-    pub item: ButtonBasicStyle,
-    #[live(VerificationBasicStyle::default_suffix(Theme::default(), VerificationState::Basic))]
-    pub suffix: ButtonBasicStyle,
+    pub item: InputAreaBasicStyle,
 }
 
 impl BasicStyle for VerificationBasicStyle {
@@ -93,9 +85,7 @@ impl BasicStyle for VerificationBasicStyle {
     fn from_state(theme: crate::themes::Theme, state: Self::State) -> Self {
         Self {
             container: Self::default_container(theme, state),
-            prefix: Self::default_prefix(theme, state),
             item: Self::default_item(theme, state),
-            suffix: Self::default_suffix(theme, state),
         }
     }
 
@@ -118,9 +108,7 @@ impl BasicStyle for VerificationBasicStyle {
     fn live_props() -> LiveProps {
         vec![
             (live_id!(container), ViewBasicStyle::live_props().into()),
-            (live_id!(header), ViewBasicStyle::live_props().into()),
-            (live_id!(body), ViewBasicStyle::live_props().into()),
-            (live_id!(footer), ViewBasicStyle::live_props().into()),
+            (live_id!(item), InputAreaBasicStyle::live_props().into()),
         ]
     }
 
@@ -147,18 +135,14 @@ impl SlotBasicStyle for VerificationBasicStyle {
                 self.container
                     .set_from_str(key, &value.into(), state.into())
             }
-            VerificationPart::Prefix => self.prefix.set_from_str(key, &value.into(), state.into()),
             VerificationPart::Item => self.item.set_from_str(key, &value.into(), state.into()),
-            VerificationPart::Suffix => self.suffix.set_from_str(key, &value.into(), state.into()),
         }
     }
 
     fn sync_slot(&mut self, state: Self::State, part: Self::Part) -> () {
         match part {
             VerificationPart::Container => self.container.sync(state.into()),
-            VerificationPart::Prefix => self.prefix.sync(state.into()),
             VerificationPart::Item => self.item.sync(state.into()),
-            VerificationPart::Suffix => self.suffix.sync(state.into()),
         }
     }
 }
@@ -172,9 +156,7 @@ impl Default for VerificationBasicStyle {
 from_prop_to_toml! {
     VerificationBasicStyle {
         container => CONTAINER,
-        prefix => PREFIX,
-        item => ITEM,
-        suffix => SUFFIX
+        item => ITEM
     }
 }
 
@@ -198,18 +180,6 @@ impl TryFrom<(&Item, VerificationState)> for VerificationBasicStyle {
             |v| (v, ViewState::from(state)).try_into(),
         )?;
 
-        let prefix = get_from_itable(
-            inline_table,
-            PREFIX,
-            || {
-                Ok(VerificationBasicStyle::default_prefix(
-                    Theme::default(),
-                    state,
-                ))
-            },
-            |v| (v, state.into()).try_into(),
-        )?;
-
         let item = get_from_itable(
             inline_table,
             ITEM,
@@ -222,24 +192,7 @@ impl TryFrom<(&Item, VerificationState)> for VerificationBasicStyle {
             |v| (v, state.into()).try_into(),
         )?;
 
-        let suffix = get_from_itable(
-            inline_table,
-            SUFFIX,
-            || {
-                Ok(VerificationBasicStyle::default_suffix(
-                    Theme::default(),
-                    state,
-                ))
-            },
-            |v| (v, state.into()).try_into(),
-        )?;
-
-        Ok(Self {
-            container,
-            prefix,
-            item,
-            suffix,
-        })
+        Ok(Self { container, item })
     }
 }
 
@@ -254,22 +207,10 @@ impl VerificationBasicStyle {
         container
     }
 
-    pub fn default_prefix(theme: Theme, state: VerificationState) -> ButtonBasicStyle {
-        let mut prefix = ButtonBasicStyle::from_state(theme, state.into());
-        prefix.set_cursor(Default::default());
-        prefix
-    }
-
-    pub fn default_item(theme: Theme, state: VerificationState) -> ButtonBasicStyle {
-        let mut item = ButtonBasicStyle::from_state(theme, state.into());
-        item.set_cursor(Default::default());
+    pub fn default_item(theme: Theme, state: VerificationState) -> InputAreaBasicStyle {
+        let mut item = InputAreaBasicStyle::from_state(theme, state.into());
+        item.container.set_width(Size::Fixed(64.0));
         item
-    }
-
-    pub fn default_suffix(theme: Theme, state: VerificationState) -> ButtonBasicStyle {
-        let mut suffix = ButtonBasicStyle::from_state(theme, state.into());
-        suffix.set_cursor(Default::default());
-        suffix
     }
 }
 
@@ -305,11 +246,11 @@ impl From<ViewState> for VerificationState {
     }
 }
 
-impl From<VerificationState> for ButtonState {
+impl From<VerificationState> for InputState {
     fn from(value: VerificationState) -> Self {
         match value {
-            VerificationState::Basic => ButtonState::Basic,
-            VerificationState::Disabled => ButtonState::Disabled,
+            VerificationState::Basic => InputState::Basic,
+            VerificationState::Disabled => InputState::Disabled,
         }
     }
 }
@@ -317,8 +258,6 @@ impl From<VerificationState> for ButtonState {
 component_part! {
     VerificationPart {
         Container => container => CONTAINER,
-        Prefix => prefix => PREFIX,
-        Item => item => ITEM,
-        Suffix => suffix => SUFFIX
+        Item => item => ITEM
     }, VerificationState
 }

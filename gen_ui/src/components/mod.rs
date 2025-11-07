@@ -34,10 +34,6 @@ mod tree;
 mod verification;
 mod view;
 
-
-pub use tree::*;
-pub use verification::*;
-pub use number_input::*;
 pub use badge::*;
 pub use button::*;
 pub use card::*;
@@ -54,6 +50,7 @@ pub use link::*;
 pub use live_props::*;
 pub use loading::*;
 pub use menu::*;
+pub use number_input::*;
 pub use pagination::*;
 pub use popup::*;
 pub use progress::*;
@@ -67,6 +64,8 @@ pub use switch::*;
 pub use tabbar::*;
 pub use tag::*;
 pub use traits::*;
+pub use tree::*;
+pub use verification::*;
 pub use view::*;
 
 use crate::{
@@ -673,6 +672,14 @@ live_design! {
             }
         }
     }
+
+    pub GVerification = <GVerificationBase> {
+        input: <GInputArea> {
+            draw_text: {
+                text_style: <THEME_FONT_REGULAR>{}
+            }
+        }
+    }
 }
 
 pub fn components_register(cx: &mut Cx) {
@@ -704,6 +711,7 @@ pub fn components_register(cx: &mut Cx) {
     badge::badge_register(cx);
     input::input_register(cx);
     pagination::live_design(cx);
+    verification::live_design(cx);
 }
 
 component! {

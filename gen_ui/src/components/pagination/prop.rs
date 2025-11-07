@@ -118,9 +118,9 @@ impl BasicStyle for PaginationBasicStyle {
     fn live_props() -> LiveProps {
         vec![
             (live_id!(container), ViewBasicStyle::live_props().into()),
-            (live_id!(header), ViewBasicStyle::live_props().into()),
-            (live_id!(body), ViewBasicStyle::live_props().into()),
-            (live_id!(footer), ViewBasicStyle::live_props().into()),
+            (live_id!(prefix), ButtonBasicStyle::live_props().into()),
+            (live_id!(body), ButtonBasicStyle::live_props().into()),
+            (live_id!(suffix), ButtonBasicStyle::live_props().into()),
         ]
     }
 
@@ -250,21 +250,15 @@ impl PaginationBasicStyle {
     }
 
     pub fn default_prefix(theme: Theme, state: PaginationState) -> ButtonBasicStyle {
-        let mut prefix = ButtonBasicStyle::from_state(theme, state.into());
-        prefix.set_cursor(Default::default());
-        prefix
+        ButtonBasicStyle::from_state(theme, state.into())
     }
 
     pub fn default_item(theme: Theme, state: PaginationState) -> ButtonBasicStyle {
-        let mut item = ButtonBasicStyle::from_state(theme, state.into());
-        item.set_cursor(Default::default());
-        item
+        ButtonBasicStyle::from_state(theme, state.into())
     }
 
     pub fn default_suffix(theme: Theme, state: PaginationState) -> ButtonBasicStyle {
-        let mut suffix = ButtonBasicStyle::from_state(theme, state.into());
-        suffix.set_cursor(Default::default());
-        suffix
+        ButtonBasicStyle::from_state(theme, state.into())
     }
 }
 
