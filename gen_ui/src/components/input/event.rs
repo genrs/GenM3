@@ -26,7 +26,7 @@ pub struct InputMaxLengthReached {
 
 #[derive(Debug, Clone)]
 pub struct InputFocus {
-    pub meta: InputFocusMetaEvent,
+    pub meta: Option<InputFocusMetaEvent>,
     pub value: String,
 }
 

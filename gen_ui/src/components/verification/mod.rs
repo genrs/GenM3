@@ -8,7 +8,8 @@ use makepad_widgets::*;
 
 use crate::{
     components::{
-        BasicStyle, Component, GInput, InputState, LifeCycle, SlotComponent, SlotStyle, Style,
+        BasicStyle, Component, GInput, InputChanged, InputFocus, InputFocusMetaEvent, InputKeyDown,
+        InputMaxLengthReached, InputState, LifeCycle, SlotComponent, SlotStyle, Style,
         ViewBasicStyle,
         area::{GInputArea, InputAreaBasicStyle, InputAreaPart},
     },
@@ -88,6 +89,9 @@ pub struct GVerification {
     /// 值，被一个输入框对应进行填充，Vec的长度和 length 保持一致
     #[live]
     pub value: Vec<String>,
+    /// (绝对位置, 索引)
+    #[rust]
+    pub abs: (DVec2, usize),
 }
 
 impl WidgetNode for GVerification {
@@ -174,12 +178,24 @@ impl MatchEvent for GVerification {
         // 捕获子输入框中的事件
         // 当输入框内容变化时，触发 changed 事件，可以知道是哪个输入框变化了来更新 value
         // 并且如果当某个输入框无法输入时，自动将焦点切换到下一个输入框，此时无法输入的输入框回返回一个max_length事件
-        for (_id, item) in self.item.iter_mut() {
-            if let Some(e) = item.changed(actions) {
-
+        let mut reapply = None;
+        for (index, (_id, item)) in self.item.iter_mut().enumerate() {
+            if let Some(InputChanged { value, .. }) = item.changed(actions) {
+                if !value.is_empty() {
+                    self.value[index] = value;
+                }
+            }
+            // 聚焦事件，聚焦事件的目的是为了存储当前聚焦的输入框位置，以便后续操作，这样当reach max length时可以自动切换焦点
+            if let Some(InputFocus { meta, value }) = item.focus(actions) {
+                if let Some(InputFocusMetaEvent::FingerDown(FingerDownEvent { abs, .. })) = meta {
+                    self.abs = (abs, index);
+                    dbg!(&self.abs);
+                }
             }
 
-            if let Some(e) = item.max_length_reached(actions) {
+            if let Some(InputMaxLengthReached { value, new_input }) =
+                item.max_length_reached(actions)
+            {
                 // 自动切换焦点到下一个输入框
                 // let current_index = self.item.iter().position(|(_id, input)| {
                 //     input.scope_path == item.scope_path
@@ -190,7 +206,40 @@ impl MatchEvent for GVerification {
                 //         next_input.focus(cx);
                 //     }
                 // }
-                dbg!(e);
+                self.value[index] = value;
+                // 将这个new_input设置到self.value中，然后重新apply_items
+                self.value[index + 1] = new_input;
+                if index + 1 >= self.length as usize {
+                    // 已经是最后一个输入框了，无法切换焦点
+                    continue;
+                } else {
+                    reapply = Some(index + 1);
+                }
+
+                // dbg!(e);
+            }
+
+            // 删除事件, 对应位置删除即可
+            if let Some(InputKeyDown { value, .. }) = item.backspace(actions) {
+                self.value[index] = value;
+            }
+        }
+        if let Some(re_index) = reapply {
+            self.apply_items(cx);
+            self.redraw(cx);
+
+            // 计算出这个输入框的绝对位置，然后设置焦点, y = self.abs.0.y, 从self.abs中可以知道到底从哪个输入框开始聚焦的
+            let input_size = self.item[re_index].1.walk(cx).width;
+            if let Size::Fixed(input_width) = input_size {
+                let spacing = self.style.get(self.state).container.spacing;
+                let abs_x =
+                    self.abs.0.x + (input_width + spacing) * (re_index as f64 - self.abs.1 as f64);
+                let abs = DVec2 {
+                    x: abs_x,
+                    y: self.abs.0.y,
+                };
+                // 设置焦点
+                self.item[re_index].1.do_focus(cx, abs);
             }
         }
     }

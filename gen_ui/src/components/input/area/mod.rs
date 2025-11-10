@@ -454,7 +454,7 @@ impl Component for GInputArea {
             Hit::KeyFocus(e) => {
                 self.animator_play(cx, id!(input.focus));
                 self.reset_cursor_blinker(cx);
-                self.active_focus(cx, e.into());
+                self.active_focus(cx, Some(e.into()));
             }
             Hit::KeyFocusLost(e) => {
                 // self.animator_play(cx, id!(focus.off));
@@ -521,28 +521,25 @@ impl Component for GInputArea {
                 modifiers,
                 ..
             }) if modifiers.is_primary() => self.select_all(cx),
-            Hit::FingerDown(FingerDownEvent {
-                abs,
-                tap_count,
-                device,
-                ..
-            }) if device.is_primary_hit() => {
+            Hit::FingerDown(fd) if fd.device.is_primary_hit() => {
                 self.set_key_focus(cx);
-                let rel = abs - self.text_area.rect(cx).pos;
+                let rel = fd.abs - self.text_area.rect(cx).pos;
                 let Ok(cursor) =
                     self.point_in_lpxs_to_cursor(Point::new(rel.x as f32, rel.y as f32))
+                    
                 else {
                     warning!("can't move cursor because layout was invalidated by earlier event");
                     return;
                 };
                 self.set_cursor(cx, cursor, false);
-                match tap_count {
+                match fd.tap_count {
                     2 => self.select_word(cx),
                     3 => self.select_all(cx),
                     _ => {}
                 }
-
+                
                 self.animator_play(cx, id!(input.focus));
+                self.active_focus(cx, Some(fd.into()));
             }
             Hit::FingerUp(fe) => {
                 if fe.is_over && fe.was_tap() {
@@ -626,15 +623,9 @@ impl Component for GInputArea {
                                     replace_with: String::new(),
                                 },
                             );
+
                             self.draw_input.redraw(cx);
-                            self.active_changed(
-                                cx,
-                                InputChangedMetaEvent::TextInput(TextInputEvent {
-                                    input: String::new(),
-                                    replace_last: false,
-                                    was_paste: false,
-                                }),
-                            );
+                            self.active_backspace(cx, Some(key_down));
                         }
                     }
                     KeyCode::Delete => {
@@ -1076,6 +1067,19 @@ impl Component for GInputArea {
 }
 
 impl GInputArea {
+    pub fn do_focus(&mut self, cx: &mut Cx, abs: DVec2) {
+        self.set_key_focus(cx);
+        let rel = abs - self.text_area.rect(cx).pos;
+        let Ok(cursor) = self.point_in_lpxs_to_cursor(Point::new(rel.x as f32, rel.y as f32))
+        else {
+            warning!("can't move cursor because layout was invalidated by earlier event");
+            self.set_cursor(cx, Cursor { index: 0, prefer_next_row: true}, false);
+            self.animator_play(cx, id!(input.focus));
+            return;
+        };
+        self.set_cursor(cx, cursor, false);
+        self.animator_play(cx, id!(input.focus));
+    }
     active_event! {
         active_hover_in: InputEvent::HoverIn |meta: FingerHoverEvent| => InputHoverIn { meta },
         active_hover_out: InputEvent::HoverOut |meta: FingerHoverEvent| => InputHoverOut { meta },
@@ -1083,7 +1087,7 @@ impl GInputArea {
         active_clicked: InputEvent::Clicked |meta: FingerUpEvent| => InputClicked { meta }
     }
 
-    pub fn active_focus(&mut self, cx: &mut Cx, meta: InputFocusMetaEvent) {
+    pub fn active_focus(&mut self, cx: &mut Cx, meta: Option<InputFocusMetaEvent>) {
         if self.event_open {
             if let Some(path) = self.scope_path.as_ref() {
                 cx.widget_action(
