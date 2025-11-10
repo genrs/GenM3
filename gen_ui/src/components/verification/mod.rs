@@ -305,6 +305,7 @@ impl GVerification {
         for _ in 0..self.length {
             let mut input = GInputArea::new_from_ptr(cx, self.input);
             input.style.basic = self.style.basic.item;
+            // 应该只替换walk和layout数据，其他的保持默认
             input.style.empty = self.style.basic.item;
             input.style.hover = self.style.basic.item;
             input.style.focus = self.style.basic.item;

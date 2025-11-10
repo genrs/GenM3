@@ -51,6 +51,9 @@ pub struct GInput {
     pub prefix: GView,
     #[live]
     pub value: String,
+    // ---
+    #[live(None)]
+    pub length: Option<usize>,
     // --- animator ----------------
     #[live(true)]
     pub animation_open: bool,
@@ -242,6 +245,7 @@ impl LiveHook for GInput {
                 _ => {}
             },
         );
+        
     }
 }
 
@@ -341,6 +345,9 @@ impl Component for GInput {
 
         // sync state if is not Basic
         self.style.sync_slot(&self.apply_slot_map);
+
+        // keep length in sync
+        self.input.length = self.length;
     }
 
     fn set_animation(&mut self, _cx: &mut Cx) -> () {

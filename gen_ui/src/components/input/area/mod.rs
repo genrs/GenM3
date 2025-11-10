@@ -185,6 +185,9 @@ pub struct GInputArea {
     pub placeholder: String,
     #[live]
     pub value: String,
+    /// max length of input area
+    #[live(None)]
+    pub length: Option<usize>,
     #[live(0.6)]
     blink_speed: f64,
     #[rust]
@@ -691,6 +694,13 @@ impl Component for GInputArea {
                     } else {
                         EditKind::Insert
                     });
+                    if let Some(length) = self.length {
+                        let current_len = self.value.graphemes(true).count();
+                        let input_len = input.graphemes(true).count();
+                        if current_len + input_len - if *replace_last { 1 } else { 0 } > length {
+                            return;
+                        }
+                    }
                     self.apply_edit(
                         cx,
                         Edit {
@@ -737,7 +747,6 @@ impl Component for GInputArea {
         }
     }
 
-    
     fn switch_state_with_animation(&mut self, cx: &mut Cx, state: Self::State) -> () {
         if !self.animation_open {
             return;
