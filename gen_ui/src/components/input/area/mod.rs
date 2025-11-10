@@ -16,6 +16,8 @@ use makepad_widgets::{
 use unicode_segmentation::UnicodeSegmentation;
 
 use crate::components::InputState;
+use crate::event_option;
+use crate::event_option_ref;
 use crate::switch_state;
 use crate::{
     ComponentAnInit, active_event, animation_open_then_redraw,
@@ -685,6 +687,7 @@ impl Component for GInputArea {
                     ..
                 } = &e;
                 if !self.is_read_only {
+                    let new_value = input.to_string();
                     let input = self.filter_input(&input, false);
                     if input.is_empty() {
                         return;
@@ -698,6 +701,8 @@ impl Component for GInputArea {
                         let current_len = self.value.graphemes(true).count();
                         let input_len = input.graphemes(true).count();
                         if current_len + input_len - if *replace_last { 1 } else { 0 } > length {
+                            // 达到最大长度限制触发max_length事件
+                            self.active_max_length_reached(cx, new_value);
                             return;
                         }
                     }
@@ -1106,6 +1111,35 @@ impl GInputArea {
                 );
             }
         }
+    }
+
+    pub fn active_max_length_reached(&mut self, cx: &mut Cx, new_input: String) {
+        if self.event_open {
+            if let Some(path) = self.scope_path.as_ref() {
+                cx.widget_action(
+                    self.widget_uid(),
+                    path,
+                    InputEvent::MaxLengthReached(InputMaxLengthReached {
+                        new_input,
+                        value: self.value.to_string(),
+                    }),
+                );
+            }
+        }
+    }
+
+    event_option! {
+        hover_in: InputEvent::HoverIn => InputHoverIn,
+        hover_out: InputEvent::HoverOut => InputHoverOut,
+        focus_lost: InputEvent::FocusLost => InputFocusLost,
+        clicked: InputEvent::Clicked => InputClicked,
+        changed: InputEvent::Changed => InputChanged,
+        focus: InputEvent::Focus => InputFocus,
+        backspace: InputEvent::Backspace => InputKeyDown,
+        esc: InputEvent::Esc => InputKeyDown,
+        returned: InputEvent::Returned => InputKeyDown,
+        key_down_unhandled: InputEvent::KeyDownUnhandled => InputKeyDown,
+        max_length_reached: InputEvent::MaxLengthReached => InputMaxLengthReached
     }
 
     pub fn active_backspace(&mut self, cx: &mut Cx, meta: Option<KeyEvent>) {
@@ -1623,6 +1657,22 @@ impl GInputArea {
             cx.stop_timer(self.blink_timer);
             self.blink_timer = cx.start_timeout(self.blink_speed)
         }
+    }
+}
+
+impl GInputAreaRef {
+    event_option_ref! {
+        hover_in => InputHoverIn,
+        hover_out => InputHoverOut,
+        focus_lost => InputFocusLost,
+        clicked => InputClicked,
+        focus => InputFocus,
+        changed => InputChanged,
+        backspace => InputKeyDown,
+        esc => InputKeyDown,
+        returned => InputKeyDown,
+        key_down_unhandled => InputKeyDown,
+        max_length_reached => InputMaxLengthReached
     }
 }
 

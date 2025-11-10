@@ -13,6 +13,15 @@ pub enum InputEvent {
     Esc(InputKeyDown),
     Returned(InputKeyDown),
     KeyDownUnhandled(InputKeyDown),
+    MaxLengthReached(InputMaxLengthReached),
+}
+
+#[derive(Debug, Clone)]
+pub struct InputMaxLengthReached {
+    /// 当前输入框的值
+    pub value: String,
+    /// 用户尝试输入的新值
+    pub new_input: String,
 }
 
 #[derive(Debug, Clone)]

@@ -209,7 +209,8 @@ impl VerificationBasicStyle {
 
     pub fn default_item(theme: Theme, state: VerificationState) -> InputAreaBasicStyle {
         let mut item = InputAreaBasicStyle::from_state(theme, state.into());
-        item.container.set_width(Size::Fixed(64.0));
+        item.container.set_width(Size::Fixed(42.0));
+        
         item
     }
 }

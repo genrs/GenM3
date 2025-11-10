@@ -84,6 +84,10 @@ pub struct GVerification {
     pub state: VerificationState,
     #[rust]
     apply_items_map: ApplySlotMap<InputState, InputAreaPart>,
+    // ---
+    /// 值，被一个输入框对应进行填充，Vec的长度和 length 保持一致
+    #[live]
+    pub value: Vec<String>,
 }
 
 impl WidgetNode for GVerification {
@@ -157,8 +161,37 @@ impl Widget for GVerification {
             return;
         }
 
+        self.match_event(cx, event);
+
         for (_id, item) in self.item.iter_mut() {
             item.handle_event(cx, event, scope);
+        }
+    }
+}
+
+impl MatchEvent for GVerification {
+    fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions) {
+        // 捕获子输入框中的事件
+        // 当输入框内容变化时，触发 changed 事件，可以知道是哪个输入框变化了来更新 value
+        // 并且如果当某个输入框无法输入时，自动将焦点切换到下一个输入框，此时无法输入的输入框回返回一个max_length事件
+        for (_id, item) in self.item.iter_mut() {
+            if let Some(e) = item.changed(actions) {
+
+            }
+
+            if let Some(e) = item.max_length_reached(actions) {
+                // 自动切换焦点到下一个输入框
+                // let current_index = self.item.iter().position(|(_id, input)| {
+                //     input.scope_path == item.scope_path
+                // });
+                // if let Some(index) = current_index {
+                //     if index + 1 < self.item.len() {
+                //         let next_input = &mut self.item[index + 1].1;
+                //         next_input.focus(cx);
+                //     }
+                // }
+                dbg!(e);
+            }
         }
     }
 }
@@ -310,6 +343,10 @@ impl GVerification {
             input.style.hover = self.style.basic.item;
             input.style.focus = self.style.basic.item;
             input.style.disabled = self.style.disabled.item;
+            // value 填充
+            if !self.value.is_empty() {
+                input.value = self.value.get(self.item.len()).cloned().unwrap_or_default();
+            }
             let id = live_id!(item);
             self.item.push((id, input));
         }
