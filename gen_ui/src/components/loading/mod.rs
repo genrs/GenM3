@@ -6,16 +6,7 @@ use makepad_widgets::*;
 pub use prop::*;
 
 use crate::{
-    ComponentAnInit,
-    components::{BasicStyle, Component, LifeCycle, Style},
-    error::Error,
-    lifecycle, play_animation,
-    prop::{ApplyStateMap, LoadingMode, traits::ToFloat},
-    set_animation, set_index, set_scope_path,
-    shader::draw_loading::DrawLoading,
-    switch_state, sync,
-    themes::conf::Conf,
-    visible,
+    ComponentAnInit, active_event, components::{BasicStyle, Component, LifeCycle, Style}, error::Error, event_option, event_option_ref, lifecycle, play_animation, prop::{ApplyStateMap, LoadingMode, traits::ToFloat}, set_animation, set_index, set_scope_path, shader::draw_loading::DrawLoading, switch_state, sync, themes::conf::Conf, visible
 };
 
 live_design! {
@@ -131,10 +122,8 @@ impl Widget for GLoading {
 }
 
 impl LiveHook for GLoading {
-    fn after_new_before_apply(&mut self, cx: &mut Cx) {
-        self.merge_conf_prop(cx);
-    }
-
+    #[allow(unused_variables)]
+    #[cfg(feature = "release")]
     fn after_new_from_doc(&mut self, cx: &mut Cx) {
         self.sync();
         self.render_after_apply(cx);
@@ -142,6 +131,26 @@ impl LiveHook for GLoading {
         if self.animation_open {
             self.next_frame = cx.new_next_frame();
         }
+    }
+
+    #[allow(unused_variables)]
+    #[cfg(feature = "dev")]
+    fn after_apply_from_doc(&mut self, cx: &mut Cx) {
+        self.sync();
+        self.render_after_apply(cx);
+        // starts the animation cycle on startup
+        if self.animation_open {
+            self.next_frame = cx.new_next_frame();
+        }
+    }
+
+    #[cfg(feature = "dev")]
+    fn after_update_from_doc(&mut self, cx: &mut Cx) {
+        self.merge_conf_prop(cx);
+    }
+
+    fn after_new_before_apply(&mut self, cx: &mut Cx) {
+        self.merge_conf_prop(cx);
     }
 }
 
@@ -300,4 +309,54 @@ impl Component for GLoading {
     set_index!();
     lifecycle!();
     switch_state!();
+}
+
+impl GLoading {
+    active_event! {
+        active_changed: LoadingEvent::Changed |loading: bool | => LoadingChanged { value: loading }
+    }
+    event_option! {
+        changed: LoadingEvent::Changed => LoadingChanged
+    }
+    pub fn set_loading(&mut self, cx: &mut Cx, loading: bool) {
+        self.loading = loading;
+        self.draw_loading.loading = loading.to_f32();
+        self.redraw(cx);
+        self.active_changed(cx, loading);
+    }
+    pub fn toggle(&mut self, cx: &mut Cx) {
+        self.set_loading(cx, !self.loading);
+    }
+    pub fn open(&mut self, cx: &mut Cx) {
+        self.set_loading(cx, true);
+    }
+    pub fn close(&mut self, cx: &mut Cx) {
+        self.set_loading(cx, false);
+    }
+}
+
+impl GLoadingRef {
+    event_option_ref! {
+        changed => LoadingChanged
+    }
+    pub fn set_loading(&mut self, cx: &mut Cx, loading: bool) {
+        if let Some(mut c_ref) = self.borrow_mut() {
+            c_ref.set_loading(cx, loading);
+        }
+    }
+    pub fn toggle(&mut self, cx: &mut Cx) {
+        if let Some(mut c_ref) = self.borrow_mut() {
+            c_ref.toggle(cx);
+        }
+    }
+    pub fn open(&mut self, cx: &mut Cx) {
+        if let Some(mut c_ref) = self.borrow_mut() {
+            c_ref.open(cx);
+        }
+    }
+    pub fn close(&mut self, cx: &mut Cx) {
+        if let Some(mut c_ref) = self.borrow_mut() {
+            c_ref.close(cx);
+        }
+    }
 }

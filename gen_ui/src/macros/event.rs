@@ -10,9 +10,9 @@
 /// ```
 #[macro_export]
 macro_rules! active_event{
-    ($($event_fn: ident : $event: path |$param: ident : $param_ty: ty| => $return_ty: expr),*) => {
+    ($($event_fn: ident : $event: path |$($param: ident : $param_ty: ty),*| => $return_ty: expr),*) => {
         $(
-            pub fn $event_fn (&mut self, cx: &mut Cx, $param: $param_ty){
+            pub fn $event_fn (&mut self, cx: &mut Cx, $($param: $param_ty),*) {
                 if self.event_open {
                     self.scope_path.as_ref().map(|path| {
                         cx.widget_action(
@@ -77,7 +77,7 @@ macro_rules! event_option {
 ///```rust
 /// impl GBreadCrumbItemRef {
 ///
-///     ref_event_option!{
+///     event_option_ref!{
 ///         clicked => GBreadCrumbEventItemParam,
 ///         hover => GBreadCrumbEventItemParam
 ///     }
