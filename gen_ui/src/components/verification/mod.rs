@@ -8,15 +8,15 @@ use makepad_widgets::*;
 
 use crate::{
     components::{
-        BasicStyle, Component, GInput, InputChanged, InputFocus, InputFocusMetaEvent, InputKeyDown,
-        InputMaxLengthReached, InputState, LifeCycle, SlotComponent, SlotStyle, Style,
-        ViewBasicStyle,
+        BasicStyle, Component, InputChanged, InputChangedMetaEvent, InputFocus,
+        InputFocusMetaEvent, InputKeyDown, InputMaxLengthReached, InputState, LifeCycle,
+        SlotComponent, SlotStyle, Style, ViewBasicStyle,
         area::{GInputArea, InputAreaBasicStyle, InputAreaPart},
     },
     error::Error,
     lifecycle,
     prop::{
-        ApplySlotMap, ApplySlotMapImpl, ApplySlotMergeImpl, ApplyStateMap, ToSlotMap,
+        ApplySlotMap, ApplySlotMapImpl, ApplySlotMergeImpl, ToSlotMap,
         manuel::{BASIC, DISABLED},
     },
     pure_after_apply, set_index, set_scope_path,
@@ -179,33 +179,24 @@ impl MatchEvent for GVerification {
         // 当输入框内容变化时，触发 changed 事件，可以知道是哪个输入框变化了来更新 value
         // 并且如果当某个输入框无法输入时，自动将焦点切换到下一个输入框，此时无法输入的输入框回返回一个max_length事件
         let mut reapply = None;
+        let mut changed_event = None;
         for (index, (_id, item)) in self.item.iter_mut().enumerate() {
-            if let Some(InputChanged { value, .. }) = item.changed(actions) {
+            if let Some(InputChanged { value, meta }) = item.changed(actions) {
                 if !value.is_empty() {
                     self.value[index] = value;
+                    changed_event = Some(meta);
                 }
             }
             // 聚焦事件，聚焦事件的目的是为了存储当前聚焦的输入框位置，以便后续操作，这样当reach max length时可以自动切换焦点
-            if let Some(InputFocus { meta, value }) = item.focus(actions) {
+            if let Some(InputFocus { meta, .. }) = item.focus(actions) {
                 if let Some(InputFocusMetaEvent::FingerDown(FingerDownEvent { abs, .. })) = meta {
                     self.abs = (abs, index);
-                    dbg!(&self.abs);
                 }
             }
 
             if let Some(InputMaxLengthReached { value, new_input }) =
                 item.max_length_reached(actions)
             {
-                // 自动切换焦点到下一个输入框
-                // let current_index = self.item.iter().position(|(_id, input)| {
-                //     input.scope_path == item.scope_path
-                // });
-                // if let Some(index) = current_index {
-                //     if index + 1 < self.item.len() {
-                //         let next_input = &mut self.item[index + 1].1;
-                //         next_input.focus(cx);
-                //     }
-                // }
                 self.value[index] = value;
                 // 将这个new_input设置到self.value中，然后重新apply_items
                 self.value[index + 1] = new_input;
@@ -215,17 +206,18 @@ impl MatchEvent for GVerification {
                 } else {
                     reapply = Some(index + 1);
                 }
-
-                // dbg!(e);
             }
 
             // 删除事件, 对应位置删除即可
-            if let Some(InputKeyDown { value, .. }) = item.backspace(actions) {
+            if let Some(InputKeyDown { value, meta }) = item.backspace(actions) {
                 self.value[index] = value;
+                if let Some(delete) = meta {
+                    changed_event = Some(InputChangedMetaEvent::Delete(delete));
+                }
             }
         }
         if let Some(re_index) = reapply {
-            self.apply_items(cx);
+            self.item[re_index].1.set_text(cx, &self.value[re_index]);
             self.redraw(cx);
 
             // 计算出这个输入框的绝对位置，然后设置焦点, y = self.abs.0.y, 从self.abs中可以知道到底从哪个输入框开始聚焦的
@@ -241,6 +233,10 @@ impl MatchEvent for GVerification {
                 // 设置焦点
                 self.item[re_index].1.do_focus(cx, abs);
             }
+        }
+
+        if changed_event.is_some() {
+            self.active_changed(cx, changed_event);
         }
     }
 }
@@ -344,11 +340,11 @@ impl Component for GVerification {
         Ok(())
     }
 
-    fn handle_widget_event(&mut self, cx: &mut Cx, event: &Event, hit: Hit, area: Area) {
+    fn handle_widget_event(&mut self, _cx: &mut Cx, _event: &Event, _hit: Hit, _area: Area) {
         ()
     }
 
-    fn play_animation(&mut self, cx: &mut Cx, state: &[LiveId; 2]) -> () {
+    fn play_animation(&mut self, _cx: &mut Cx, _state: &[LiveId; 2]) -> () {
         ()
     }
 
@@ -370,7 +366,7 @@ impl Component for GVerification {
         self.style.sync_slot(&self.apply_slot_map);
     }
 
-    fn set_animation(&mut self, cx: &mut Cx) -> () {
+    fn set_animation(&mut self, _cx: &mut Cx) -> () {
         ()
     }
 
@@ -382,6 +378,21 @@ impl Component for GVerification {
 }
 
 impl GVerification {
+    pub fn active_changed(&mut self, cx: &mut Cx, meta: Option<InputChangedMetaEvent>) {
+        if self.event_open {
+            if let Some(path) = self.scope_path.as_ref() {
+                cx.widget_action(
+                    self.widget_uid(),
+                    path,
+                    VerificationEvent::Changed(VerificationChanged {
+                        meta,
+                        value: self.value.clone(),
+                        length: self.length as usize,
+                    }),
+                );
+            }
+        }
+    }
     pub fn apply_items(&mut self, cx: &mut Cx) {
         self.item.clear();
         for _ in 0..self.length {
