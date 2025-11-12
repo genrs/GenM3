@@ -6,7 +6,7 @@ use crate::components::item::SelectItemStyle;
 use crate::components::options::SelectOptionsStyle;
 use crate::components::panel::ColorPanelStyle;
 use crate::components::{
-    BadgeStyle, ButtonStyle, CardStyle, CheckboxStyle, CollapseStyle, DividerStyle, ImageStyle, InputStyle, LabelStyle, LinkStyle, LoadingStyle, MenuItemProp, MenuProp, PaginationStyle, PopupContainerStyle, PopupStyle, ProgressStyle, RadioStyle, RateStyle, SelectStyle, SliderStyle, SubMenuProp, SvgStyle, SwitchStyle, TabbarItemProp, TabbarProp, TagStyle, VerificationStyle, ViewStyle
+    BadgeStyle, ButtonStyle, CardStyle, CheckboxStyle, CollapseStyle, DividerStyle, ImageStyle, InputStyle, LabelStyle, LinkStyle, LoadingStyle, MenuItemStyle, MenuProp, PaginationStyle, PopupContainerStyle, PopupStyle, ProgressStyle, RadioStyle, RateStyle, SelectStyle, SliderStyle, SubMenuProp, SvgStyle, SwitchStyle, TabbarItemProp, TabbarProp, TagStyle, VerificationStyle, ViewStyle
 };
 use crate::error::Error;
 use crate::prop::manuel::{
@@ -32,7 +32,7 @@ pub struct ComponentsConf {
     pub tabbar_item: TabbarItemProp,
     pub tag: TagStyle,
     pub link: LinkStyle,
-    pub menu_item: MenuItemProp,
+    pub menu_item: MenuItemStyle,
     pub sub_menu: SubMenuProp,
     pub menu: MenuProp,
     pub collapse: CollapseStyle,
@@ -70,7 +70,7 @@ try_from_toml_item! {
         tabbar_item => TABBAR_ITEM, TabbarItemProp::default(), |item| item.try_into(),
         tag => TAG, TagStyle::default(), |item| item.try_into(),
         link => LINK, LinkStyle::default(), |item| item.try_into(),
-        menu_item => MENU_ITEM, MenuItemProp::default(), |item| item.try_into(),
+        menu_item => MENU_ITEM, MenuItemStyle::default(), |item| item.try_into(),
         sub_menu => SUB_MENU, SubMenuProp::default(), |item| item.try_into(),
         menu => MENU, MenuProp::default(), |item| item.try_into(),
         collapse => COLLAPSE, CollapseStyle::default(), |item| item.try_into(),

@@ -26,7 +26,7 @@ use crate::{
 };
 
 prop_interconvert! {
-    MenuItemProp {
+    MenuItemStyle {
         basic_prop = MenuItemBasicStyle;
         basic => BASIC, MenuItemBasicStyle::default(), |v| (v, MenuItemState::Basic).try_into(),
         hover => HOVER, MenuItemBasicStyle::from_state(Theme::default(), MenuItemState::Hover), |v| (v, MenuItemState::Hover).try_into(),
@@ -35,7 +35,7 @@ prop_interconvert! {
     }, "[component.menu_item] should be a table"
 }
 
-impl Style for MenuItemProp {
+impl Style for MenuItemStyle {
     type State = MenuItemState;
 
     type Basic = MenuItemBasicStyle;
@@ -59,7 +59,7 @@ impl Style for MenuItemProp {
     }
 }
 
-impl SlotStyle for MenuItemProp {
+impl SlotStyle for MenuItemStyle {
     type Part = MenuItemPart;
 
     fn sync_slot(&mut self, map: &crate::prop::ApplySlotMap<Self::State, Self::Part>) -> () {

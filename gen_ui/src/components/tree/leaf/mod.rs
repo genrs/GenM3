@@ -1,37 +1,33 @@
 mod prop;
 
+pub use prop::*;
+
+use makepad_widgets::*;
+
 use crate::{
     ComponentAnInit, active_event, animation_open_then_redraw,
     components::{
-        label::{GLabel, LabelBasicStyle},
-        lifecycle::LifeCycle,
-        menu::event::{MenuItemClicked, MenuItemEvent, MenuItemHoverIn, MenuItemHoverOut},
-        svg::{GSvg, SvgBasicStyle},
-        traits::{BasicStyle, Component, SlotComponent, SlotStyle, Style},
-        view::{GView, ViewBasicStyle},
+        Component, GLabel, GSvg, LabelBasicStyle, LifeCycle, SlotComponent, SvgBasicStyle,
+        ViewBasicStyle,
     },
     error::Error,
     event_option, getter, hit_hover_in, hit_hover_out, lifecycle, play_animation,
     prop::{
-        ApplyMapImpl, ApplySlotMap, ApplySlotMapImpl, ApplySlotMergeImpl, DeferWalks, SlotDrawer,
-        ToSlotMap, ToStateMap,
+        ApplySlotMap, DeferWalks, SlotDrawer,
         manuel::{ACTIVE, BASIC, DISABLED, HOVER},
-        traits::ToFloat,
     },
-    pure_after_apply, set_animation, set_index, set_scope_path, setter,
+    pure_after_apply, set_index, set_scope_path, setter,
     shader::draw_view::DrawView,
     sync,
     themes::conf::Conf,
     visible,
 };
-use makepad_widgets::*;
-pub use prop::*;
 
 live_design! {
     link genui_basic;
     use link::genui_animation_prop::*;
 
-    pub GMenuItemBase = {{GMenuItem}}{
+    pub GLeafBase = {{GLeaf}} {
         animator: {
             hover = {
                 default: off,
@@ -74,10 +70,15 @@ live_design! {
     }
 }
 
+/// A leaf node in the tree
+///
+/// ```
+///
+/// ```
 #[derive(Live, WidgetRef, WidgetSet, LiveRegisterWidget)]
-pub struct GMenuItem {
+pub struct GLeaf {
     #[live]
-    pub style: MenuItemStyle,
+    pub style: LeafStyle,
     // --- visible -------------------
     #[live(true)]
     pub visible: bool,
@@ -91,14 +92,13 @@ pub struct GMenuItem {
     #[rust]
     pub scope_path: Option<HeapLiveIdPath>,
     #[rust]
-    pub apply_slot_map: ApplySlotMap<MenuItemState, MenuItemPart>,
+    pub apply_slot_map: ApplySlotMap<LeafState, LeafPart>,
     // --- draw ----------------------
     #[live]
     pub icon: GSvg,
     #[live]
     pub text: GLabel,
-    #[live]
-    pub extra: GView,
+
     #[live]
     pub draw_item: DrawView,
     // --- animator ----------------
@@ -116,7 +116,7 @@ pub struct GMenuItem {
     #[live(true)]
     pub sync: bool,
     #[rust]
-    pub state: MenuItemState,
+    pub state: LeafState,
     #[rust]
     defer_walks: DeferWalks,
     #[live]
@@ -125,21 +125,13 @@ pub struct GMenuItem {
     pub value: String,
 }
 
-impl WidgetNode for GMenuItem {
+impl WidgetNode for GLeaf {
     fn uid_to_widget(&self, uid: WidgetUid) -> WidgetRef {
-        for (_, child) in &self.extra.children {
-            let x = child.uid_to_widget(uid);
-            if !x.is_empty() {
-                return x;
-            }
-        }
         WidgetRef::empty()
     }
 
     fn find_widgets(&self, path: &[LiveId], cached: WidgetCache, results: &mut WidgetSet) {
-        for (_, child) in &self.extra.children {
-            child.find_widgets(path, cached, results);
-        }
+        ()
     }
 
     fn walk(&mut self, _cx: &mut Cx) -> Walk {
@@ -160,9 +152,6 @@ impl WidgetNode for GMenuItem {
         if self.text.visible {
             self.text.redraw(cx);
         }
-        if self.extra.visible {
-            self.extra.redraw(cx);
-        }
     }
 
     fn state(&self) -> String {
@@ -176,7 +165,7 @@ impl WidgetNode for GMenuItem {
     visible!();
 }
 
-impl Widget for GMenuItem {
+impl Widget for GLeaf {
     fn draw_walk(&mut self, cx: &mut Cx2d, scope: &mut Scope, walk: Walk) -> DrawStep {
         if !self.visible {
             return DrawStep::done();
@@ -191,7 +180,6 @@ impl Widget for GMenuItem {
             [
                 (live_id!(icon), (&mut self.icon).into()),
                 (live_id!(text), (&mut self.text).into()),
-                (live_id!(extra), (&mut self.extra).into()),
             ],
             &mut self.defer_walks,
         )
@@ -208,19 +196,18 @@ impl Widget for GMenuItem {
         }
 
         self.set_animation(cx);
-        cx.global::<ComponentAnInit>().menu_item = true;
+        cx.global::<ComponentAnInit>().leaf = true;
 
         // handle slot events
         let is_slot_hover = false;
         self.icon.handle_event(cx, event, scope);
         self.text.handle_event(cx, event, scope);
-        self.extra.handle_event(cx, event, scope);
-        // let super_state: MenuItemState = self.icon.state.into();
+        // let super_state: LeafState = self.icon.state.into();
 
         if is_slot_hover {
-            self.switch_state_with_animation(cx, MenuItemState::Hover);
+            self.switch_state_with_animation(cx, LeafState::Hover);
         } else {
-            self.switch_state_with_animation(cx, MenuItemState::Basic);
+            self.switch_state_with_animation(cx, LeafState::Basic);
         }
 
         let area = self.area();
@@ -229,7 +216,7 @@ impl Widget for GMenuItem {
     }
 }
 
-impl LiveHook for GMenuItem {
+impl LiveHook for GLeaf {
     pure_after_apply!();
 
     fn after_new_before_apply(&mut self, cx: &mut Cx) {
@@ -237,7 +224,6 @@ impl LiveHook for GMenuItem {
     }
 
     fn after_apply(&mut self, _cx: &mut Cx, apply: &mut Apply, index: usize, nodes: &[LiveNode]) {
-        let live_props = ViewBasicStyle::live_props();
         self.set_apply_slot_map(
             apply.from,
             nodes,
@@ -249,32 +235,23 @@ impl LiveHook for GMenuItem {
                 live_id!(disabled),
             ],
             [
-                (MenuItemPart::Container, &live_props),
-                (MenuItemPart::Icon, &SvgBasicStyle::live_props()),
-                (MenuItemPart::Text, &LabelBasicStyle::live_props()),
-                (MenuItemPart::Extra, &live_props),
+                (LeafPart::Container, &ViewBasicStyle::live_props()),
+                (LeafPart::Icon, &SvgBasicStyle::live_props()),
+                (LeafPart::Text, &LabelBasicStyle::live_props()),
             ],
             |_| {},
             |prefix, component, applys| match prefix.to_string().as_str() {
                 BASIC => {
-                    component
-                        .apply_slot_map
-                        .insert(MenuItemState::Basic, applys);
+                    component.apply_slot_map.insert(LeafState::Basic, applys);
                 }
                 HOVER => {
-                    component
-                        .apply_slot_map
-                        .insert(MenuItemState::Hover, applys);
+                    component.apply_slot_map.insert(LeafState::Hover, applys);
                 }
                 ACTIVE => {
-                    component
-                        .apply_slot_map
-                        .insert(MenuItemState::Active, applys);
+                    component.apply_slot_map.insert(LeafState::Active, applys);
                 }
                 DISABLED => {
-                    component
-                        .apply_slot_map
-                        .insert(MenuItemState::Disabled, applys);
+                    component.apply_slot_map.insert(LeafState::Disabled, applys);
                 }
                 _ => {}
             },
@@ -282,25 +259,25 @@ impl LiveHook for GMenuItem {
     }
 }
 
-impl Component for GMenuItem {
+impl Component for GLeaf {
     type Error = Error;
 
-    type State = MenuItemState;
+    type State = LeafState;
 
     fn merge_conf_prop(&mut self, cx: &mut Cx) -> () {
-        let style = &cx.global::<Conf>().components.menu_item;
+        let style = &cx.global::<Conf>().components.leaf;
         self.style = style.clone();
         self.merge_prop_to_slot();
     }
 
     fn render(&mut self, cx: &mut Cx) -> Result<(), Self::Error> {
         let state = if self.disabled {
-            MenuItemState::Disabled
+            LeafState::Disabled
         } else {
             if self.active {
-                MenuItemState::Active
+                LeafState::Active
             } else {
-                MenuItemState::Basic
+                LeafState::Basic
             }
         };
         self.switch_state(state);
@@ -323,26 +300,26 @@ impl Component for GMenuItem {
                 }
                 Hit::FingerHoverIn(e) => {
                     cx.set_cursor(self.style.get(self.state).container.cursor);
-                    self.switch_state_with_animation(cx, MenuItemState::Hover);
+                    self.switch_state_with_animation(cx, LeafState::Hover);
                     hit_hover_in!(self, cx, e);
                 }
                 Hit::FingerHoverOut(e) => {
-                    self.switch_state_with_animation(cx, MenuItemState::Basic);
+                    self.switch_state_with_animation(cx, LeafState::Basic);
                     hit_hover_out!(self, cx, e);
                 }
                 Hit::FingerUp(e) => {
                     if e.is_over {
                         if e.has_hovers() {
                             self.active = true;
-                            self.switch_state_with_animation(cx, MenuItemState::Active);
+                            self.switch_state_with_animation(cx, LeafState::Active);
                             self.play_animation(cx, id!(hover.active));
                         } else {
-                            self.switch_state_with_animation(cx, MenuItemState::Basic);
+                            self.switch_state_with_animation(cx, LeafState::Basic);
                             self.play_animation(cx, id!(hover.off));
                         }
                         self.active_clicked(cx, Some(e));
                     } else {
-                        self.switch_state_with_animation(cx, MenuItemState::Basic);
+                        self.switch_state_with_animation(cx, LeafState::Basic);
                     }
                 }
                 _ => {}
@@ -353,7 +330,7 @@ impl Component for GMenuItem {
     fn handle_when_disabled(&mut self, cx: &mut Cx, _event: &Event, hit: Hit) -> () {
         match hit {
             Hit::FingerHoverIn(_) => {
-                self.switch_state_and_redraw(cx, MenuItemState::Disabled);
+                self.switch_state_and_redraw(cx, LeafState::Disabled);
                 cx.set_cursor(self.style.get(self.state).container.cursor);
             }
             _ => {}
@@ -377,15 +354,15 @@ impl Component for GMenuItem {
 
     fn focus_sync(&mut self) -> () {
         let mut crossed_map = self.apply_slot_map.cross();
-        crossed_map.remove(&MenuItemPart::Icon).map(|map| {
+        crossed_map.remove(&LeafPart::Icon).map(|map| {
             self.icon.apply_slot_map.merge_slot(map.to_slot());
             self.icon.focus_sync();
         });
-        crossed_map.remove(&MenuItemPart::Text).map(|map| {
+        crossed_map.remove(&LeafPart::Text).map(|map| {
             self.text.apply_state_map.merge(map.to_state());
             self.text.focus_sync();
         });
-        crossed_map.remove(&MenuItemPart::Extra).map(|map| {
+        crossed_map.remove(&LeafPart::Extra).map(|map| {
             self.extra.apply_state_map.merge(map.to_state());
             self.extra.focus_sync();
         });
@@ -395,7 +372,7 @@ impl Component for GMenuItem {
     }
 
     fn set_animation(&mut self, cx: &mut Cx) -> () {
-        let init_global = cx.global::<ComponentAnInit>().menu_item;
+        let init_global = cx.global::<ComponentAnInit>().leaf;
 
         let live_ptr = match self.animator.live_ptr {
             Some(ptr) => ptr.file_id.0,
@@ -412,10 +389,10 @@ impl Component for GMenuItem {
 
         if self.lifecycle.is_created() || !init_global || self.scope_path.is_none() {
             self.lifecycle.next();
-            let basic_prop = self.style.get(MenuItemState::Basic);
-            let hover_prop = self.style.get(MenuItemState::Hover);
-            let active_prop = self.style.get(MenuItemState::Active);
-            let disabled_prop = self.style.get(MenuItemState::Disabled);
+            let basic_prop = self.style.get(LeafState::Basic);
+            let hover_prop = self.style.get(LeafState::Hover);
+            let active_prop = self.style.get(LeafState::Active);
+            let disabled_prop = self.style.get(LeafState::Disabled);
             let (mut basic_index, mut hover_index, mut active_index, mut disabled_index) =
                 (None, None, None, None);
             if let Some(index) = nodes.child_by_path(
@@ -514,7 +491,7 @@ impl Component for GMenuItem {
             let state = self.state;
             let style = self.style.get(state);
             let index = match state {
-                MenuItemState::Basic => nodes.child_by_path(
+                LeafState::Basic => nodes.child_by_path(
                     self.index,
                     &[
                         live_id!(animator).as_field(),
@@ -522,7 +499,7 @@ impl Component for GMenuItem {
                         live_id!(off).as_instance(),
                     ],
                 ),
-                MenuItemState::Hover => nodes.child_by_path(
+                LeafState::Hover => nodes.child_by_path(
                     self.index,
                     &[
                         live_id!(animator).as_field(),
@@ -530,7 +507,7 @@ impl Component for GMenuItem {
                         live_id!(on).as_instance(),
                     ],
                 ),
-                MenuItemState::Active => nodes.child_by_path(
+                LeafState::Active => nodes.child_by_path(
                     self.index,
                     &[
                         live_id!(animator).as_field(),
@@ -538,7 +515,7 @@ impl Component for GMenuItem {
                         live_id!(active).as_instance(),
                     ],
                 ),
-                MenuItemState::Disabled => nodes.child_by_path(
+                LeafState::Disabled => nodes.child_by_path(
                     self.index,
                     &[
                         live_id!(animator).as_field(),
@@ -572,8 +549,8 @@ impl Component for GMenuItem {
     lifecycle!();
 }
 
-impl SlotComponent<MenuItemState> for GMenuItem {
-    type Part = MenuItemPart;
+impl SlotComponent<LeafState> for GLeaf {
+    type Part = LeafPart;
 
     fn merge_prop_to_slot(&mut self) -> () {
         self.icon.style.basic = self.style.basic.icon;
@@ -582,22 +559,18 @@ impl SlotComponent<MenuItemState> for GMenuItem {
         self.icon.style.disabled = self.style.disabled.icon;
         self.text.style.basic = self.style.basic.text;
         self.text.style.disabled = self.style.disabled.text;
-        self.extra.style.basic = self.style.basic.extra;
-        self.extra.style.hover = self.style.hover.extra;
-        self.extra.style.pressed = self.style.active.extra;
-        self.extra.style.disabled = self.style.disabled.extra;
     }
 }
 
-impl GMenuItem {
+impl GLeaf {
     active_event! {
-        active_hover_in: MenuItemEvent::HoverIn |meta: FingerHoverEvent| => MenuItemHoverIn { meta },
-        active_hover_out: MenuItemEvent::HoverOut |meta: FingerHoverEvent| => MenuItemHoverOut { meta }
+        active_hover_in: LeafEvent::HoverIn |meta: FingerHoverEvent| => LeafHoverIn { meta },
+        active_hover_out: LeafEvent::HoverOut |meta: FingerHoverEvent| => LeafHoverOut { meta }
     }
     event_option! {
-        hover_in: MenuItemEvent::HoverIn => MenuItemHoverIn,
-        hover_out: MenuItemEvent::HoverOut => MenuItemHoverOut,
-        clicked: MenuItemEvent::Clicked => MenuItemClicked
+        hover_in: LeafEvent::HoverIn => LeafHoverIn,
+        hover_out: LeafEvent::HoverOut => LeafHoverOut,
+        clicked: LeafEvent::Clicked => LeafClicked
     }
     pub fn active_clicked(&mut self, cx: &mut Cx, meta: Option<FingerUpEvent>) {
         if self.event_open {
@@ -605,7 +578,7 @@ impl GMenuItem {
                 cx.widget_action(
                     self.widget_uid(),
                     path,
-                    MenuItemEvent::Clicked(MenuItemClicked {
+                    LeafEvent::Clicked(LeafClicked {
                         active: self.active,
                         value: self.value.to_string(),
                         meta,
@@ -617,10 +590,10 @@ impl GMenuItem {
     pub fn toggle(&mut self, cx: &mut Cx, active: bool, init: bool) -> () {
         self.active = active;
         let (state, hover_id) = match (active, init) {
-            (true, false) => (MenuItemState::Active, Some(id!(hover.active))),
-            (true, true) => (MenuItemState::Active, None),
-            (false, true) => (MenuItemState::Basic, None),
-            (false, false) => (MenuItemState::Basic, Some(id!(hover.off))),
+            (true, false) => (LeafState::Active, Some(id!(hover.active))),
+            (true, true) => (LeafState::Active, None),
+            (false, true) => (LeafState::Basic, None),
+            (false, false) => (LeafState::Basic, Some(id!(hover.off))),
         };
         self.switch_state(state);
         if let Some(hover_id) = hover_id {
@@ -638,12 +611,12 @@ impl GMenuItem {
         }
     }
     getter! {
-        GMenuItem {
+        GLeaf {
             get_active(bool) {|c| {c.active}}
         }
     }
     setter! {
-        GMenuItem {
+        GLeaf {
             set_active(active: bool) {|c, cx| {c.active = active; c.redraw(cx); Ok(())}}
         }
     }
