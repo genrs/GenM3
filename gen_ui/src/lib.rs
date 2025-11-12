@@ -60,4 +60,5 @@ pub struct ComponentAnInit {
     badge: bool,
     input: bool,
     input_area: bool,
+    leaf: bool
 }

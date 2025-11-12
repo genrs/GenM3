@@ -3,24 +3,13 @@ mod prop;
 pub use prop::*;
 
 use makepad_widgets::*;
-
+use super::event::*;
 use crate::{
-    ComponentAnInit, active_event, animation_open_then_redraw,
-    components::{
-        Component, GLabel, GSvg, LabelBasicStyle, LifeCycle, SlotComponent, SvgBasicStyle,
-        ViewBasicStyle,
-    },
-    error::Error,
-    event_option, getter, hit_hover_in, hit_hover_out, lifecycle, play_animation,
-    prop::{
-        ApplySlotMap, DeferWalks, SlotDrawer,
-        manuel::{ACTIVE, BASIC, DISABLED, HOVER},
-    },
-    pure_after_apply, set_index, set_scope_path, setter,
-    shader::draw_view::DrawView,
-    sync,
-    themes::conf::Conf,
-    visible,
+    ComponentAnInit, active_event, animation_open_then_redraw, components::{
+        BasicStyle, Component, GLabel, GSvg, LabelBasicStyle, LifeCycle, SlotComponent, SlotStyle, Style, SvgBasicStyle, ViewBasicStyle
+    }, error::Error, event_option, getter, hit_hover_in, hit_hover_out, lifecycle, play_animation, prop::{
+        ApplyMapImpl, ApplySlotMap, ApplySlotMapImpl, ApplySlotMergeImpl, DeferWalks, SlotDrawer, ToSlotMap, ToStateMap, manuel::{ACTIVE, BASIC, DISABLED, HOVER}, traits::ToFloat
+    }, pure_after_apply, set_animation, set_index, set_scope_path, setter, shader::draw_view::DrawView, sync, themes::conf::Conf, visible
 };
 
 live_design! {
@@ -36,7 +25,7 @@ live_design! {
                     from: {all: Forward {duration: (AN_DURATION)}},
                     ease: InOutQuad,
                     apply: {
-                        draw_item: <AN_DRAW_VIEW> {}
+                        draw_leaf: <AN_DRAW_VIEW> {}
                     }
                 }
 
@@ -46,7 +35,7 @@ live_design! {
                     },
                     ease: InOutQuad,
                     apply: {
-                       draw_item: <AN_DRAW_VIEW> {}
+                       draw_leaf: <AN_DRAW_VIEW> {}
                     }
                 }
 
@@ -54,7 +43,7 @@ live_design! {
                     from: {all: Forward {duration: (AN_DURATION)}},
                     ease: InOutQuad,
                     apply: {
-                        draw_item: <AN_DRAW_VIEW> {}
+                        draw_leaf: <AN_DRAW_VIEW> {}
                     }
                 }
 
@@ -62,7 +51,7 @@ live_design! {
                     from: {all: Forward {duration: (AN_DURATION)}},
                     ease: InOutQuad,
                     apply: {
-                        draw_item: <AN_DRAW_VIEW> {}
+                        draw_leaf: <AN_DRAW_VIEW> {}
                     }
                 }
             }
@@ -100,7 +89,7 @@ pub struct GLeaf {
     pub text: GLabel,
 
     #[live]
-    pub draw_item: DrawView,
+    pub draw_leaf: DrawView,
     // --- animator ----------------
     #[live(true)]
     pub animation_open: bool,
@@ -126,11 +115,11 @@ pub struct GLeaf {
 }
 
 impl WidgetNode for GLeaf {
-    fn uid_to_widget(&self, uid: WidgetUid) -> WidgetRef {
+    fn uid_to_widget(&self, _uid: WidgetUid) -> WidgetRef {
         WidgetRef::empty()
     }
 
-    fn find_widgets(&self, path: &[LiveId], cached: WidgetCache, results: &mut WidgetSet) {
+    fn find_widgets(&self, _path: &[LiveId], _cached: WidgetCache, _results: &mut WidgetSet) {
         ()
     }
 
@@ -140,12 +129,12 @@ impl WidgetNode for GLeaf {
     }
 
     fn area(&self) -> Area {
-        self.draw_item.area
+        self.draw_leaf.area
     }
 
     fn redraw(&mut self, cx: &mut Cx) {
         let _ = self.render(cx);
-        self.draw_item.redraw(cx);
+        self.draw_leaf.redraw(cx);
         if self.icon.visible {
             self.icon.redraw(cx);
         }
@@ -174,7 +163,7 @@ impl Widget for GLeaf {
         let state = self.state;
         let style = self.style.get(state);
 
-        let _ = self.draw_item.begin(cx, walk, style.layout());
+        let _ = self.draw_leaf.begin(cx, walk, style.layout());
 
         let _ = SlotDrawer::new(
             [
@@ -185,7 +174,7 @@ impl Widget for GLeaf {
         )
         .draw_walk(cx, scope);
 
-        self.draw_item.end(cx);
+        self.draw_leaf.end(cx);
         self.set_scope_path(&scope.path);
         DrawStep::done()
     }
@@ -282,10 +271,9 @@ impl Component for GLeaf {
         };
         self.switch_state(state);
         let style = self.style.get(self.state);
-        self.draw_item.merge(&style.container);
+        self.draw_leaf.merge(&style.container);
         let _ = self.icon.render(cx)?;
         let _ = self.text.render(cx)?;
-        let _ = self.extra.render(cx)?;
         Ok(())
     }
 
@@ -341,7 +329,6 @@ impl Component for GLeaf {
         self.state = state;
         self.icon.switch_state(state.into());
         self.text.switch_state(state.into());
-        self.extra.switch_state(state.into());
     }
 
     fn switch_state_with_animation(&mut self, cx: &mut Cx, state: Self::State) -> () {
@@ -362,10 +349,7 @@ impl Component for GLeaf {
             self.text.apply_state_map.merge(map.to_state());
             self.text.focus_sync();
         });
-        crossed_map.remove(&LeafPart::Extra).map(|map| {
-            self.extra.apply_state_map.merge(map.to_state());
-            self.extra.focus_sync();
-        });
+       
 
         // sync state if is not Basic
         self.style.sync_slot(&self.apply_slot_map);
@@ -440,7 +424,7 @@ impl Component for GLeaf {
             }
 
             set_animation! {
-                nodes: draw_item = {
+                nodes: draw_leaf = {
                     basic_index => {
                         background_color => basic_prop.container.background_color,
                         border_color =>basic_prop.container.border_color,
@@ -525,7 +509,7 @@ impl Component for GLeaf {
                 ),
             };
             set_animation! {
-                nodes: draw_item = {
+                nodes: draw_leaf = {
                     index => {
                         background_color => style.container.background_color,
                         border_color => style.container.border_color,

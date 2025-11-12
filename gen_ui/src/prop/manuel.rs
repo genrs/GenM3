@@ -127,6 +127,13 @@ pub const INPUT: &str = "input";
 pub const INPUT_AREA: &str = "input_area";
 pub const PAGINATION: &str = "pagination";
 pub const VERIFICATION: &str = "verification";
+pub const LEAF: &str = "leaf";
+pub const BRANCH: &str = "branch";
+pub const TREE: &str = "tree";
+pub const NUMBER_INPUT: &str = "number_input";
+pub const CALENDAR: &str = "calendar";
+pub const DATE_PICKER: &str = "date_picker";
+pub const TIME_PICKER: &str = "time_picker";
 // --- mode ------------------------------------------------------
 pub const MODE: &str = "mode";
 pub const ROUND: &str = "Round";
