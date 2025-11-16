@@ -6,11 +6,18 @@ use crate::components::item::SelectItemStyle;
 use crate::components::options::SelectOptionsStyle;
 use crate::components::panel::ColorPanelStyle;
 use crate::components::{
-    BadgeStyle, ButtonStyle, CardStyle, CheckboxStyle, CollapseStyle, DividerStyle, ImageStyle, InputStyle, LabelStyle, LeafStyle, LinkStyle, LoadingStyle, MenuItemStyle, MenuProp, PaginationStyle, PopupContainerStyle, PopupStyle, ProgressStyle, RadioStyle, RateStyle, SelectStyle, SliderStyle, SubMenuProp, SvgStyle, SwitchStyle, TabbarItemProp, TabbarProp, TagStyle, VerificationStyle, ViewStyle
+    BadgeStyle, BranchStyle, ButtonStyle, CardStyle, CheckboxStyle, CollapseStyle, DividerStyle,
+    ImageStyle, InputStyle, LabelStyle, LeafStyle, LinkStyle, LoadingStyle, MenuItemStyle,
+    MenuStyle, PaginationStyle, PopupContainerStyle, PopupStyle, ProgressStyle, RadioStyle,
+    RateStyle, SelectStyle, SliderStyle, SubMenuStyle, SvgStyle, SwitchStyle, TabbarItemProp,
+    TabbarProp, TagStyle, VerificationStyle, ViewStyle,
 };
 use crate::error::Error;
 use crate::prop::manuel::{
-    BADGE, BADGE_DOT, BUTTON, CARD, CHECKBOX, COLLAPSE, COLOR_PANEL, DIVIDER, IMAGE, INPUT, INPUT_AREA, LABEL, LEAF, LINK, LOADING, MENU, MENU_ITEM, PAGINATION, POPUP, POPUP_CONTAINER, PROGRESS, RADIO, RATE, SELECT, SELECT_ITEM, SELECT_OPTIONS, SLIDER, SUB_MENU, SVG, SWITCH, TABBAR, TABBAR_ITEM, TAG, VERIFICATION, VIEW
+    BADGE, BADGE_DOT, BRANCH, BUTTON, CARD, CHECKBOX, COLLAPSE, COLOR_PANEL, DIVIDER, IMAGE, INPUT,
+    INPUT_AREA, LABEL, LEAF, LINK, LOADING, MENU, MENU_ITEM, PAGINATION, POPUP, POPUP_CONTAINER,
+    PROGRESS, RADIO, RATE, SELECT, SELECT_ITEM, SELECT_OPTIONS, SLIDER, SUB_MENU, SVG, SWITCH,
+    TABBAR, TABBAR_ITEM, TAG, VERIFICATION, VIEW,
 };
 use crate::try_from_toml_item;
 
@@ -33,8 +40,8 @@ pub struct ComponentsConf {
     pub tag: TagStyle,
     pub link: LinkStyle,
     pub menu_item: MenuItemStyle,
-    pub sub_menu: SubMenuProp,
-    pub menu: MenuProp,
+    pub sub_menu: SubMenuStyle,
+    pub menu: MenuStyle,
     pub collapse: CollapseStyle,
     pub progress: ProgressStyle,
     pub slider: SliderStyle,
@@ -51,6 +58,7 @@ pub struct ComponentsConf {
     pub pagination: PaginationStyle,
     pub verification: VerificationStyle,
     pub leaf: LeafStyle,
+    pub branch: BranchStyle,
 }
 
 try_from_toml_item! {
@@ -72,8 +80,8 @@ try_from_toml_item! {
         tag => TAG, TagStyle::default(), |item| item.try_into(),
         link => LINK, LinkStyle::default(), |item| item.try_into(),
         menu_item => MENU_ITEM, MenuItemStyle::default(), |item| item.try_into(),
-        sub_menu => SUB_MENU, SubMenuProp::default(), |item| item.try_into(),
-        menu => MENU, MenuProp::default(), |item| item.try_into(),
+        sub_menu => SUB_MENU, SubMenuStyle::default(), |item| item.try_into(),
+        menu => MENU, MenuStyle::default(), |item| item.try_into(),
         collapse => COLLAPSE, CollapseStyle::default(), |item| item.try_into(),
         progress => PROGRESS, ProgressStyle::default(), |item| item.try_into(),
         slider => SLIDER, SliderStyle::default(), |item| item.try_into(),
@@ -89,7 +97,8 @@ try_from_toml_item! {
         input_area => INPUT_AREA, InputAreaStyle::default(), |item| item.try_into(),
         pagination => PAGINATION, PaginationStyle::default(), |item| item.try_into(),
         verification => VERIFICATION, VerificationStyle::default(), |item| item.try_into(),
-        leaf => LEAF, LeafStyle::default(), |item| item.try_into()
+        leaf => LEAF, LeafStyle::default(), |item| item.try_into(),
+        branch => BRANCH, BranchStyle::default(), |item| item.try_into()
     }, "[components] should be a table"
 }
 

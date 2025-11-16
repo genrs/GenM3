@@ -689,6 +689,22 @@ live_design! {
             text: "tree-leaf"
         }
     }
+
+    pub GBranch = <GBranchBase> {
+        icon: <IconRight> {}
+        text: <GLabel> {
+            text: "tree-branch"
+        }
+        body: <GView> {
+            style: {
+                basic: {
+                    height: Fit,
+                    width: Fill,
+                    flow: Down,
+                }
+            }
+        }
+    }
 }
 
 pub fn components_register(cx: &mut Cx) {

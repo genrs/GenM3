@@ -22,13 +22,13 @@ use crate::{
 };
 
 prop_interconvert! {
-    MenuProp {
+    MenuStyle {
         basic_prop = MenuBasicStyle;
         basic => BASIC, MenuBasicStyle::default(), |v| (v, MenuState::Basic).try_into()
     }, "[component.menu] should be a table"
 }
 
-impl Style for MenuProp {
+impl Style for MenuStyle {
     type State = MenuState;
 
     type Basic = MenuBasicStyle;
@@ -49,7 +49,7 @@ impl Style for MenuProp {
     }
 }
 
-impl SlotStyle for MenuProp {
+impl SlotStyle for MenuStyle {
     type Part = MenuPart;
 
     fn sync_slot(&mut self, map: &crate::prop::ApplySlotMap<Self::State, Self::Part>) -> () {

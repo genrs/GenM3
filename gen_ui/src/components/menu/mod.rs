@@ -42,7 +42,7 @@ live_design! {
 #[derive(Live, WidgetRef, WidgetSet, LiveRegisterWidget)]
 pub struct GMenu {
     #[live]
-    pub style: MenuProp,
+    pub style: MenuStyle,
     // --- visible -------------------
     #[live(true)]
     pub visible: bool,

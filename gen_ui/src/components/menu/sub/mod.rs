@@ -66,7 +66,7 @@ live_design! {
 #[derive(Live, WidgetRef, WidgetSet, LiveRegisterWidget)]
 pub struct GSubMenu {
     #[live]
-    pub style: SubMenuProp,
+    pub style: SubMenuStyle,
     #[live]
     pub header: GView,
     #[live]

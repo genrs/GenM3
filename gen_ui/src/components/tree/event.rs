@@ -24,3 +24,16 @@ pub struct LeafClicked {
     pub active: bool,
     pub value: String,
 }
+
+#[derive(Debug, Clone, DefaultNone)]
+pub enum BranchEvent {
+    Changed(BranchChanged),
+    None,
+}
+
+#[derive(Debug, Clone)]
+pub struct BranchChanged {
+    pub active: bool,
+    pub value: String,
+    pub meta: Option<FingerUpEvent>,
+}

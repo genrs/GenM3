@@ -24,7 +24,7 @@ use crate::{
 };
 
 prop_interconvert! {
-    SubMenuProp {
+    SubMenuStyle {
         basic_prop = SubMenuBasicStyle;
         basic => BASIC, SubMenuBasicStyle::default(), |v| (v, SubMenuState::Basic).try_into(),
         active => ACTIVE, SubMenuBasicStyle::from_state(Theme::default(), SubMenuState::Active), |v| (v, SubMenuState::Active).try_into(),
@@ -32,7 +32,7 @@ prop_interconvert! {
     }, "[component.sub_menu] should be a table"
 }
 
-impl Style for SubMenuProp {
+impl Style for SubMenuStyle {
     type State = SubMenuState;
 
     type Basic = SubMenuBasicStyle;
@@ -55,7 +55,7 @@ impl Style for SubMenuProp {
     }
 }
 
-impl SlotStyle for SubMenuProp {
+impl SlotStyle for SubMenuStyle {
     type Part = SubMenuPart;
 
     fn sync_slot(&mut self, map: &crate::prop::ApplySlotMap<Self::State, Self::Part>) -> () {
