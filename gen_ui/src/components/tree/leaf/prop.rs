@@ -17,7 +17,7 @@ use crate::{
     from_prop_to_toml, get_get_mut,
     prop::{
         ApplySlotMapImpl, Applys,
-        manuel::{ACTIVE, BASIC, CONTAINER, DISABLED, EXTRA, HOVER, ICON, TEXT},
+        manuel::{ACTIVE, BASIC, CONTAINER, DISABLED, HOVER, ICON, TEXT},
         traits::NewFrom,
     },
     prop_interconvert,
@@ -71,11 +71,7 @@ impl SlotStyle for LeafStyle {
                 (LeafState::Active, &mut self.active),
                 (LeafState::Disabled, &mut self.disabled),
             ],
-            [
-                LeafPart::Container,
-                LeafPart::Icon,
-                LeafPart::Text
-            ],
+            [LeafPart::Container, LeafPart::Icon, LeafPart::Text],
         );
     }
 }
@@ -179,7 +175,7 @@ impl SlotBasicStyle for LeafBasicStyle {
                 self.icon.sync_slot(state.into(), SvgPart::Svg);
                 self.icon.sync_slot(state.into(), SvgPart::Container);
             }
-            LeafPart::Text => self.text.sync(state.into())
+            LeafPart::Text => self.text.sync(state.into()),
         }
     }
 }
@@ -232,10 +228,11 @@ impl LeafBasicStyle {
         let mut container = ViewBasicStyle::from_state(theme, state.into());
         container.set_height(Size::Fit);
         container.set_width(Size::Fill);
-        container.set_background_visible(true);
+        container.set_background_visible(false);
         container.set_flow(Flow::Right);
         container.set_cursor(MouseCursor::Hand);
         container.set_margin(Margin::from_f64(0.0));
+        container.set_padding(Padding::from_xy(0.0, 4.0));
         container
     }
     pub fn default_icon(theme: Theme, state: LeafState) -> SvgBasicStyle {

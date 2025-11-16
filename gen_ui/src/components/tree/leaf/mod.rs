@@ -2,15 +2,28 @@ mod prop;
 
 pub use prop::*;
 
-use makepad_widgets::*;
 use super::event::*;
 use crate::{
-    ComponentAnInit, active_event, animation_open_then_redraw, components::{
-        BasicStyle, Component, GLabel, GSvg, LabelBasicStyle, LifeCycle, SlotComponent, SlotStyle, Style, SvgBasicStyle, ViewBasicStyle
-    }, error::Error, event_option, getter, hit_hover_in, hit_hover_out, lifecycle, play_animation, prop::{
-        ApplyMapImpl, ApplySlotMap, ApplySlotMapImpl, ApplySlotMergeImpl, DeferWalks, SlotDrawer, ToSlotMap, ToStateMap, manuel::{ACTIVE, BASIC, DISABLED, HOVER}, traits::ToFloat
-    }, pure_after_apply, set_animation, set_index, set_scope_path, setter, shader::draw_view::DrawView, sync, themes::conf::Conf, visible
+    ComponentAnInit, active_event, animation_open_then_redraw,
+    components::{
+        BasicStyle, Component, GLabel, GSvg, LabelBasicStyle, LifeCycle, SlotComponent, SlotStyle,
+        Style, SvgBasicStyle, ViewBasicStyle,
+    },
+    error::Error,
+    event_option, getter, hit_hover_in, hit_hover_out, lifecycle, play_animation,
+    prop::{
+        ApplyMapImpl, ApplySlotMap, ApplySlotMapImpl, ApplySlotMergeImpl, DeferWalks, SlotDrawer,
+        ToSlotMap, ToStateMap,
+        manuel::{ACTIVE, BASIC, DISABLED, HOVER},
+        traits::ToFloat,
+    },
+    pure_after_apply, set_animation, set_index, set_scope_path, setter,
+    shader::draw_view::DrawView,
+    sync,
+    themes::conf::Conf,
+    visible,
 };
+use makepad_widgets::*;
 
 live_design! {
     link genui_basic;
@@ -60,10 +73,6 @@ live_design! {
 }
 
 /// A leaf node in the tree
-///
-/// ```
-///
-/// ```
 #[derive(Live, WidgetRef, WidgetSet, LiveRegisterWidget)]
 pub struct GLeaf {
     #[live]
@@ -87,7 +96,6 @@ pub struct GLeaf {
     pub icon: GSvg,
     #[live]
     pub text: GLabel,
-
     #[live]
     pub draw_leaf: DrawView,
     // --- animator ----------------
@@ -279,39 +287,37 @@ impl Component for GLeaf {
 
     fn handle_widget_event(&mut self, cx: &mut Cx, event: &Event, hit: Hit, area: Area) {
         animation_open_then_redraw!(self, cx, event);
-        if !self.active {
-            match hit {
-                Hit::FingerDown(_) => {
-                    if self.grab_key_focus {
-                        cx.set_key_focus(area);
-                    }
+        match hit {
+            Hit::FingerDown(_) => {
+                if self.grab_key_focus {
+                    cx.set_key_focus(area);
                 }
-                Hit::FingerHoverIn(e) => {
-                    cx.set_cursor(self.style.get(self.state).container.cursor);
-                    self.switch_state_with_animation(cx, LeafState::Hover);
-                    hit_hover_in!(self, cx, e);
-                }
-                Hit::FingerHoverOut(e) => {
-                    self.switch_state_with_animation(cx, LeafState::Basic);
-                    hit_hover_out!(self, cx, e);
-                }
-                Hit::FingerUp(e) => {
-                    if e.is_over {
-                        if e.has_hovers() {
-                            self.active = true;
-                            self.switch_state_with_animation(cx, LeafState::Active);
-                            self.play_animation(cx, id!(hover.active));
-                        } else {
-                            self.switch_state_with_animation(cx, LeafState::Basic);
-                            self.play_animation(cx, id!(hover.off));
-                        }
-                        self.active_clicked(cx, Some(e));
+            }
+            Hit::FingerHoverIn(e) => {
+                cx.set_cursor(self.style.get(self.state).container.cursor);
+                self.switch_state_with_animation(cx, LeafState::Hover);
+                hit_hover_in!(self, cx, e);
+            }
+            Hit::FingerHoverOut(e) => {
+                self.switch_state_with_animation(cx, LeafState::Basic);
+                hit_hover_out!(self, cx, e);
+            }
+            Hit::FingerUp(e) => {
+                if e.is_over {
+                    if e.has_hovers() {
+                        self.active = true;
+                        self.switch_state_with_animation(cx, LeafState::Active);
+                        self.play_animation(cx, id!(hover.active));
                     } else {
                         self.switch_state_with_animation(cx, LeafState::Basic);
+                        self.play_animation(cx, id!(hover.off));
                     }
+                    self.active_clicked(cx, Some(e));
+                } else {
+                    self.switch_state_with_animation(cx, LeafState::Basic);
                 }
-                _ => {}
             }
+            _ => {}
         }
     }
 
@@ -349,7 +355,6 @@ impl Component for GLeaf {
             self.text.apply_state_map.merge(map.to_state());
             self.text.focus_sync();
         });
-       
 
         // sync state if is not Basic
         self.style.sync_slot(&self.apply_slot_map);

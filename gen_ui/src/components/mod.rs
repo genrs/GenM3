@@ -680,6 +680,15 @@ live_design! {
             }
         }
     }
+
+    pub GLeaf = <GLeafBase> {
+        icon: <GSvg> {
+            visible: false
+        }
+        text: <GLabel> {
+            text: "tree-leaf"
+        }
+    }
 }
 
 pub fn components_register(cx: &mut Cx) {
@@ -712,6 +721,7 @@ pub fn components_register(cx: &mut Cx) {
     input::input_register(cx);
     pagination::live_design(cx);
     verification::live_design(cx);
+    tree::tree_register(cx);
 }
 
 component! {
