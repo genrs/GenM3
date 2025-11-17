@@ -161,9 +161,7 @@ impl Widget for GBranch {
         let body_walk = self.body.walk(cx);
         let icon_walk = self.icon.walk(cx);
         let text_walk = self.text.walk(cx);
-
         self.draw_branch.begin(cx, walk, style.layout());
-
         if self.draw_state.begin(cx, DrawBranchState::DrawHeader) {
             cx.begin_turtle(
                 Walk {
@@ -175,6 +173,11 @@ impl Widget for GBranch {
                 Layout {
                     flow: Flow::Right,
                     padding: Padding::from_xy(0.0, 4.0),
+                    spacing: 12.0,
+                    align: Align {
+                        x: 0.0,
+                        y: 0.5,
+                    },
                     ..Default::default()
                 },
             );
@@ -301,6 +304,7 @@ impl WidgetNode for GBranch {
 
 impl LiveHook for GBranch {
     pure_after_apply!();
+
     fn after_new_before_apply(&mut self, cx: &mut Cx) {
         self.merge_conf_prop(cx);
     }

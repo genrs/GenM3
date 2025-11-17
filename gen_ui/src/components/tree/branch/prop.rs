@@ -236,7 +236,7 @@ impl BranchBasicStyle {
         let mut container = ViewBasicStyle::from_state(theme, state.into());
         container.set_height(Size::Fit);
         container.set_width(Size::Fill);
-        container.set_background_visible(true);
+        container.set_background_visible(false);
         container.set_flow(Flow::Down);
         container.set_margin(Margin::from_f64(0.0));
         container.set_padding(Padding::from_f64(0.0));
@@ -245,20 +245,19 @@ impl BranchBasicStyle {
     }
     pub fn default_icon(theme: Theme, state: BranchState) -> SvgBasicStyle {
         let mut icon = SvgBasicStyle::from_state(theme, state.into());
-        icon.container.height = Size::Fixed(16.0);
-        icon.container.width = Size::Fixed(16.0);
+        icon.svg.height = Size::Fixed(12.0);
+        icon.svg.width = Size::Fixed(12.0);
         icon
     }
     pub fn default_text(theme: Theme, state: BranchState) -> LabelBasicStyle {
-        let mut text = LabelBasicStyle::from_state(theme, state.into());
-        text.set_font_size(14.0);
+        let  text = LabelBasicStyle::from_state(theme, state.into());
         text
     }
     pub fn default_body(theme: Theme, state: BranchState) -> ViewBasicStyle {
         let mut body = ViewBasicStyle::from_state(theme, state.into());
         body.set_height(Size::Fit);
         body.set_width(Size::Fill);
-        body.set_background_visible(true);
+        body.set_background_visible(false);
         body.set_margin(Margin::from_f64(0.0));
         body.set_flow(Flow::Down);
         body
