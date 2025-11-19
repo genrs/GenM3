@@ -8,7 +8,7 @@ use crate::{
         label::{LabelBasicStyle, LabelState},
         live_props::LiveProps,
         svg::{SvgBasicStyle, SvgPart, SvgState},
-        traits::{BasicStyle, ComponentState, Part, Style, SlotBasicStyle, SlotStyle},
+        traits::{BasicStyle, ComponentState, Style, SlotBasicStyle, SlotStyle},
         view::{ViewBasicStyle, ViewState},
     }, error::Error, from_prop_to_toml, get_get_mut, prop::{
         manuel::{ACTIVE, BASIC, CONTAINER, DISABLED, HOVER, ICON, TEXT},

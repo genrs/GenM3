@@ -13,23 +13,23 @@ pub use sub::*;
 use makepad_widgets::*;
 
 use crate::{
-    active_event, area, area_ref,
+    ComponentAnInit, active_event, area, area_ref,
     components::{
         lifecycle::LifeCycle,
-        traits::{BasicStyle, Component, Style, SlotComponent, SlotStyle},
+        traits::{BasicStyle, Component, SlotComponent, SlotStyle, Style},
         view::{GView, ViewBasicStyle},
     },
     error::Error,
     event_option, event_option_ref, getter_setter_ref, lifecycle,
     prop::{
-        manuel::BASIC, ApplyMapImpl, ApplySlotMap, ApplySlotMapImpl, DeferWalks, MenuItemMode,
-        SlotDrawer, ToStateMap,
+        ApplyMapImpl, ApplySlotMap, ApplySlotMapImpl, DeferWalks, MenuItemMode, SlotDrawer,
+        ToStateMap, manuel::BASIC,
     },
     pure_after_apply, set_index, set_scope_path,
     shader::draw_view::DrawView,
     sync,
     themes::conf::Conf,
-    visible, ComponentAnInit,
+    visible,
 };
 
 live_design! {
@@ -556,23 +556,36 @@ fn nested_action(
         if child.value.is_empty() {
             child.generate_value(&index_chain);
         }
+
+        if let Some(e) = child.changed(actions) {
+            active.replace(MenuActionType::SubMenu(e));
+        }
         let mut sub_menu_mode = vec![];
         // 递归查找子菜单项
         for (sub_index, (_id, sub_child)) in child.body.children.iter().enumerate() {
             let mut index_chain = index_chain.clone();
             index_chain.push(sub_index);
-            if let Some(e) = child.changed(actions) {
-                active.replace(MenuActionType::SubMenu(e));
-            } else {
-                nested_action(
-                    sub_child,
-                    cx,
-                    &mut sub_menu_mode,
-                    active,
-                    &index_chain,
-                    actions,
-                );
-            }
+
+            nested_action(
+                sub_child,
+                cx,
+                &mut sub_menu_mode,
+                active,
+                &index_chain,
+                actions,
+            );
+            // if let Some(e) = child.changed(actions) {
+            //     active.replace(MenuActionType::SubMenu(e));
+            // } else {
+            //     nested_action(
+            //         sub_child,
+            //         cx,
+            //         &mut sub_menu_mode,
+            //         active,
+            //         &index_chain,
+            //         actions,
+            //     );
+            // }
         }
         item_modes.push(MenuItemMode::SubMenu {
             active: child.active,

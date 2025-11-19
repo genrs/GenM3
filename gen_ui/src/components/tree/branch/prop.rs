@@ -15,7 +15,7 @@ use crate::{
     from_prop_to_toml, get_get_mut,
     prop::{
         ApplySlotMapImpl, Applys,
-        manuel::{ACTIVE, BASIC, BODY, CONTAINER, DISABLED, HEADER, ICON, TEXT},
+        manuel::{ACTIVE, BASIC, BODY, CONTAINER, DISABLED, ICON, TEXT},
         traits::NewFrom,
     },
     prop_interconvert,
@@ -240,7 +240,6 @@ impl BranchBasicStyle {
         container.set_flow(Flow::Down);
         container.set_margin(Margin::from_f64(0.0));
         container.set_padding(Padding::from_f64(0.0));
-        container.set_spacing(0.0);
         container
     }
     pub fn default_icon(theme: Theme, state: BranchState) -> SvgBasicStyle {
@@ -259,6 +258,7 @@ impl BranchBasicStyle {
         body.set_width(Size::Fill);
         body.set_background_visible(false);
         body.set_margin(Margin::from_f64(0.0));
+        body.set_padding(Padding::from_all(0.0, 0.0, 0.0, 28.0));
         body.set_flow(Flow::Down);
         body
     }

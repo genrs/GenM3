@@ -37,3 +37,34 @@ pub struct BranchChanged {
     pub value: String,
     pub meta: Option<FingerUpEvent>,
 }
+
+#[derive(Debug, Clone)]
+pub enum TreeActionType {
+    Branch(BranchChanged),
+    Leaf(LeafClicked),
+}
+
+#[derive(Debug, Clone, DefaultNone)]
+pub enum TreeEvent {
+    HoverIn(TreeHoverIn),
+    HoverOut(TreeHoverOut),
+    Changed(TreeChanged),
+    None,
+}
+
+#[derive(Clone, Debug)]
+pub struct TreeHoverIn {
+    pub meta: FingerHoverEvent,
+}
+
+#[derive(Clone, Debug)]
+pub struct TreeHoverOut {
+    pub meta: FingerHoverEvent,
+}
+
+#[derive(Clone, Debug)]
+pub struct TreeChanged {
+    pub meta: Option<FingerUpEvent>,
+    /// The value of the active
+    pub actives: Vec<String>,
+}

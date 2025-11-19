@@ -87,7 +87,7 @@ live_design! {
 /// ```
 /// <GBranch> {
 ///     text: <GLabel> { text: "Branch 1" }
-///     body = <GView> {
+///     body: <GView> {
 ///         <GLeaf> {}
 ///         <GLeaf> {}
 ///         <GBranch> {

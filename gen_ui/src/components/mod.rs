@@ -705,6 +705,10 @@ live_design! {
             }
         }
     }
+
+    pub GTree = <GTreeBase> {
+        body: <GView> {}
+    }
 }
 
 pub fn components_register(cx: &mut Cx) {

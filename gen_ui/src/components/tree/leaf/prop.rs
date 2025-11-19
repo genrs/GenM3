@@ -232,7 +232,7 @@ impl LeafBasicStyle {
         container.set_flow(Flow::Right);
         container.set_cursor(MouseCursor::Hand);
         container.set_margin(Margin::from_f64(0.0));
-        container.set_padding(Padding::from_xy(0.0, 4.0));
+        container.set_padding(Padding::from_f64(0.0));
         container
     }
     pub fn default_icon(theme: Theme, state: LeafState) -> SvgBasicStyle {
