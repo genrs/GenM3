@@ -709,6 +709,34 @@ live_design! {
     pub GTree = <GTreeBase> {
         body: <GView> {}
     }
+
+    pub GNumberInput = <GNumberInputBase> {
+        input: <GInputArea> {
+            draw_text: {
+                text_style: <THEME_FONT_REGULAR>{}
+            }
+        }
+        up: <GButton>{
+            slot: {
+                style: {
+                    basic: {
+                        font_size: 8.0,
+                    }
+                }
+                text: "▲"
+            }
+        }
+        down: <GButton>{
+            slot: {
+                style: {
+                    basic: {
+                        font_size: 8.0,
+                    }
+                }
+                text: "▼"
+            }
+        }
+    }
 }
 
 pub fn components_register(cx: &mut Cx) {
@@ -742,6 +770,7 @@ pub fn components_register(cx: &mut Cx) {
     pagination::live_design(cx);
     verification::live_design(cx);
     tree::tree_register(cx);
+    number_input::live_design(cx);
 }
 
 component! {

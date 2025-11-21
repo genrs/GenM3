@@ -1,7 +1,7 @@
   - [x] input
     - [x] input_area
   - [ ] number_input
-  - [ ] verification
+  - [x] verification
   - [x] loading
   - [ ] time_picker
   - [ ] date_picker
@@ -25,9 +25,9 @@
     - [ ] virtual
   - [x] slider
   - [x] progress
-  - [ ] tree
-    - [ ] leaf
-    - [ ] branch
+  - [x] tree
+    - [x] leaf
+    - [x] branch
   - [x] rate
   - [ ] upload (maybe)
   - [x] badge

@@ -1,9 +1,5 @@
-pub mod controller;
-mod event;
 mod prop;
 
-
-pub use event::*;
 pub use prop::*;
 
 use makepad_widgets::*;
@@ -34,25 +30,19 @@ live_design! {
     link genui_basic;
     use link::genui_animation_prop::*;
 
-    pub GNumberInputBase = {{GNumberInput}} {}
+    pub GNumberCtrBase = {{GNumberCtr}} {}
 }
 
 #[derive(Live, WidgetRef, WidgetSet, LiveRegisterWidget)]
-pub struct GNumberInput {
+pub struct GNumberCtr {
     #[live]
-    pub style: NumberInputStyle,
-    #[live(4)]
-    pub length: i32,
-    #[live]
-    pub input: GInputArea,
+    pub style: NumberCtrStyle,
     #[live]
     pub up: GButton,
     #[live]
     pub down: GButton,
-    // #[rust]
-    // live_update_order: SmallVec<[LiveId; 1]>,
     #[live]
-    pub draw_number_input: DrawView,
+    pub draw_number_ctr: DrawView,
     // --- visible -------------------
     #[live(true)]
     pub visible: bool,
@@ -66,7 +56,7 @@ pub struct GNumberInput {
     #[rust]
     pub scope_path: Option<HeapLiveIdPath>,
     #[rust]
-    pub apply_slot_map: ApplySlotMap<NumberInputState, NumberInputPart>,
+    pub apply_slot_map: ApplySlotMap<NumberCtrState, NumberCtrPart>,
     #[rust]
     pub index: usize,
     #[rust(true)]
@@ -78,7 +68,7 @@ pub struct GNumberInput {
     #[rust]
     pub lifecycle: LifeCycle,
     #[rust]
-    pub state: NumberInputState,
+    pub state: NumberCtrState,
     #[rust]
     defer_walks: DeferWalks,
     // ----------------------------------
@@ -86,7 +76,7 @@ pub struct GNumberInput {
     pub value: f32,
 }
 
-impl WidgetNode for GNumberInput {
+impl WidgetNode for GNumberCtr {
     fn uid_to_widget(&self, _uid: WidgetUid) -> WidgetRef {
         WidgetRef::empty()
     }
@@ -101,12 +91,12 @@ impl WidgetNode for GNumberInput {
     }
 
     fn area(&self) -> Area {
-        self.draw_number_input.area
+        self.draw_number_ctr.area
     }
 
     fn redraw(&mut self, cx: &mut Cx) {
         let _ = self.render(cx);
-        self.draw_number_input.redraw(cx);
+        self.draw_number_ctr.redraw(cx);
         for slot in [&mut self.up, &mut self.down] {
             if slot.visible {
                 slot.redraw(cx);
@@ -128,13 +118,13 @@ impl WidgetNode for GNumberInput {
     visible!();
 }
 
-impl Widget for GNumberInput {
+impl Widget for GNumberCtr {
     fn draw_walk(&mut self, cx: &mut Cx2d, scope: &mut Scope, walk: Walk) -> DrawStep {
         if !self.visible {
             return DrawStep::done();
         }
         let style = self.style.get(self.state);
-        self.draw_number_input.begin(cx, walk, style.layout());
+        self.draw_number_ctr.begin(cx, walk, style.layout());
 
         if self.input.visible {
             let walk = self.input.walk(cx);
@@ -169,7 +159,7 @@ impl Widget for GNumberInput {
 
         cx.end_turtle();
 
-        self.draw_number_input.end(cx);
+        self.draw_number_ctr.end(cx);
         self.set_scope_path(&scope.path);
         DrawStep::done()
     }
@@ -197,11 +187,11 @@ impl Widget for GNumberInput {
     }
 }
 
-impl MatchEvent for GNumberInput {
+impl MatchEvent for GNumberCtr {
     fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions) {}
 }
 
-impl LiveHook for GNumberInput {
+impl LiveHook for GNumberCtr {
     pure_after_apply!();
 
     fn after_new_before_apply(&mut self, cx: &mut Cx) {
@@ -215,21 +205,21 @@ impl LiveHook for GNumberInput {
             index,
             [live_id!(basic), live_id!(disabled)],
             [
-                (NumberInputPart::Container, &ViewBasicStyle::live_props()),
-                (NumberInputPart::Input, &InputAreaBasicStyle::live_props()),
-                (NumberInputPart::Button, &ButtonBasicStyle::live_props()),
+                (NumberCtrPart::Container, &ViewBasicStyle::live_props()),
+                (NumberCtrPart::Input, &InputAreaBasicStyle::live_props()),
+                (NumberCtrPart::Button, &ButtonBasicStyle::live_props()),
             ],
             |_| {},
             |prefix, component, applys| match prefix.to_string().as_str() {
                 BASIC => {
                     component
                         .apply_slot_map
-                        .insert(NumberInputState::Basic, applys);
+                        .insert(NumberCtrState::Basic, applys);
                 }
                 DISABLED => {
                     component
                         .apply_slot_map
-                        .insert(NumberInputState::Disabled, applys);
+                        .insert(NumberCtrState::Disabled, applys);
                 }
                 _ => {}
             },
@@ -239,8 +229,8 @@ impl LiveHook for GNumberInput {
     }
 }
 
-impl SlotComponent<NumberInputState> for GNumberInput {
-    type Part = NumberInputPart;
+impl SlotComponent<NumberCtrState> for GNumberCtr {
+    type Part = NumberCtrPart;
 
     fn merge_prop_to_slot(&mut self) -> () {
         self.up.style.basic = self.style.basic.button;
@@ -253,10 +243,10 @@ impl SlotComponent<NumberInputState> for GNumberInput {
     }
 }
 
-impl Component for GNumberInput {
+impl Component for GNumberCtr {
     type Error = Error;
 
-    type State = NumberInputState;
+    type State = NumberCtrState;
 
     fn merge_conf_prop(&mut self, cx: &mut Cx) -> () {
         let style = &cx.global::<Conf>().components.number_input;
@@ -266,10 +256,10 @@ impl Component for GNumberInput {
 
     fn render(&mut self, _cx: &mut Cx) -> Result<(), Self::Error> {
         if self.disabled {
-            self.switch_state(NumberInputState::Disabled);
+            self.switch_state(NumberCtrState::Disabled);
         }
         let style = self.style.get(self.state).container;
-        self.draw_number_input.merge(&style);
+        self.draw_number_ctr.merge(&style);
         Ok(())
     }
 
@@ -292,16 +282,16 @@ impl Component for GNumberInput {
 
     fn focus_sync(&mut self) -> () {
         let mut crossed_map = self.apply_slot_map.cross();
-        // crossed_map.remove(&NumberInputPart::Input).map(|map| {
+        // crossed_map.remove(&NumberCtrPart::Input).map(|map| {
         //     self.apply_items_map.merge_slot(map.to_slot());
         // });
 
-        crossed_map.remove(&NumberInputPart::Input).map(|map| {
+        crossed_map.remove(&NumberCtrPart::Input).map(|map| {
             self.input.apply_slot_map.merge_slot(map.to_slot());
             self.input.focus_sync();
         });
 
-        crossed_map.remove(&NumberInputPart::Button).map(|map| {
+        crossed_map.remove(&NumberCtrPart::Button).map(|map| {
             self.up.apply_state_map.merge(map.clone().to_state());
             self.down.apply_state_map.merge(map.to_state());
             self.up.focus_sync();
@@ -322,19 +312,19 @@ impl Component for GNumberInput {
     switch_state!();
 }
 
-impl GNumberInput {
+impl GNumberCtr {
     pub fn active_changed(
         &mut self,
         cx: &mut Cx,
         meta: Option<InputChangedMetaEvent>,
-        adjust: NumberInputAdjust,
+        adjust: GNumberCtrAdjust,
     ) {
         if self.event_open {
             if let Some(path) = self.scope_path.as_ref() {
                 cx.widget_action(
                     self.widget_uid(),
                     path,
-                    NumberInputEvent::Changed(NumberInputChanged {
+                    GNumberCtrEvent::Changed(GNumberCtrChanged {
                         meta,
                         value: self.value,
                         adjust,

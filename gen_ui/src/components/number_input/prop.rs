@@ -10,7 +10,7 @@ use crate::{
     from_prop_to_toml, get_get_mut,
     prop::{
         ApplySlotMapImpl, ApplyStateMapImpl, Applys,
-        manuel::{BASIC, BUTTON, CONTAINER, DISABLED, INPUT, ITEM},
+        manuel::{BASIC, BUTTON, CONTAINER, DISABLED, INPUT, ITEM}, traits::NewFrom,
     },
     prop_interconvert,
     themes::Theme,
@@ -215,10 +215,13 @@ impl NumberInputBasicStyle {
     pub fn default_container(theme: Theme, state: NumberInputState) -> ViewBasicStyle {
         let mut container = ViewBasicStyle::from_state(theme, state.into());
         container.set_cursor(Default::default());
-        container.set_background_visible(false);
+        container.set_background_visible(true);
+        container.set_background_color(vec4(1.0,0.0,0.0, 1.0));
         container.set_flow(Flow::Right);
         container.set_height(Size::Fit);
-        container.set_width(Size::Fit);
+        container.set_width(Size::Fill);
+        container.set_padding(Padding::from_f64(0.0));
+        container.set_spacing(0.0);
         container
     }
 
@@ -230,8 +233,9 @@ impl NumberInputBasicStyle {
 
     pub fn default_button(theme: Theme, state: NumberInputState) -> ButtonBasicStyle {
         let mut button = ButtonBasicStyle::from_state(theme, state.into());
-        button.set_width(Size::Fixed(24.0));
-        button.set_height(Size::Fixed(24.0));
+        button.set_width(Size::Fill);
+        button.set_padding(Padding::from_f64(2.0));
+        button.set_height(Size::Fill);
         button
     }
 }

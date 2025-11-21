@@ -6,11 +6,11 @@ use crate::components::item::SelectItemStyle;
 use crate::components::options::SelectOptionsStyle;
 use crate::components::panel::ColorPanelStyle;
 use crate::components::{
-    BadgeStyle, BranchStyle, ButtonStyle, CardStyle, CheckboxStyle, CollapseStyle, DividerStyle, ImageStyle, InputStyle, LabelStyle, LeafStyle, LinkStyle, LoadingStyle, MenuItemStyle, MenuStyle, PaginationStyle, PopupContainerStyle, PopupStyle, ProgressStyle, RadioStyle, RateStyle, SelectStyle, SliderStyle, SubMenuStyle, SvgStyle, SwitchStyle, TabbarItemProp, TabbarProp, TagStyle, TreeStyle, VerificationStyle, ViewStyle
+    BadgeStyle, BranchStyle, ButtonStyle, CardStyle, CheckboxStyle, CollapseStyle, DividerStyle, ImageStyle, InputStyle, LabelStyle, LeafStyle, LinkStyle, LoadingStyle, MenuItemStyle, MenuStyle, NumberInputStyle, PaginationStyle, PopupContainerStyle, PopupStyle, ProgressStyle, RadioStyle, RateStyle, SelectStyle, SliderStyle, SubMenuStyle, SvgStyle, SwitchStyle, TabbarItemProp, TabbarProp, TagStyle, TreeStyle, VerificationStyle, ViewStyle
 };
 use crate::error::Error;
 use crate::prop::manuel::{
-    BADGE, BADGE_DOT, BRANCH, BUTTON, CARD, CHECKBOX, COLLAPSE, COLOR_PANEL, DIVIDER, IMAGE, INPUT, INPUT_AREA, LABEL, LEAF, LINK, LOADING, MENU, MENU_ITEM, PAGINATION, POPUP, POPUP_CONTAINER, PROGRESS, RADIO, RATE, SELECT, SELECT_ITEM, SELECT_OPTIONS, SLIDER, SUB_MENU, SVG, SWITCH, TABBAR, TABBAR_ITEM, TAG, TREE, VERIFICATION, VIEW
+    BADGE, BADGE_DOT, BRANCH, BUTTON, CARD, CHECKBOX, COLLAPSE, COLOR_PANEL, DIVIDER, IMAGE, INPUT, INPUT_AREA, LABEL, LEAF, LINK, LOADING, MENU, MENU_ITEM, NUMBER_INPUT, PAGINATION, POPUP, POPUP_CONTAINER, PROGRESS, RADIO, RATE, SELECT, SELECT_ITEM, SELECT_OPTIONS, SLIDER, SUB_MENU, SVG, SWITCH, TABBAR, TABBAR_ITEM, TAG, TREE, VERIFICATION, VIEW
 };
 use crate::try_from_toml_item;
 
@@ -53,6 +53,7 @@ pub struct ComponentsConf {
     pub leaf: LeafStyle,
     pub branch: BranchStyle,
     pub tree: TreeStyle,
+    pub number_input: NumberInputStyle
 }
 
 try_from_toml_item! {
@@ -93,7 +94,8 @@ try_from_toml_item! {
         verification => VERIFICATION, VerificationStyle::default(), |item| item.try_into(),
         leaf => LEAF, LeafStyle::default(), |item| item.try_into(),
         branch => BRANCH, BranchStyle::default(), |item| item.try_into(),
-        tree => TREE, TreeStyle::default(), |item| item.try_into()
+        tree => TREE, TreeStyle::default(), |item| item.try_into(),
+        number_input => NUMBER_INPUT, NumberInputStyle::default(), |item| item.try_into()
     }, "[components] should be a table"
 }
 
