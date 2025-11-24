@@ -131,6 +131,7 @@ pub const LEAF: &str = "leaf";
 pub const BRANCH: &str = "branch";
 pub const TREE: &str = "tree";
 pub const NUMBER_INPUT: &str = "number_input";
+pub const NUMBER_CTR: &str = "number_ctr";
 pub const CALENDAR: &str = "calendar";
 pub const DATE_PICKER: &str = "date_picker";
 pub const TIME_PICKER: &str = "time_picker";

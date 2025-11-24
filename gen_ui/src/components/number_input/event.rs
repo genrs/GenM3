@@ -8,6 +8,19 @@ pub enum NumberInputEvent {
     None,
 }
 
+// #[derive(Clone, Debug, DefaultNone)]
+// pub enum NumberCtrEvent {
+//     Up(NumberCtrUp),
+//     Down(NumberCtrDown),
+//     None,
+// }
+
+// #[derive(Clone, Debug)]
+// pub struct NumberCtrUp {
+//     pub meta: Option<>,
+    
+// }
+
 #[derive(Clone, Debug, Copy, PartialEq, Eq)]
 pub enum NumberInputAdjust {
     Up,

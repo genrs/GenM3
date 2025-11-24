@@ -6,9 +6,10 @@ use makepad_widgets::*;
 
 use crate::{
     components::{
-        BasicStyle, ButtonBasicStyle, Component, GButton, InputChanged, InputChangedMetaEvent,
-        InputFocus, InputFocusMetaEvent, InputKeyDown, InputMaxLengthReached, InputState,
-        LifeCycle, SlotComponent, SlotStyle, Style, ViewBasicStyle,
+        BasicStyle, ButtonBasicStyle, ButtonState, Component, GButton, InputChanged,
+        InputChangedMetaEvent, InputFocus, InputFocusMetaEvent, InputKeyDown,
+        InputMaxLengthReached, InputState, LifeCycle, SlotComponent, SlotStyle, Style,
+        ViewBasicStyle,
         area::{GInputArea, InputAreaBasicStyle, InputAreaPart},
     },
     error::Error,
@@ -16,7 +17,7 @@ use crate::{
     prop::{
         ApplyMapImpl, ApplySlotMap, ApplySlotMapImpl, ApplySlotMergeImpl, DeferWalks, SlotDrawer,
         ToSlotMap, ToStateMap,
-        manuel::{BASIC, DISABLED},
+        manuel::{BASIC, DISABLED, HOVER, PRESSED},
         traits::{NewFrom, ToColor},
     },
     pure_after_apply, set_index, set_scope_path,
@@ -56,7 +57,7 @@ pub struct GNumberCtr {
     #[rust]
     pub scope_path: Option<HeapLiveIdPath>,
     #[rust]
-    pub apply_slot_map: ApplySlotMap<NumberCtrState, NumberCtrPart>,
+    pub apply_slot_map: ApplySlotMap<ButtonState, NumberCtrPart>,
     #[rust]
     pub index: usize,
     #[rust(true)]
@@ -68,7 +69,7 @@ pub struct GNumberCtr {
     #[rust]
     pub lifecycle: LifeCycle,
     #[rust]
-    pub state: NumberCtrState,
+    pub state: ButtonState,
     #[rust]
     defer_walks: DeferWalks,
     // ----------------------------------
@@ -102,9 +103,6 @@ impl WidgetNode for GNumberCtr {
                 slot.redraw(cx);
             }
         }
-        if self.input.visible {
-            self.input.redraw(cx);
-        }
     }
 
     fn state(&self) -> String {
@@ -126,28 +124,6 @@ impl Widget for GNumberCtr {
         let style = self.style.get(self.state);
         self.draw_number_ctr.begin(cx, walk, style.layout());
 
-        if self.input.visible {
-            let walk = self.input.walk(cx);
-            let _ = self.input.draw_walk(cx, scope, walk);
-        }
-
-        let wrapper_height = self.input.area().rect(cx).size.y;
-        // 绘制 up 和 down 按钮
-        cx.begin_turtle(
-            Walk {
-                height: Size::Fixed(wrapper_height),
-                width: Size::Fixed(24.0),
-                ..Default::default()
-            },
-            Layout {
-                padding: Padding::from_f64(4.0),
-                align: Align::from_f64(0.5),
-                flow: Flow::Down,
-                spacing: 6.0,
-                ..Default::default()
-            },
-        );
-
         let _ = SlotDrawer::new(
             [
                 (live_id!(up), (&mut self.up).into()),
@@ -156,9 +132,6 @@ impl Widget for GNumberCtr {
             &mut self.defer_walks,
         )
         .draw_walk(cx, scope);
-
-        cx.end_turtle();
-
         self.draw_number_ctr.end(cx);
         self.set_scope_path(&scope.path);
         DrawStep::done()
@@ -177,10 +150,6 @@ impl Widget for GNumberCtr {
         }
 
         self.match_event(cx, event);
-
-        if self.input.visible {
-            self.input.handle_event(cx, event, scope);
-        }
 
         self.up.handle_event(cx, event, scope);
         self.down.handle_event(cx, event, scope);
@@ -206,57 +175,61 @@ impl LiveHook for GNumberCtr {
             [live_id!(basic), live_id!(disabled)],
             [
                 (NumberCtrPart::Container, &ViewBasicStyle::live_props()),
-                (NumberCtrPart::Input, &InputAreaBasicStyle::live_props()),
                 (NumberCtrPart::Button, &ButtonBasicStyle::live_props()),
             ],
             |_| {},
             |prefix, component, applys| match prefix.to_string().as_str() {
                 BASIC => {
+                    component.apply_slot_map.insert(ButtonState::Basic, applys);
+                }
+                HOVER => {
+                    component.apply_slot_map.insert(ButtonState::Hover, applys);
+                }
+                PRESSED => {
                     component
                         .apply_slot_map
-                        .insert(NumberCtrState::Basic, applys);
+                        .insert(ButtonState::Pressed, applys);
                 }
                 DISABLED => {
                     component
                         .apply_slot_map
-                        .insert(NumberCtrState::Disabled, applys);
+                        .insert(ButtonState::Disabled, applys);
                 }
                 _ => {}
             },
         );
-
-        self.apply_items(cx);
     }
 }
 
-impl SlotComponent<NumberCtrState> for GNumberCtr {
+impl SlotComponent<ButtonState> for GNumberCtr {
     type Part = NumberCtrPart;
 
     fn merge_prop_to_slot(&mut self) -> () {
         self.up.style.basic = self.style.basic.button;
-        // self.up.style.hover = self.style.basic.button;
+        self.up.style.hover = self.style.basic.button;
+        self.up.style.pressed = self.style.basic.button;
         self.up.style.disabled = self.style.disabled.button;
         self.down.style.basic = self.style.basic.button;
+        self.down.style.hover = self.style.basic.button;
+        self.down.style.pressed = self.style.basic.button;
         self.down.style.disabled = self.style.disabled.button;
-        self.input.style.basic = self.style.basic.input;
-        self.input.style.disabled = self.style.disabled.input;
     }
 }
 
 impl Component for GNumberCtr {
     type Error = Error;
 
-    type State = NumberCtrState;
+    type State = ButtonState;
 
     fn merge_conf_prop(&mut self, cx: &mut Cx) -> () {
-        let style = &cx.global::<Conf>().components.number_input;
+        let style = &cx.global::<Conf>().components.number_ctr;
         self.style = style.clone();
         self.merge_prop_to_slot();
     }
 
     fn render(&mut self, _cx: &mut Cx) -> Result<(), Self::Error> {
         if self.disabled {
-            self.switch_state(NumberCtrState::Disabled);
+            self.switch_state(ButtonState::Disabled);
         }
         let style = self.style.get(self.state).container;
         self.draw_number_ctr.merge(&style);
@@ -282,14 +255,6 @@ impl Component for GNumberCtr {
 
     fn focus_sync(&mut self) -> () {
         let mut crossed_map = self.apply_slot_map.cross();
-        // crossed_map.remove(&NumberCtrPart::Input).map(|map| {
-        //     self.apply_items_map.merge_slot(map.to_slot());
-        // });
-
-        crossed_map.remove(&NumberCtrPart::Input).map(|map| {
-            self.input.apply_slot_map.merge_slot(map.to_slot());
-            self.input.focus_sync();
-        });
 
         crossed_map.remove(&NumberCtrPart::Button).map(|map| {
             self.up.apply_state_map.merge(map.clone().to_state());
@@ -313,25 +278,24 @@ impl Component for GNumberCtr {
 }
 
 impl GNumberCtr {
-    pub fn active_changed(
-        &mut self,
-        cx: &mut Cx,
-        meta: Option<InputChangedMetaEvent>,
-        adjust: GNumberCtrAdjust,
-    ) {
-        if self.event_open {
-            if let Some(path) = self.scope_path.as_ref() {
-                cx.widget_action(
-                    self.widget_uid(),
-                    path,
-                    GNumberCtrEvent::Changed(GNumberCtrChanged {
-                        meta,
-                        value: self.value,
-                        adjust,
-                    }),
-                );
-            }
-        }
-    }
-    pub fn apply_items(&mut self, cx: &mut Cx) {}
+    // pub fn active_changed(
+    //     &mut self,
+    //     cx: &mut Cx,
+    //     meta: Option<InputChangedMetaEvent>,
+    // ) {
+    //     if self.event_open {
+    //         if let Some(path) = self.scope_path.as_ref() {
+    //             cx.widget_action(
+    //                 self.widget_uid(),
+    //                 path,
+    //                 NumberCtrEvent::Changed(NumberCtrChanged {
+    //                     meta,
+    //                     value: self.value,
+    //                     adjust,
+    //                 }),
+    //             );
+    //         }
+    //     }
+    // }
+    // pub fn apply_items(&mut self, cx: &mut Cx) {}
 }

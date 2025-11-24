@@ -710,6 +710,29 @@ live_design! {
         body: <GView> {}
     }
 
+    pub GNumberCtr = <GNumberCtrBase> {
+        up: <GButton>{
+            slot: {
+                style: {
+                    basic: {
+                        font_size: 8.0,
+                    }
+                }
+                text: "▲"
+            }
+        }
+        down: <GButton>{
+            slot: {
+                style: {
+                    basic: {
+                        font_size: 8.0,
+                    }
+                }
+                text: "▼"
+            }
+        }
+    }
+
     pub GNumberInput = <GNumberInputBase> {
         input: <GInputArea> {
             draw_text: {
@@ -770,7 +793,7 @@ pub fn components_register(cx: &mut Cx) {
     pagination::live_design(cx);
     verification::live_design(cx);
     tree::tree_register(cx);
-    number_input::live_design(cx);
+    number_input::number_input_register(cx);
 }
 
 component! {

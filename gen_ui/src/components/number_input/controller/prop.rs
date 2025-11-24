@@ -28,7 +28,7 @@ prop_interconvert! {
         hover => HOVER, NumberCtrBasicStyle::from_state(Theme::default(), ButtonState::Hover), |v| (v, ButtonState::Hover).try_into(),
         pressed => PRESSED, NumberCtrBasicStyle::from_state(Theme::default(), ButtonState::Pressed), |v| (v, ButtonState::Pressed).try_into(),
         disabled => DISABLED, NumberCtrBasicStyle::from_state(Theme::default(), ButtonState::Disabled), |v| (v, ButtonState::Disabled).try_into()
-    }, "[component.number_input] should be a table"
+    }, "[component.number_ctr] should be a table"
 }
 
 impl Style for NumberCtrStyle {
@@ -177,7 +177,7 @@ impl TryFrom<(&Item, ButtonState)> for NumberCtrBasicStyle {
 
     fn try_from((value, state): (&Item, ButtonState)) -> Result<Self, Self::Error> {
         let inline_table = value.as_inline_table().ok_or(Error::ThemeStyleParse(
-            "[component.number_input.$slot] should be an inline table".to_string(),
+            "[component.number_ctr.$slot] should be an inline table".to_string(),
         ))?;
 
         let container = get_from_itable(
@@ -209,8 +209,8 @@ impl NumberCtrBasicStyle {
         container.set_cursor(Default::default());
         container.set_background_visible(true);
         container.set_background_color(vec4(1.0, 0.0, 0.0, 1.0));
-        container.set_flow(Flow::Right);
-        container.set_height(Size::Fit);
+        container.set_flow(Flow::Down);
+        container.set_height(Size::Fill);
         container.set_width(Size::Fill);
         container.set_padding(Padding::from_f64(0.0));
         container.set_spacing(0.0);

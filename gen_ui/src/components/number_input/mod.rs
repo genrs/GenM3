@@ -1,8 +1,9 @@
 pub mod controller;
 mod event;
 mod prop;
+mod register;
 
-
+pub use register::register as number_input_register;
 pub use event::*;
 pub use prop::*;
 
