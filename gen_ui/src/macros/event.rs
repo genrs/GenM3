@@ -30,8 +30,8 @@ macro_rules! active_event{
 /// ```
 /// impl GBreadCrumbItem {
 ///     event_option!{
-///         clicked : GBreadCrumbItemEvent => GBreadCrumbEventItemParam,
-///         hover : GBreadCrumbItemEvent => GBreadCrumbEventItemParam
+///         clicked : GBreadCrumbItemEvent::Clicked => GBreadCrumbEventItemParam,
+///         hover : GBreadCrumbItemEvent::Hover => GBreadCrumbEventItemParam
 ///     }
 ///     // pub fn clicked(&self, actions: &Actions) -> Option<GBreadCrumbEventItemParam> {
 ///     //     if let GBreadCrumbItemEvent::Clicked(e) =

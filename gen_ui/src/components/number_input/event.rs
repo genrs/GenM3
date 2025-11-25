@@ -1,4 +1,4 @@
-use makepad_widgets::{ActionDefaultRef, DefaultNone};
+use makepad_widgets::{ActionDefaultRef, DefaultNone, FingerUpEvent};
 
 use crate::components::InputChangedMetaEvent;
 
@@ -8,18 +8,19 @@ pub enum NumberInputEvent {
     None,
 }
 
-// #[derive(Clone, Debug, DefaultNone)]
-// pub enum NumberCtrEvent {
-//     Up(NumberCtrUp),
-//     Down(NumberCtrDown),
-//     None,
-// }
+#[derive(Clone, Debug, DefaultNone)]
+pub enum NumberCtrEvent {
+    Up(NumberCtrClicked),
+    Down(NumberCtrClicked),
+    None,
+}
 
-// #[derive(Clone, Debug)]
-// pub struct NumberCtrUp {
-//     pub meta: Option<>,
-    
-// }
+#[derive(Clone, Debug)]
+pub struct NumberCtrClicked {
+    pub meta: Option<FingerUpEvent>,
+}
+
+
 
 #[derive(Clone, Debug, Copy, PartialEq, Eq)]
 pub enum NumberInputAdjust {

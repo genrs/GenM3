@@ -1,5 +1,5 @@
 use makepad_widgets::*;
-use toml_edit::Item;
+use toml_edit::{InlineTable, Item, Value};
 
 use crate::{
     component_part,
@@ -172,14 +172,10 @@ from_prop_to_toml! {
     }
 }
 
-impl TryFrom<(&Item, ButtonState)> for NumberCtrBasicStyle {
+impl TryFrom<(&InlineTable, ButtonState)> for NumberCtrBasicStyle {
     type Error = Error;
 
-    fn try_from((value, state): (&Item, ButtonState)) -> Result<Self, Self::Error> {
-        let inline_table = value.as_inline_table().ok_or(Error::ThemeStyleParse(
-            "[component.number_ctr.$slot] should be an inline table".to_string(),
-        ))?;
-
+    fn try_from((inline_table, state): (&InlineTable, ButtonState)) -> Result<Self, Self::Error> {
         let container = get_from_itable(
             inline_table,
             CONTAINER,
@@ -203,12 +199,35 @@ impl TryFrom<(&Item, ButtonState)> for NumberCtrBasicStyle {
     }
 }
 
+impl TryFrom<(&Value, ButtonState)> for NumberCtrBasicStyle {
+    type Error = Error;
+
+    fn try_from((value, state): (&Value, ButtonState)) -> Result<Self, Self::Error> {
+        let inline_table = value.as_inline_table().ok_or(Error::ThemeStyleParse(
+            "[component.number_ctr.$slot] should be an inline table".to_string(),
+        ))?;
+
+        (inline_table, state).try_into()
+    }
+}
+
+impl TryFrom<(&Item, ButtonState)> for NumberCtrBasicStyle {
+    type Error = Error;
+
+    fn try_from((value, state): (&Item, ButtonState)) -> Result<Self, Self::Error> {
+        let inline_table = value.as_inline_table().ok_or(Error::ThemeStyleParse(
+            "[component.number_ctr.$slot] should be an inline table".to_string(),
+        ))?;
+
+        (inline_table, state).try_into()
+    }
+}
+
 impl NumberCtrBasicStyle {
     pub fn default_container(theme: Theme, state: ButtonState) -> ViewBasicStyle {
         let mut container = ViewBasicStyle::from_state(theme, state.into());
         container.set_cursor(Default::default());
-        container.set_background_visible(true);
-        container.set_background_color(vec4(1.0, 0.0, 0.0, 1.0));
+        container.set_background_visible(false);
         container.set_flow(Flow::Down);
         container.set_height(Size::Fill);
         container.set_width(Size::Fill);
@@ -220,7 +239,12 @@ impl NumberCtrBasicStyle {
     pub fn default_button(theme: Theme, state: ButtonState) -> ButtonBasicStyle {
         let mut button = ButtonBasicStyle::from_state(theme, state.into());
         button.set_width(Size::Fill);
-        button.set_padding(Padding::from_f64(2.0));
+        let padding = if state == ButtonState::Hover {
+            Padding::from_xy(4.0, 2.0)
+        } else {
+            Padding::from_f64(2.0)
+        };
+        button.set_padding(padding);
         button.set_height(Size::Fill);
         button
     }

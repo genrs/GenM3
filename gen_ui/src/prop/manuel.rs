@@ -135,6 +135,7 @@ pub const NUMBER_CTR: &str = "number_ctr";
 pub const CALENDAR: &str = "calendar";
 pub const DATE_PICKER: &str = "date_picker";
 pub const TIME_PICKER: &str = "time_picker";
+pub const CTR: &str = "ctr";
 // --- mode ------------------------------------------------------
 pub const MODE: &str = "mode";
 pub const ROUND: &str = "Round";

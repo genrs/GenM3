@@ -2,30 +2,17 @@ mod prop;
 
 pub use prop::*;
 
-use makepad_widgets::*;
-
+use super::event::*;
 use crate::{
-    components::{
-        BasicStyle, ButtonBasicStyle, ButtonState, Component, GButton, InputChanged,
-        InputChangedMetaEvent, InputFocus, InputFocusMetaEvent, InputKeyDown,
-        InputMaxLengthReached, InputState, LifeCycle, SlotComponent, SlotStyle, Style,
-        ViewBasicStyle,
-        area::{GInputArea, InputAreaBasicStyle, InputAreaPart},
-    },
-    error::Error,
-    lifecycle,
-    prop::{
-        ApplyMapImpl, ApplySlotMap, ApplySlotMapImpl, ApplySlotMergeImpl, DeferWalks, SlotDrawer,
-        ToSlotMap, ToStateMap,
+    active_event, components::{
+        BasicStyle, ButtonBasicStyle, ButtonState, Component, GButton, LifeCycle, NumberCtrClicked,
+        SlotComponent, SlotStyle, Style, ViewBasicStyle,
+    }, error::Error, event_option, event_option_ref, lifecycle, prop::{
+        ApplyMapImpl, ApplySlotMap, ApplySlotMapImpl, DeferWalks, SlotDrawer, ToStateMap,
         manuel::{BASIC, DISABLED, HOVER, PRESSED},
-        traits::{NewFrom, ToColor},
-    },
-    pure_after_apply, set_index, set_scope_path,
-    shader::draw_view::DrawView,
-    switch_state, sync,
-    themes::conf::Conf,
-    visible,
+    }, pure_after_apply, set_index, set_scope_path, shader::draw_view::DrawView, switch_state, sync, themes::conf::Conf, visible
 };
+use makepad_widgets::*;
 
 live_design! {
     link genui_basic;
@@ -157,7 +144,15 @@ impl Widget for GNumberCtr {
 }
 
 impl MatchEvent for GNumberCtr {
-    fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions) {}
+    fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions) {
+        if let Some(param) = self.up.clicked(actions) {
+            self.active_up(cx, Some(param.meta));
+        }
+
+        if let Some(param) = self.down.clicked(actions) {
+            self.active_down(cx, Some(param.meta));
+        }
+    }
 }
 
 impl LiveHook for GNumberCtr {
@@ -167,12 +162,17 @@ impl LiveHook for GNumberCtr {
         self.merge_conf_prop(cx);
     }
 
-    fn after_apply(&mut self, cx: &mut Cx, apply: &mut Apply, index: usize, nodes: &[LiveNode]) {
+    fn after_apply(&mut self, _cx: &mut Cx, apply: &mut Apply, index: usize, nodes: &[LiveNode]) {
         self.set_apply_slot_map(
             apply.from,
             nodes,
             index,
-            [live_id!(basic), live_id!(disabled)],
+            [
+                live_id!(basic),
+                live_id!(disabled),
+                live_id!(hover),
+                live_id!(pressed),
+            ],
             [
                 (NumberCtrPart::Container, &ViewBasicStyle::live_props()),
                 (NumberCtrPart::Button, &ButtonBasicStyle::live_props()),
@@ -206,12 +206,12 @@ impl SlotComponent<ButtonState> for GNumberCtr {
 
     fn merge_prop_to_slot(&mut self) -> () {
         self.up.style.basic = self.style.basic.button;
-        self.up.style.hover = self.style.basic.button;
-        self.up.style.pressed = self.style.basic.button;
+        self.up.style.hover = self.style.hover.button;
+        self.up.style.pressed = self.style.pressed.button;
         self.up.style.disabled = self.style.disabled.button;
         self.down.style.basic = self.style.basic.button;
-        self.down.style.hover = self.style.basic.button;
-        self.down.style.pressed = self.style.basic.button;
+        self.down.style.hover = self.style.hover.button;
+        self.down.style.pressed = self.style.pressed.button;
         self.down.style.disabled = self.style.disabled.button;
     }
 }
@@ -278,24 +278,20 @@ impl Component for GNumberCtr {
 }
 
 impl GNumberCtr {
-    // pub fn active_changed(
-    //     &mut self,
-    //     cx: &mut Cx,
-    //     meta: Option<InputChangedMetaEvent>,
-    // ) {
-    //     if self.event_open {
-    //         if let Some(path) = self.scope_path.as_ref() {
-    //             cx.widget_action(
-    //                 self.widget_uid(),
-    //                 path,
-    //                 NumberCtrEvent::Changed(NumberCtrChanged {
-    //                     meta,
-    //                     value: self.value,
-    //                     adjust,
-    //                 }),
-    //             );
-    //         }
-    //     }
-    // }
-    // pub fn apply_items(&mut self, cx: &mut Cx) {}
+    active_event! {
+        active_up: NumberCtrEvent::Up | meta: Option<FingerUpEvent> | => NumberCtrClicked {meta},
+        active_down: NumberCtrEvent::Down | meta: Option<FingerUpEvent> | => NumberCtrClicked {meta}
+    }
+
+    event_option! {
+        up: NumberCtrEvent::Up => NumberCtrClicked,
+        down: NumberCtrEvent::Down => NumberCtrClicked
+    }
+}
+
+impl GNumberCtrRef {
+    event_option_ref! {
+        up => NumberCtrClicked,
+        down => NumberCtrClicked
+    }
 }

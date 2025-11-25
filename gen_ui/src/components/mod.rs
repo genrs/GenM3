@@ -70,7 +70,7 @@ pub use view::*;
 
 use crate::{
     component,
-    components::{area::GInputArea, item::GSelectItem},
+    components::{area::GInputArea, controller::GNumberCtr, item::GSelectItem, options::GSelectOptions},
 };
 
 live_design! {
@@ -715,7 +715,7 @@ live_design! {
             slot: {
                 style: {
                     basic: {
-                        font_size: 8.0,
+                        font_size: 6.0,
                     }
                 }
                 text: "▲"
@@ -725,7 +725,7 @@ live_design! {
             slot: {
                 style: {
                     basic: {
-                        font_size: 8.0,
+                        font_size: 6.0,
                     }
                 }
                 text: "▼"
@@ -739,26 +739,7 @@ live_design! {
                 text_style: <THEME_FONT_REGULAR>{}
             }
         }
-        up: <GButton>{
-            slot: {
-                style: {
-                    basic: {
-                        font_size: 8.0,
-                    }
-                }
-                text: "▲"
-            }
-        }
-        down: <GButton>{
-            slot: {
-                style: {
-                    basic: {
-                        font_size: 8.0,
-                    }
-                }
-                text: "▼"
-            }
-        }
+        ctr: <GNumberCtr> {}
     }
 }
 
@@ -821,5 +802,9 @@ component! {
     Slider => GSlider,
     Rate => GRate,
     InputArea => GInputArea,
-    SelectItem => GSelectItem
+    SelectItem => GSelectItem,
+    // SelectOptions => GSelectOptions,
+    Select => GSelect,
+    NumberCtr => GNumberCtr,
+    NumberInput => GNumberInput
 }

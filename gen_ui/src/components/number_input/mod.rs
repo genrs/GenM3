@@ -3,26 +3,24 @@ mod event;
 mod prop;
 mod register;
 
-pub use register::register as number_input_register;
 pub use event::*;
 pub use prop::*;
+pub use register::register as number_input_register;
 
 use makepad_widgets::*;
 
 use crate::{
     components::{
-        BasicStyle, ButtonBasicStyle, Component, GButton, InputChanged, InputChangedMetaEvent,
-        InputFocus, InputFocusMetaEvent, InputKeyDown, InputMaxLengthReached, InputState,
-        LifeCycle, SlotComponent, SlotStyle, Style, ViewBasicStyle,
-        area::{GInputArea, InputAreaBasicStyle, InputAreaPart},
+        BasicStyle, Component, GComponent, InputChangedMetaEvent, LifeCycle, SlotComponent,
+        SlotStyle, Style, ViewBasicStyle,
+        area::{GInputArea, InputAreaBasicStyle},
+        controller::{GNumberCtr, NumberCtrBasicStyle},
     },
     error::Error,
     lifecycle,
     prop::{
-        ApplyMapImpl, ApplySlotMap, ApplySlotMapImpl, ApplySlotMergeImpl, DeferWalks, SlotDrawer,
-        ToSlotMap, ToStateMap,
+        ApplySlotMap, ApplySlotMapImpl, ApplySlotMergeImpl, DeferWalks, ToSlotMap,
         manuel::{BASIC, DISABLED},
-        traits::{NewFrom, ToColor},
     },
     pure_after_apply, set_index, set_scope_path,
     shader::draw_view::DrawView,
@@ -47,9 +45,7 @@ pub struct GNumberInput {
     #[live]
     pub input: GInputArea,
     #[live]
-    pub up: GButton,
-    #[live]
-    pub down: GButton,
+    pub ctr: GNumberCtr,
     // #[rust]
     // live_update_order: SmallVec<[LiveId; 1]>,
     #[live]
@@ -85,6 +81,18 @@ pub struct GNumberInput {
     // ----------------------------------
     #[live]
     pub value: f32,
+    #[live(1.0)]
+    pub step: f32,
+    #[live(0.0)]
+    pub min: f32,
+    #[live(100.0)]
+    pub max: f32,
+    /// 严格模式
+    /// - value必须在min和max之间
+    /// - value必须是step的整数倍
+    /// - 当用户输入的value不符合要求时，会自动调整到符合要求的值
+    #[live(true)]
+    pub strict: bool,
 }
 
 impl WidgetNode for GNumberInput {
@@ -108,10 +116,8 @@ impl WidgetNode for GNumberInput {
     fn redraw(&mut self, cx: &mut Cx) {
         let _ = self.render(cx);
         self.draw_number_input.redraw(cx);
-        for slot in [&mut self.up, &mut self.down] {
-            if slot.visible {
-                slot.redraw(cx);
-            }
+        if self.ctr.visible {
+            self.ctr.redraw(cx);
         }
         if self.input.visible {
             self.input.redraw(cx);
@@ -137,38 +143,80 @@ impl Widget for GNumberInput {
         let style = self.style.get(self.state);
         self.draw_number_input.begin(cx, walk, style.layout());
 
-        if self.input.visible {
-            let walk = self.input.walk(cx);
-            let _ = self.input.draw_walk(cx, scope, walk);
+        let mut slots: [(LiveId, GComponent); 2] = [
+            (live_id!(input), (&mut self.input).into()),
+            (live_id!(ctr), (&mut self.ctr).into()),
+        ];
+        let mut real_height = 0.0;
+        let mut draw_ctr = true;
+        let ctr_width = slots[1].1.walk(cx).width;
+        self.defer_walks.clear();
+        // 由于makepad中没有反向绘制的机制，所以这里需要手动处理，为了完整性，看起来比较麻烦
+        // 实际上：1. 不直接先绘制input，将它放到defer中；
+        // 2. defer会传递真正的宽度，减去ctr的宽度,来确定真正的input宽度，完成input绘制后获取input的高度，最后用这个高度来绘制ctr
+        // 后续作为TODO，可以考虑在makepad中增加反向绘制的机制，从而简化这里的逻辑，如果makepad支持反向绘制较为困难可以尝试在SlotDrawer中增加支持
+        for (id, component) in &mut slots {
+            if component.visible() {
+                let mut walk = component.walk(cx);
+                if let Some(fw) = cx.defer_walk(walk) {
+                    // if is fill, defer the walk
+                    self.defer_walks.push((*id, fw));
+                } else {
+                    if *id == live_id!(ctr) {
+                        // 需要跳过，因为input的高度还没有确定
+                        if real_height == 0.0 {
+                            draw_ctr = false;
+                            continue;
+                        } else {
+                            walk.height = Size::Fixed(real_height);
+                        }
+                    }
+                    let _ = component.draw_walk(cx, scope, walk);
+
+                    if *id == live_id!(input) {
+                        real_height = component.area().rect(cx).size.y;
+                    }
+                }
+            }
+        }
+        let mut new_defer_walks = DeferWalks::new();
+        for (id, df_walk) in self.defer_walks.iter_mut() {
+            for (slot_id, slot) in &mut slots {
+                if *id == *slot_id {
+                    let mut res_walk = df_walk.resolve(cx);
+                    if *id == live_id!(ctr) {
+                        if real_height == 0.0 {
+                            // 如果依然是0.0说明input没有显示出来，我们需要再次加入到defer队列
+                            new_defer_walks.push((*id, df_walk.clone()));
+                            break;
+                        } else {
+                            res_walk.height = Size::Fixed(real_height);
+                        }
+                    } else if *id == live_id!(input) {
+                        if let Size::Fixed(w) = res_walk.width {
+                            if let Size::Fixed(cw) = ctr_width {
+                                if w >= cw {
+                                    res_walk.width = Size::Fixed(w - cw - style.container.spacing);
+                                }
+                            }
+                        }
+                    }
+                    let _ = slot.draw_walk(cx, scope, res_walk);
+                    if *id == live_id!(input) {
+                        real_height = slot.area().rect(cx).size.y;
+                    }
+                    break;
+                }
+            }
         }
 
-        let wrapper_height = self.input.area().rect(cx).size.y;
-        // 绘制 up 和 down 按钮
-        cx.begin_turtle(
-            Walk {
-                height: Size::Fixed(wrapper_height),
-                width: Size::Fixed(24.0),
-                ..Default::default()
-            },
-            Layout {
-                padding: Padding::from_f64(4.0),
-                align: Align::from_f64(0.5),
-                flow: Flow::Down,
-                spacing: 6.0,
-                ..Default::default()
-            },
-        );
-
-        let _ = SlotDrawer::new(
-            [
-                (live_id!(up), (&mut self.up).into()),
-                (live_id!(down), (&mut self.down).into()),
-            ],
-            &mut self.defer_walks,
-        )
-        .draw_walk(cx, scope);
-
-        cx.end_turtle();
+        if !draw_ctr {
+            if self.ctr.visible {
+                let mut walk = self.ctr.walk(cx);
+                walk.height = Size::Fixed(real_height);
+                let _ = self.ctr.draw_walk(cx, scope, walk);
+            }
+        }
 
         self.draw_number_input.end(cx);
         self.set_scope_path(&scope.path);
@@ -193,13 +241,16 @@ impl Widget for GNumberInput {
             self.input.handle_event(cx, event, scope);
         }
 
-        self.up.handle_event(cx, event, scope);
-        self.down.handle_event(cx, event, scope);
+        if self.ctr.visible {
+            self.ctr.handle_event(cx, event, scope);
+        }
     }
 }
 
 impl MatchEvent for GNumberInput {
-    fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions) {}
+    fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions) {
+        if let Some(param) = self.ctr.up(actions) {}
+    }
 }
 
 impl LiveHook for GNumberInput {
@@ -218,7 +269,7 @@ impl LiveHook for GNumberInput {
             [
                 (NumberInputPart::Container, &ViewBasicStyle::live_props()),
                 (NumberInputPart::Input, &InputAreaBasicStyle::live_props()),
-                (NumberInputPart::Button, &ButtonBasicStyle::live_props()),
+                (NumberInputPart::Ctr, &NumberCtrBasicStyle::live_props()),
             ],
             |_| {},
             |prefix, component, applys| match prefix.to_string().as_str() {
@@ -236,7 +287,7 @@ impl LiveHook for GNumberInput {
             },
         );
 
-        self.apply_items(cx);
+        self.apply_data(cx);
     }
 }
 
@@ -244,11 +295,8 @@ impl SlotComponent<NumberInputState> for GNumberInput {
     type Part = NumberInputPart;
 
     fn merge_prop_to_slot(&mut self) -> () {
-        self.up.style.basic = self.style.basic.button;
-        // self.up.style.hover = self.style.basic.button;
-        self.up.style.disabled = self.style.disabled.button;
-        self.down.style.basic = self.style.basic.button;
-        self.down.style.disabled = self.style.disabled.button;
+        self.ctr.style.basic = self.style.basic.ctr;
+        self.ctr.style.disabled = self.style.disabled.ctr;
         self.input.style.basic = self.style.basic.input;
         self.input.style.disabled = self.style.disabled.input;
     }
@@ -302,11 +350,9 @@ impl Component for GNumberInput {
             self.input.focus_sync();
         });
 
-        crossed_map.remove(&NumberInputPart::Button).map(|map| {
-            self.up.apply_state_map.merge(map.clone().to_state());
-            self.down.apply_state_map.merge(map.to_state());
-            self.up.focus_sync();
-            self.down.focus_sync();
+        crossed_map.remove(&NumberInputPart::Ctr).map(|map| {
+            self.ctr.apply_slot_map.merge_slot(map.to_slot());
+            self.ctr.focus_sync();
         });
 
         self.style.sync_slot(&self.apply_slot_map);
@@ -344,5 +390,8 @@ impl GNumberInput {
             }
         }
     }
-    pub fn apply_items(&mut self, cx: &mut Cx) {}
+    // 用于将数据应用到各个子组件上
+    pub fn apply_data(&mut self, cx: &mut Cx) {
+        self.input.value = self.value.to_string();
+    }
 }

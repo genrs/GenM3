@@ -4,13 +4,19 @@ use toml_edit::Item;
 use crate::{
     component_part, component_state,
     components::{
-        ButtonBasicStyle, ButtonState, InputState, ViewColors, area::InputAreaBasicStyle, live_props::LiveProps, traits::{BasicStyle, ComponentState, SlotBasicStyle, SlotStyle, Style}, view::{ViewBasicStyle, ViewState}
+        ButtonState, InputState, ViewColors,
+        area::InputAreaBasicStyle,
+        controller::NumberCtrBasicStyle,
+        live_props::LiveProps,
+        traits::{BasicStyle, ComponentState, SlotBasicStyle, SlotStyle, Style},
+        view::{ViewBasicStyle, ViewState},
     },
     error::Error,
     from_prop_to_toml, get_get_mut,
     prop::{
         ApplySlotMapImpl, ApplyStateMapImpl, Applys,
-        manuel::{BASIC, BUTTON, CONTAINER, DISABLED, INPUT, ITEM}, traits::NewFrom,
+        manuel::{BASIC, BUTTON, CONTAINER, CTR, DISABLED, INPUT},
+        traits::NewFrom,
     },
     prop_interconvert,
     themes::Theme,
@@ -59,7 +65,11 @@ impl SlotStyle for NumberInputStyle {
             &mut self.basic,
             NumberInputState::Basic,
             [(NumberInputState::Disabled, &mut self.disabled)],
-            [NumberInputPart::Container, NumberInputPart::Input, NumberInputPart::Button],
+            [
+                NumberInputPart::Container,
+                NumberInputPart::Input,
+                NumberInputPart::Ctr,
+            ],
         );
     }
 }
@@ -71,8 +81,8 @@ pub struct NumberInputBasicStyle {
     pub container: ViewBasicStyle,
     #[live(NumberInputBasicStyle::default_input(Theme::default(), NumberInputState::Basic))]
     pub input: InputAreaBasicStyle,
-    #[live(NumberInputBasicStyle::default_button(Theme::default(), NumberInputState::Basic))]
-    pub button: ButtonBasicStyle
+    #[live(NumberInputBasicStyle::default_ctr(Theme::default(), NumberInputState::Basic))]
+    pub ctr: NumberCtrBasicStyle,
 }
 
 impl BasicStyle for NumberInputBasicStyle {
@@ -84,7 +94,7 @@ impl BasicStyle for NumberInputBasicStyle {
         Self {
             container: Self::default_container(theme, state),
             input: Self::default_input(theme, state),
-            button: Self::default_button(theme, state),
+            ctr: Self::default_ctr(theme, state),
         }
     }
 
@@ -108,7 +118,7 @@ impl BasicStyle for NumberInputBasicStyle {
         vec![
             (live_id!(container), ViewBasicStyle::live_props().into()),
             (live_id!(input), InputAreaBasicStyle::live_props().into()),
-            (live_id!(button), ButtonBasicStyle::live_props().into()),
+            (live_id!(ctr), NumberCtrBasicStyle::live_props().into()),
         ]
     }
 
@@ -136,7 +146,7 @@ impl SlotBasicStyle for NumberInputBasicStyle {
                     .set_from_str(key, &value.into(), state.into())
             }
             NumberInputPart::Input => self.input.set_from_str(key, &value.into(), state.into()),
-            NumberInputPart::Button => self.button.set_from_str(key, &value.into(), state.into()),
+            NumberInputPart::Ctr => self.ctr.set_from_str(key, &value.into(), state.into()),
         }
     }
 
@@ -144,7 +154,7 @@ impl SlotBasicStyle for NumberInputBasicStyle {
         match part {
             NumberInputPart::Container => self.container.sync(state.into()),
             NumberInputPart::Input => self.input.sync(state.into()),
-            NumberInputPart::Button => self.button.sync(state.into()),
+            NumberInputPart::Ctr => self.ctr.sync(state.into()),
         }
     }
 }
@@ -159,7 +169,7 @@ from_prop_to_toml! {
     NumberInputBasicStyle {
         container => CONTAINER,
         input => INPUT,
-        button => BUTTON
+        ctr => CTR
     }
 }
 
@@ -195,19 +205,18 @@ impl TryFrom<(&Item, NumberInputState)> for NumberInputBasicStyle {
             |v| (v, state.into()).try_into(),
         )?;
 
-        let button = get_from_itable(
+        let ctr = get_from_itable(
             inline_table,
             BUTTON,
-            || {
-                Ok(NumberInputBasicStyle::default_button(
-                    Theme::default(),
-                    state,
-                ))
-            },
+            || Ok(NumberInputBasicStyle::default_ctr(Theme::default(), state)),
             |v| (v, state.into()).try_into(),
         )?;
 
-        Ok(Self { container, input, button })
+        Ok(Self {
+            container,
+            input,
+            ctr,
+        })
     }
 }
 
@@ -216,12 +225,11 @@ impl NumberInputBasicStyle {
         let mut container = ViewBasicStyle::from_state(theme, state.into());
         container.set_cursor(Default::default());
         container.set_background_visible(true);
-        container.set_background_color(vec4(1.0,0.0,0.0, 1.0));
         container.set_flow(Flow::Right);
         container.set_height(Size::Fit);
         container.set_width(Size::Fill);
         container.set_padding(Padding::from_f64(0.0));
-        container.set_spacing(0.0);
+        container.set_spacing(2.0);
         container
     }
 
@@ -231,12 +239,10 @@ impl NumberInputBasicStyle {
         item
     }
 
-    pub fn default_button(theme: Theme, state: NumberInputState) -> ButtonBasicStyle {
-        let mut button = ButtonBasicStyle::from_state(theme, state.into());
-        button.set_width(Size::Fill);
-        button.set_padding(Padding::from_f64(2.0));
-        button.set_height(Size::Fill);
-        button
+    pub fn default_ctr(theme: Theme, state: NumberInputState) -> NumberCtrBasicStyle {
+        let mut ctr = NumberCtrBasicStyle::from_state(theme, state.into());
+        ctr.container.set_width(Size::Fixed(28.0));
+        ctr
     }
 }
 
@@ -294,6 +300,6 @@ component_part! {
     NumberInputPart {
         Container => container => CONTAINER,
         Input => input => INPUT,
-        Button => button => BUTTON
+        Ctr => ctr => CTR
     }, NumberInputState
 }
