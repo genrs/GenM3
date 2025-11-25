@@ -1,0 +1,867 @@
+use gen_ui::components::*;
+use makepad_widgets::*;
+
+use crate::widget_node;
+
+live_design! {
+    use link::widgets::*;
+    use link::genui::*;
+    use crate::views::basic::view::*;
+    use crate::views::basic::button::*;
+    use crate::views::basic::label::*;
+    use crate::views::basic::svg::*;
+    use crate::views::basic::image::*;
+    use crate::views::basic::card::*;
+    use crate::views::form::radio::*;
+    use crate::views::form::checkbox::*;
+    use crate::views::form::switch::*;
+    use crate::views::basic::divider::*;
+    use crate::views::basic::link::*;
+    use crate::views::data::tag::*;
+    use crate::views::data::collapse::*;
+    use crate::views::nav::dialog::*;
+    use crate::views::nav::popover::*;
+    use crate::views::nav::tooltip::*;
+    use crate::views::nav::drawer::*;
+    use crate::views::nav::menu::*;
+    use crate::views::nav::tabbar::*;
+    use crate::views::nav::router::*;
+    use crate::views::data::progress::*;
+    use crate::views::data::loading::*;
+    use crate::views::form::rate::*;
+    use crate::views::data::slider::*;
+    use crate::views::data::badge::*;
+    use crate::views::form::input::*;
+    use crate::views::form::select::*;
+    use crate::views::data::pagination::*;
+    use crate::views::form::verification::*;
+    use crate::views::data::tree::*;
+    use crate::views::data::number_input::*;
+
+    pub HomePage = {{HomePage}} {
+        style: {
+            basic: {
+                flow: Right,
+                padding: {left: 0.0, right: 0.0, top: 0.0, bottom: 0.0}
+            }
+        }
+        menu = <GMenu> {
+            style: {
+                basic: {
+                    container: {
+                        theme: Primary,
+                    },
+                    body: {
+                        theme: Primary,
+                    }
+                }
+            },
+            // active: "tab_view",
+            body: {
+                <GSubMenu> {
+                    style: {
+                        basic: {
+                            container: {
+                                theme: Primary,
+                            },
+                            header: {
+                                theme: Primary,
+                            },
+                            body: {
+                                theme: Primary,
+                            }
+                        }
+                    },
+                    header: {
+                        <GLabel> {
+                            text: "Basic Components"
+                        }
+                    },
+                    body: {
+                        <GMenuItem> {
+                            style: {
+                                basic: {
+                                    container: {
+                                        theme: Primary,
+                                    }
+                                }
+                            }
+                            text: {
+                                text: "View"
+                            },
+                            value: "tab_view"
+                        }
+                        <GMenuItem> {
+                            style: {
+                                basic: {
+                                    container: {
+                                        theme: Primary,
+                                    }
+                                }
+                            }
+                            text: {
+                                text: "Label"
+                            },
+                            value: "tab_label"
+                        }
+                        <GMenuItem> {
+                            style: {
+                                basic: {
+                                    container: {
+                                        theme: Primary,
+                                    }
+                                }
+                            }
+                            text: {
+                                text: "Button"
+                            },
+                            value: "tab_button"
+                        }
+                        <GMenuItem> {
+                            style: {
+                                basic: {
+                                    container: {
+                                        theme: Primary,
+                                    }
+                                }
+                            }
+                            text: {
+                                text: "Svg"
+                            },
+                            value: "tab_svg"
+                        }
+                        <GMenuItem> {
+                            style: {
+                                basic: {
+                                    container: {
+                                        theme: Primary,
+                                    }
+                                }
+                            }
+                            text: {
+                                text: "Image"
+                            },
+                            value: "tab_image"
+                        }
+                        <GMenuItem> {
+                            style: {
+                                basic: {
+                                    container: {
+                                        theme: Primary,
+                                    }
+                                }
+                            }
+                            text: {
+                                text: "Card"
+                            },
+                            value: "tab_card"
+                        }
+                        <GMenuItem> {
+                            style: {
+                                basic: {
+                                    container: {
+                                        theme: Primary,
+                                    }
+                                }
+                            }
+                            text: {
+                                text: "Divider"
+                            },
+                            value: "tab_divider"
+                        }
+                        <GMenuItem> {
+                            style: {
+                                basic: {
+                                    container: {
+                                        theme: Primary,
+                                    }
+                                }
+                            }
+                            text: {
+                                text: "Link"
+                            },
+                            value: "tab_link"
+                        }
+                    }
+                }
+                <GSubMenu> {
+                    style: {
+                        basic: {
+                            container: {
+                                theme: Primary,
+                            },
+                            header: {
+                                theme: Primary,
+                            },
+                            body: {
+                                theme: Primary,
+                            }
+                        }
+                    },
+                    header: {
+                        <GLabel> {
+                            text: "Form Components"
+                        }
+                    },
+                    body: {
+                        <GMenuItem> {
+                            style: {
+                                basic: {
+                                    container: {
+                                        theme: Primary,
+                                    }
+                                }
+                            }
+                            text: {
+                                text: "Radio"
+                            },
+                            value: "tab_radio"
+                        }
+                        <GMenuItem> {
+                            style: {
+                                basic: {
+                                    container: {
+                                        theme: Primary,
+                                    }
+                                }
+                            }
+                            text: {
+                                text: "Checkbox"
+                            },
+                            value: "tab_checkbox"
+                        }
+                        <GMenuItem> {
+                            style: {
+                                basic: {
+                                    container: {
+                                        theme: Primary,
+                                    }
+                                }
+                            }
+                            text: {
+                                text: "Switch"
+                            },
+                            value: "tab_switch"
+                        }
+                        <GMenuItem> {
+                            style: {
+                                basic: {
+                                    container: {
+                                        theme: Primary,
+                                    }
+                                }
+                            }
+                            text: {
+                                text: "Rate"
+                            },
+                            value: "tab_rate"
+                        }
+                        <GMenuItem> {
+                            style: {
+                                basic: {
+                                    container: {
+                                        theme: Primary,
+                                    }
+                                }
+                            }
+                            text: {
+                                text: "Input"
+                            },
+                            value: "tab_input"
+                        }
+                        <GMenuItem> {
+                            style: {
+                                basic: {
+                                    container: {
+                                        theme: Primary,
+                                    }
+                                }
+                            }
+                            text: {
+                                text: "Select"
+                            },
+                            value: "tab_select"
+                        }
+                        <GMenuItem> {
+                            style: {
+                                basic: {
+                                    container: {
+                                        theme: Primary,
+                                    }
+                                }
+                            }
+                            text: {
+                                text: "Verification"
+                            },
+                            value: "tab_verification"
+                        }
+                    }
+                }
+                <GSubMenu> {
+                    style: {
+                        basic: {
+                            container: {
+                                theme: Primary,
+                            },
+                            header: {
+                                theme: Primary,
+                            },
+                            body: {
+                                theme: Primary,
+                            }
+                        }
+                    },
+                    header: {
+                        <GLabel> {
+                            text: "Data Components"
+                        }
+                    },
+                    body: {
+                        <GMenuItem> {
+                            style: {
+                                basic: {
+                                    container: {
+                                        theme: Primary,
+                                    }
+                                }
+                            }
+                            text: {
+                                text: "Tag"
+                            },
+                            value: "tab_tag"
+                        }
+                        <GMenuItem> {
+                            style: {
+                                basic: {
+                                    container: {
+                                        theme: Primary,
+                                    }
+                                }
+                            }
+                            text: {
+                                text: "Collapse"
+                            },
+                            value: "tab_collapse"
+                        }
+                        <GMenuItem> {
+                            style: {
+                                basic: {
+                                    container: {
+                                        theme: Primary,
+                                    }
+                                }
+                            }
+                            text: {
+                                text: "Progress"
+                            },
+                            value: "tab_progress"
+                        }
+                        <GMenuItem> {
+                            style: {
+                                basic: {
+                                    container: {
+                                        theme: Primary,
+                                    }
+                                }
+                            }
+                            text: {
+                                text: "Loading"
+                            },
+                            value: "tab_loading"
+                        }
+                        <GMenuItem> {
+                            style: {
+                                basic: {
+                                    container: {
+                                        theme: Primary,
+                                    }
+                                }
+                            }
+                            text: {
+                                text: "Slider"
+                            },
+                            value: "tab_slider"
+                        }
+                        <GMenuItem> {
+                            style: {
+                                basic: {
+                                    container: {
+                                        theme: Primary,
+                                    }
+                                }
+                            }
+                            text: {
+                                text: "Badge"
+                            },
+                            value: "tab_badge"
+                        }
+                        <GMenuItem> {
+                            style: {
+                                basic: {
+                                    container: {
+                                        theme: Primary,
+                                    }
+                                }
+                            }
+                            text: {
+                                text: "Pagination"
+                            },
+                            value: "tab_pagination"
+                        }
+                        <GMenuItem> {
+                            style: {
+                                basic: {
+                                    container: {
+                                        theme: Primary,
+                                    }
+                                }
+                            }
+                            text: {
+                                text: "Tree"
+                            },
+                            value: "tab_tree"
+                        }
+                        <GMenuItem> {
+                            style: {
+                                basic: {
+                                    container: {
+                                        theme: Primary,
+                                    }
+                                }
+                            }
+                            text: {
+                                text: "Number Input"
+                            },
+                            value: "tab_number_input"
+                        }
+                    }
+                }
+                <GSubMenu> {
+                    style: {
+                        basic: {
+                            container: {
+                                theme: Primary,
+                            },
+                            header: {
+                                theme: Primary,
+                            },
+                            body: {
+                                theme: Primary,
+                            }
+                        }
+                    },
+                    header: {
+                        <GLabel> {
+                            text: "Nav Components"
+                        }
+                    },
+                    body: {
+                        <GMenuItem> {
+                            style: {
+                                basic: {
+                                    container: {
+                                        theme: Primary,
+                                    }
+                                }
+                            }
+                            text: {
+                                text: "Dialog"
+                            },
+                            value: "tab_dialog"
+                        }
+                        <GMenuItem> {
+                            style: {
+                                basic: {
+                                    container: {
+                                        theme: Primary,
+                                    }
+                                }
+                            }
+                            text: {
+                                text: "Drawer"
+                            },
+                            value: "tab_drawer"
+                        }
+                        <GMenuItem> {
+                            style: {
+                                basic: {
+                                    container: {
+                                        theme: Primary,
+                                    }
+                                }
+                            }
+                            text: {
+                                text: "Popover"
+                            },
+                            value: "tab_popover"
+                        }
+                        <GMenuItem> {
+                            style: {
+                                basic: {
+                                    container: {
+                                        theme: Primary,
+                                    }
+                                }
+                            }
+                            text: {
+                                text: "ToolTip"
+                            },
+                            value: "tab_tooltip"
+                        }
+                        <GMenuItem> {
+                            style: {
+                                basic: {
+                                    container: {
+                                        theme: Primary,
+                                    }
+                                }
+                            }
+                            text: {
+                                text: "TabBar"
+                            },
+                            value: "tab_tabbar"
+                        }
+                        <GMenuItem> {
+                            style: {
+                                basic: {
+                                    container: {
+                                        theme: Primary,
+                                    }
+                                }
+                            }
+                            text: {
+                                text: "Menu"
+                            },
+                            value: "tab_menu"
+                        }
+                        <GMenuItem> {
+                            style: {
+                                basic: {
+                                    container: {
+                                        theme: Primary,
+                                    }
+                                }
+                            }
+                            text: {
+                                text: "Router"
+                            },
+                            value: "tab_router"
+                        }
+                    }
+                }
+            }
+        }
+        <GVLayout> {
+            app_router = <GRouter> {
+                bar_pages = {
+                    view_page = <GBarPage> {
+                        <ViewPage>{}
+                    }
+                    button_page = <GBarPage> {
+                        <ButtonPage>{}
+                    }
+                    label_page = <GBarPage> {
+                        <LabelPage>{}
+                    }
+                    svg_page = <GBarPage> {
+                        <SvgPage>{}
+                    }
+                    image_page = <GBarPage> {
+                        <ImagePage>{}
+                    }
+                    card_page = <GBarPage> {
+                        <CardPage>{}
+                    }
+                    radio_page = <GBarPage> {
+                        <RadioPage>{}
+                    }
+                    checkbox_page = <GBarPage> {
+                        <CheckboxPage>{}
+                    }
+                    switch_page = <GBarPage> {
+                        <SwitchPage>{}
+                    }
+                    divider_page = <GBarPage> {
+                        <DividerPage>{}
+                    }
+                    link_page = <GBarPage> {
+                        <LinkPage>{}
+                    }
+                    tag_page = <GBarPage> {
+                        <TagPage>{}
+                    }
+                    collapse_page = <GBarPage> {
+                        <CollapsePage>{}
+                    }
+                    dialog_page = <GBarPage> {
+                        <DialogPage>{}
+                    }
+                    drawer_page = <GBarPage> {
+                        <DrawerPage>{}
+                    }
+                    popover_page = <GBarPage> {
+                        <PopoverPage>{}
+                    }
+                    tooltip_page = <GBarPage> {
+                        <TooltipPage>{}
+                    }
+                    tabbar_page = <GBarPage> {
+                        <TabbarPage>{}
+                    }
+                    menu_page = <GBarPage> {
+                        <MenuPage>{}
+                    }
+                    router_page = <GBarPage> {
+                        <RouterPage>{}
+                    }
+                    progress_page = <GBarPage> {
+                        <ProgressPage>{}
+                    }
+                    loading_page = <GBarPage> {
+                        <LoadingPage>{}
+                    }
+                    rate_page = <GBarPage> {
+                        <RatePage>{}
+                    }
+                    slider_page = <GBarPage> {
+                        <SliderPage>{}
+                    }
+                    badge_page = <GBarPage> {
+                        <BadgePage>{}
+                    }
+                    input_page = <GBarPage> {
+                        <InputPage>{}
+                    }
+                    select_page = <GBarPage> {
+                        <SelectPage>{}
+                    }
+                    pagination_page = <GBarPage> {
+                        <PaginationPage>{}
+                    }
+                    verification_page = <GBarPage> {
+                        <VerificationPage>{}
+                    }
+                    tree_page = <GBarPage> {
+                        <TreePage>{}
+                    }
+                    number_input_page = <GBarPage> {
+                        <NumberInputPage>{}
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[derive(Live, WidgetRef, WidgetSet, LiveRegisterWidget)]
+pub struct HomePage {
+    #[deref]
+    pub deref_widget: GView,
+    #[rust]
+    pub lifecycle: LifeCycle,
+}
+
+impl LiveHook for HomePage {
+    fn after_apply(&mut self, cx: &mut Cx, apply: &mut Apply, index: usize, nodes: &[LiveNode]) {
+        self.deref_widget.after_apply(cx, apply, index, nodes);
+    }
+    fn after_new_before_apply(&mut self, cx: &mut Cx) {
+        self.deref_widget.after_new_before_apply(cx);
+    }
+    fn before_apply(&mut self, cx: &mut Cx, apply: &mut Apply, index: usize, nodes: &[LiveNode]) {
+        self.deref_widget.before_apply(cx, apply, index, nodes);
+    }
+    fn after_update_from_doc(&mut self, cx: &mut Cx) {
+        self.deref_widget.after_update_from_doc(cx);
+    }
+    fn after_apply_from_doc(&mut self, cx: &mut Cx) {
+        self.deref_widget.after_apply_from_doc(cx);
+    }
+    fn after_new_from_doc(&mut self, cx: &mut Cx) {
+        self.deref_widget.after_new_from_doc(cx);
+        self.gmenu(id!(menu)).borrow_mut().map(|mut menu| {
+            menu.set_active(cx, Some("tab_number_input".to_string()));
+        });
+    }
+    fn apply_value_instance(
+        &mut self,
+        cx: &mut Cx,
+        apply: &mut Apply,
+        index: usize,
+        nodes: &[LiveNode],
+    ) -> usize {
+        self.deref_widget
+            .apply_value_instance(cx, apply, index, nodes)
+    }
+}
+
+impl Widget for HomePage {
+    fn draw_walk(&mut self, cx: &mut Cx2d, scope: &mut Scope, walk: Walk) -> DrawStep {
+        let _ = self.deref_widget.draw_walk(cx, scope, walk);
+        if self.lifecycle.is_created() {
+            let router = self.grouter(id!(app_router));
+            router.borrow_mut().map(|mut router| {
+                router
+                    .init(
+                        ids!(
+                            view_page,
+                            button_page,
+                            label_page,
+                            svg_page,
+                            image_page,
+                            card_page,
+                            radio_page,
+                            checkbox_page,
+                            switch_page,
+                            divider_page,
+                            link_page,
+                            tag_page,
+                            collapse_page,
+                            popover_page,
+                            tooltip_page,
+                            dialog_page,
+                            drawer_page,
+                            tabbar_page,
+                            router_page,
+                            menu_page,
+                            progress_page,
+                            loading_page,
+                            rate_page,
+                            badge_page,
+                            slider_page,
+                            input_page,
+                            select_page,
+                            pagination_page,
+                            verification_page,
+                            tree_page,
+                            number_input_page,
+                        ),
+                        None,
+                        None,
+                    )
+                    .active(id!(number_input_page))
+                    .build(cx);
+            });
+            self.lifecycle.next();
+        }
+        DrawStep::done()
+    }
+    fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
+        // let actions = cx.capture_actions(|cx| self.deref_widget.handle_event(cx, event, scope));
+        // self.deref_widget.handle_event(cx, event, scope);
+        self.match_event(cx, event);
+        self.deref_widget.handle_event(cx, event, scope);
+    }
+}
+
+impl MatchEvent for HomePage {
+    fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions) {
+        let router = self.grouter(id!(app_router));
+        if let Some(MenuChanged { meta, active }) = self.gmenu(id!(menu)).changed(actions) {
+            if let Some(active) = active {
+                match active.as_str() {
+                    "tab_view" => {
+                        router.nav_to(cx, id!(view_page));
+                    }
+                    "tab_button" => {
+                        router.nav_to(cx, id!(button_page));
+                    }
+                    "tab_label" => {
+                        router.nav_to(cx, id!(label_page));
+                    }
+                    "tab_svg" => {
+                        router.nav_to(cx, id!(svg_page));
+                    }
+                    "tab_image" => {
+                        router.nav_to(cx, id!(image_page));
+                    }
+                    "tab_card" => {
+                        router.nav_to(cx, id!(card_page));
+                    }
+                    "tab_radio" => {
+                        router.nav_to(cx, id!(radio_page));
+                    }
+                    "tab_checkbox" => {
+                        router.nav_to(cx, id!(checkbox_page));
+                    }
+                    "tab_switch" => {
+                        router.nav_to(cx, id!(switch_page));
+                    }
+                    "tab_divider" => {
+                        router.nav_to(cx, id!(divider_page));
+                    }
+                    "tab_link" => {
+                        router.nav_to(cx, id!(link_page));
+                    }
+                    "tab_popover" => {
+                        router.nav_to(cx, id!(popover_page));
+                    }
+                    "tab_tooltip" => {
+                        router.nav_to(cx, id!(tooltip_page));
+                    }
+                    "tab_dialog" => {
+                        router.nav_to(cx, id!(dialog_page));
+                    }
+                    "tab_drawer" => {
+                        router.nav_to(cx, id!(drawer_page));
+                    }
+                    "tab_collapse" => {
+                        router.nav_to(cx, id!(collapse_page));
+                    }
+                    "tab_tag" => {
+                        router.nav_to(cx, id!(tag_page));
+                    }
+                    "tab_router" => {
+                        router.nav_to(cx, id!(router_page));
+                    }
+                    "tab_menu" => {
+                        router.nav_to(cx, id!(menu_page));
+                    }
+                    "tab_tabbar" => {
+                        router.nav_to(cx, id!(tabbar_page));
+                    }
+                    "tab_progress" => {
+                        router.nav_to(cx, id!(progress_page));
+                    }
+                    "tab_loading" => {
+                        router.nav_to(cx, id!(loading_page));
+                    }
+                    "tab_rate" => {
+                        router.nav_to(cx, id!(rate_page));
+                    }
+                    "tab_slider" => {
+                        router.nav_to(cx, id!(slider_page));
+                    }
+                    "tab_badge" => {
+                        router.nav_to(cx, id!(badge_page));
+                    }
+                    "tab_input" => {
+                        router.nav_to(cx, id!(input_page));
+                    }
+                    "tab_select" => {
+                        router.nav_to(cx, id!(select_page));
+                    }
+                    "tab_pagination" => {
+                        router.nav_to(cx, id!(pagination_page));
+                    }
+                    "tab_verification" => {
+                        router.nav_to(cx, id!(verification_page));
+                    }
+                    "tab_tree" => {
+                        router.nav_to(cx, id!(tree_page));
+                    }
+                    "tab_number_input" => {
+                        router.nav_to(cx, id!(number_input_page));
+                    }
+                    _ => {}
+                }
+            }
+        }
+
+        router.borrow_mut().map(|mut route| {
+            route.handle_nav_events(cx, &actions);
+        });
+    }
+}
+
+widget_node!(HomePage);

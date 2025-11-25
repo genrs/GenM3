@@ -1,0 +1,139 @@
+use gen_ui::{components::*, inherits_view_livehook, prop::traits::ToFloat};
+use makepad_widgets::*;
+
+use crate::widget_node;
+
+live_design! {
+    use link::widgets::*;
+    use link::genui::*;
+    use crate::views::cbox::*;
+
+    pub BadgePage = {{BadgePage}} {
+        <CBox> {
+            show = {
+                style: {
+                    basic: {
+                        height: Fit,
+                        width: Fill,
+                        flow: Down,
+                        spacing: 20.0,
+                    }
+                }
+                // <GHLayout> {
+                //     style: {
+                //         basic: {
+                //             height: 248.0,
+                //             width: Fill,
+                //             spacing: 12.0,
+                //         }
+                //     }
+
+                // }
+                <GBadge> {
+                    position: RightTop,
+                    style: {
+                        basic: {
+                            container: {
+                                background_visible: true,
+                                height: 46.0,
+                                width: 46.0,
+                            }
+                        }
+                    }
+                    dot: <GBadgeDot> {
+                        text: <GLabel> {
+                            text: "1"
+                        },
+                        style: {
+                            basic: {
+                                container: {
+                                    theme: Error,
+                                }
+                            }
+                        }
+                    }
+                }
+
+                <GBadge> {
+                    position: RightTop,
+                    style: {
+                        basic: {
+                            container: {
+                                background_visible: true,
+                                height: 46.0,
+                                width: 46.0,
+                            },
+                            dot: {
+                                container: {
+                                    theme: Error,
+                                }
+                            }
+                        }
+                    }
+
+                    dot: <GBadgeDot> {
+                        text: <GLabel> {
+                            text: "1"
+                        },
+                        dot: true,
+                    }
+                }
+
+                <GBadge> {
+                    position: RightBottom,
+                    dot: <GBadgeDot> {
+                        style: {
+                            basic: {
+                                container: {
+                                    theme: Primary,
+                                }
+                            }
+                        }
+                        text: <GLabel> {
+                            text: "22+"
+                        }
+                    }
+                    <GButton> {
+                        slot: {
+                            text: "Messages"
+                        }
+                    }
+                }
+            }
+            desc = {
+                text: ""
+            }
+        }
+    }
+}
+
+#[derive(Live, WidgetRef, WidgetSet, LiveRegisterWidget)]
+pub struct BadgePage {
+    #[deref]
+    pub deref_widget: GView,
+}
+
+impl LiveHook for BadgePage {
+    inherits_view_livehook!();
+    fn after_apply(&mut self, cx: &mut Cx, apply: &mut Apply, index: usize, nodes: &[LiveNode]) {
+        self.deref_widget.after_apply(cx, apply, index, nodes);
+    }
+}
+
+impl Widget for BadgePage {
+    fn draw_walk(&mut self, cx: &mut Cx2d, scope: &mut Scope, walk: Walk) -> DrawStep {
+        let _ = self.deref_widget.draw_walk(cx, scope, walk);
+
+        DrawStep::done()
+    }
+    fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
+        self.match_event(cx, event);
+        self.deref_widget.handle_event(cx, event, scope)
+    }
+}
+
+impl MatchEvent for BadgePage {
+    fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions) {}
+}
+
+widget_node!(BadgePage);

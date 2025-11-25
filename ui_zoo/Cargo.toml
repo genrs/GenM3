@@ -1,0 +1,9 @@
+[package]
+name = "ui_zoo"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+makepad-widgets = { path = "/Users/shengyifei/projects/makepad/makepad/widgets" }
+# makepad-widgets = { git = "https://github.com/syf20020816/makepad.git", branch = "genui"}
+gen_ui = {path="../gen_ui"}

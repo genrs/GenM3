@@ -12,3 +12,4 @@ gen_ui M3 component based on the makepad `main` branch, but with some additional
 makepad-widgets = { git = "https://github.com/syf20020816/makepad.git", branch = "genui"}
 gen_ui = {path="../gen_ui"}
 ```
+
