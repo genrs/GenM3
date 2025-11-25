@@ -70,7 +70,7 @@ pub use view::*;
 
 use crate::{
     component,
-    components::{area::GInputArea, controller::GNumberCtr, item::GSelectItem, options::GSelectOptions},
+    components::{area::GInputArea, controller::GNumberCtr, item::GSelectItem},
 };
 
 live_design! {

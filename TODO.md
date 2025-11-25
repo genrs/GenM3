@@ -1,6 +1,7 @@
   - [x] input
     - [x] input_area
-  - [ ] number_input
+  - [x] number_input
+    - [x] number_ctr
   - [x] verification
   - [x] loading
   - [ ] time_picker

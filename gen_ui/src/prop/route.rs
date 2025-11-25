@@ -2,6 +2,7 @@ use makepad_widgets::*;
 
 #[derive(Clone, Copy, Live, LiveHook, LiveRegister, Default)]
 #[live_ignore]
+#[allow(unused)]
 pub enum NavMode {
     #[pick]
     #[default]

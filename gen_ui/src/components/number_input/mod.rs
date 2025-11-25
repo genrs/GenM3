@@ -3,6 +3,8 @@ mod event;
 mod prop;
 mod register;
 
+use std::f32;
+
 pub use event::*;
 pub use prop::*;
 pub use register::register as number_input_register;
@@ -11,8 +13,8 @@ use makepad_widgets::*;
 
 use crate::{
     components::{
-        BasicStyle, Component, GComponent, InputChangedMetaEvent, LifeCycle, SlotComponent,
-        SlotStyle, Style, ViewBasicStyle,
+        BasicStyle, Component, GComponent, InputChanged, InputChangedMetaEvent, LifeCycle,
+        SlotComponent, SlotStyle, Style, ViewBasicStyle,
         area::{GInputArea, InputAreaBasicStyle},
         controller::{GNumberCtr, NumberCtrBasicStyle},
     },
@@ -46,8 +48,6 @@ pub struct GNumberInput {
     pub input: GInputArea,
     #[live]
     pub ctr: GNumberCtr,
-    // #[rust]
-    // live_update_order: SmallVec<[LiveId; 1]>,
     #[live]
     pub draw_number_input: DrawView,
     // --- visible -------------------
@@ -249,7 +249,17 @@ impl Widget for GNumberInput {
 
 impl MatchEvent for GNumberInput {
     fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions) {
-        if let Some(param) = self.ctr.up(actions) {}
+        // 接收input的事件，输入事件需要进行特殊处理，因为input只是担任输入框的角色，没有实际的输入逻辑
+        if let Some(param) = self.input.changed(actions) {
+            self.handle_changed(cx, param);
+        }
+
+        if let Some(_) = self.ctr.up(actions) {
+            self.handle_adjust(cx, NumberInputAdjust::Up);
+        }
+        if let Some(_) = self.ctr.down(actions) {
+            self.handle_adjust(cx, NumberInputAdjust::Down);
+        }
     }
 }
 
@@ -390,8 +400,71 @@ impl GNumberInput {
             }
         }
     }
+    pub fn handle_adjust(&mut self, cx: &mut Cx, adjust: NumberInputAdjust) {
+        match adjust {
+            NumberInputAdjust::Up => {
+                self.value += self.step;
+                if self.strict {
+                    if self.value > self.max {
+                        self.value = self.max;
+                    }
+                    self.value = self.value.clamp(f32::MIN, f32::MAX);
+                }
+                self.active_changed(cx, None, adjust);
+            }
+            NumberInputAdjust::Down => {
+                self.value -= self.step;
+                if self.strict {
+                    if self.value < self.min {
+                        self.value = self.min;
+                    }
+                    self.value = self.value.clamp(f32::MIN, f32::MAX);
+                }
+                self.active_changed(cx, None, adjust);
+            }
+            NumberInputAdjust::Clear => {
+                unreachable!("Clear adjust is not supported in GNumberInput now");
+            }
+        }
+        self.apply_data(cx);
+        self.input.redraw(cx);
+    }
+    pub fn handle_changed(&mut self, cx: &mut Cx, param: InputChanged) {
+        let mut adjust = NumberInputAdjust::Up; // 默认是向上调整
+        if let Ok(value) = param.value.parse::<f32>() {
+            if value == self.value {
+                return; // 如果值没有变化，则不处理
+            }
+
+            if value < self.value {
+                adjust = NumberInputAdjust::Down; // 如果小于最小值，则向下调整
+            }
+
+            if self.strict {
+                if value < self.min
+                    || value > self.max
+                    || (value - self.min).abs() % self.step != 0.0
+                {
+                    // 如果不符合严格模式的要求，则调整到符合要求的值
+                    let adjusted_value =
+                        ((value - self.min) / self.step).round() * self.step + self.min;
+                    self.value = adjusted_value.clamp(self.min, self.max);
+                } else {
+                    self.value = value;
+                }
+            } else {
+                self.value = value;
+            }
+        } else {
+            // 如果解析失败，保持原值
+            return;
+        }
+        self.active_changed(cx, Some(param.meta), adjust);
+        self.apply_data(cx);
+        self.input.redraw(cx);
+    }
     // 用于将数据应用到各个子组件上
     pub fn apply_data(&mut self, cx: &mut Cx) {
-        self.input.value = self.value.to_string();
+        self.input.set_text(cx, &self.value.to_string());
     }
 }
